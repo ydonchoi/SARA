@@ -444,11 +444,12 @@ SARA의 출력은 다음 원칙을 따른다.
 
 ```text
 SARA/
-├─ SARA_v1.0/
-├─ SARA_V2.1/
-├─ SARA_v2.2/
-├─ SARA_v2.3/
-└─ legacy
+├─ legacy/
+├     ├─ SARA_v1.0/
+├     ├─ SARA_v2.1/
+├     └─ SARA_v2.2
+└─ SARA_v2.3
+
 ```
 
 ### Latest
