@@ -27,6 +27,7 @@ request:
 ## Response
 response:
   request_id:
+  claim_id:
   provider_id: SARA
   adapter_revision:
   status: SUCCEEDED | FAILED | REJECTED
@@ -46,7 +47,8 @@ response:
   failure:
 
 ## Boundary rules
-1. verification_layer for claim/evidence verification is always research_verification.
+1. response claim_id must exactly match the request claim.id; verification results must be bound to the claim they verify.
+2. verification_layer for claim/evidence verification is always research_verification.
 2. truthfulness_status defaults to UNASSESSED; structural validity does not establish truthfulness. ESTABLISHED requires external_citation_verification.status=VERIFIED.
 3. SIMULATED_REPRODUCTION is never verification evidence.
 4. External citation verification remains a separate field.
