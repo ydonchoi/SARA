@@ -318,3 +318,89 @@ def test_sara_executor_rejects_evidence_bound_to_another_claim():
 
     with pytest.raises(MODULE.SARAExecutionError):
         MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+
+
+def test_sara_executor_accepts_evidence_explicitly_bound_to_requested_claim():
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-EVID-VALID",
+        capability="verify_claim",
+        claim={"id": "CLAIM-B", "text": "claim B"},
+        evidence=({
+            "id": "E-B",
+            "evidence_type": "empirical data",
+            "verification_layer": "research_verification",
+            "supports_claims": ["CLAIM-A", "CLAIM-B"],
+        },),
+        provenance_ids=("INPUT-B",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-EVID-VALID",
+                claim_id="CLAIM-B",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="RESULT-B",
+                external_result_provenance_ids=("RESULT-B-PROV",),
+                verification_status="VERIFIED",
+                verification_layer="research_verification",
+                findings=("claim B supported",),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+            )
+
+    result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+    assert result.claim_id == "CLAIM-B"
+    assert result.verification_status == "VERIFIED"
+
+
+def test_sara_executor_accepts_legacy_evidence_without_supports_claims():
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-EVID-LEGACY",
+        capability="verify_claim",
+        claim={"id": "CLAIM-B", "text": "claim B"},
+        evidence=({
+            "id": "E-LEGACY",
+            "evidence_type": "empirical data",
+            "verification_layer": "research_verification",
+        },),
+        provenance_ids=("INPUT-B",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-EVID-LEGACY",
+                claim_id="CLAIM-B",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="RESULT-LEGACY",
+                external_result_provenance_ids=("RESULT-LEGACY-PROV",),
+                verification_status="VERIFIED",
+                verification_layer="research_verification",
+                findings=(),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+            )
+
+    result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+    assert result.claim_id == "CLAIM-B"
