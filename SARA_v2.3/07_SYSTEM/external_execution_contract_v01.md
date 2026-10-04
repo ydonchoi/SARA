@@ -47,7 +47,7 @@ response:
 
 ## Boundary rules
 1. verification_layer for claim/evidence verification is always research_verification.
-2. truthfulness_status defaults to UNASSESSED; structural validity does not establish truthfulness.
+2. truthfulness_status defaults to UNASSESSED; structural validity does not establish truthfulness. ESTABLISHED requires external_citation_verification.status=VERIFIED.
 3. SIMULATED_REPRODUCTION is never verification evidence.
 4. External citation verification remains a separate field.
 5. Missing provenance for a consequential result is an execution-contract failure.
