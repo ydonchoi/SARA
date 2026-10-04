@@ -23,6 +23,18 @@ evidence:
   limitations:
 ```
 
+## Execution-Derived Evidence Firewall
+
+The following execution-derived classes are **blocked ingress classes**, not ordinary SARA evidence types:
+
+- `cognitive_execution`
+- `agent_execution`
+- `simulated_reproduction`
+
+They may describe execution artifacts or simulation output at an integration boundary, but they must not be promoted into research-verification evidence. An external caller attempting to submit these classes to the SARA execution facade must be rejected before backend verification.
+
+This firewall does not create new verification statuses and does not change the existing Evidence Types vocabulary. It defines a security boundary for execution-derived inputs.
+
 ## Evidence Types
 
 - empirical data
