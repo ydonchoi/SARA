@@ -74,6 +74,12 @@ class SARAExecutor:
             raise SARAExecutionError("unsupported capability")
         if not request.claim.get("id") or not request.claim.get("text"):
             raise SARAExecutionError("claim id and text are required")
+        inference_level = request.claim.get("inference_level")
+        if inference_level is not None and inference_level not in {"FACT", "INFERENCE", "HYPOTHESIS", "SPECULATION"}:
+            raise SARAExecutionError("invalid inference level")
+        if inference_level != "FACT" and inference_level is not None:
+            if not request.claim.get("inference_basis"):
+                raise SARAExecutionError("inference_basis is required for non-FACT claims")
         if not request.adapter_revision:
             raise SARAExecutionError("adapter_revision is required")
 
