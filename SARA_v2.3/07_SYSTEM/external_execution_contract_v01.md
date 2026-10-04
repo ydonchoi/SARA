@@ -51,7 +51,7 @@ response:
 2. verification_layer for claim/evidence verification is always research_verification.
 2. truthfulness_status defaults to UNASSESSED; structural validity does not establish truthfulness. ESTABLISHED requires external_citation_verification.status=VERIFIED.
 3. SIMULATED_REPRODUCTION is never verification evidence.
-4. External citation verification remains a separate field.
+4. External citation verification remains a separate field. When present, its status is limited to VERIFIED, PARTIALLY VERIFIED, UNVERIFIED, CONTRADICTED, or NOT_COMPLETED; these values are scoped to this field and do not expand verification_status vocabulary.
 5. Missing provenance for a consequential result is an execution-contract failure. Request/input provenance must not be reused as external-result provenance.
 6. Execution SUCCEEDED does not imply verification VERIFIED.
 7. SARA does not make a Human Decision.
