@@ -704,3 +704,87 @@ def test_sara_executor_accepts_non_fact_claim_with_inference_basis(inference_lev
 
     result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
     assert result.claim_id == request.claim["id"]
+
+
+@pytest.mark.parametrize("citation_status", [
+    "VERIFIED",
+    "PARTIALLY VERIFIED",
+    "UNVERIFIED",
+    "CONTRADICTED",
+    "NOT_COMPLETED",
+])
+def test_sara_executor_accepts_scoped_external_citation_status(citation_status):
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-CITATION-SCOPED",
+        capability="verify_claim",
+        claim={"id": "CLAIM-CIT", "text": "claim"},
+        evidence=(),
+        provenance_ids=("INPUT-CIT",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-CITATION-SCOPED",
+                claim_id="CLAIM-CIT",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="RESULT-CIT",
+                external_result_provenance_ids=("RESULT-CIT-PROV",),
+                verification_status="UNVERIFIED",
+                verification_layer="research_verification",
+                findings=(),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification={"status": citation_status},
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+            )
+
+    result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+    assert result.external_citation_verification["status"] == citation_status
+
+
+@pytest.mark.parametrize("citation_status", ["INVALID", "VERIFIED_EXTRA", "ESTABLISHED"])
+def test_sara_executor_rejects_invalid_external_citation_status(citation_status):
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-CITATION-INVALID",
+        capability="verify_claim",
+        claim={"id": "CLAIM-CIT", "text": "claim"},
+        evidence=(),
+        provenance_ids=("INPUT-CIT",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-CITATION-INVALID",
+                claim_id="CLAIM-CIT",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="RESULT-CIT",
+                external_result_provenance_ids=("RESULT-CIT-PROV",),
+                verification_status="UNVERIFIED",
+                verification_layer="research_verification",
+                findings=(),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification={"status": citation_status},
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+            )
+
+    with pytest.raises(MODULE.SARAExecutionError):
+        MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
