@@ -40,6 +40,11 @@ Conclusion의 강도가 Evidence의 강도를 초과하는지 검사한다. (예
 
 ## 9. Source Integrity
 
+External execution provenance must not be treated as a substitute for research evidence provenance. Execution success, agent output, and integration provenance are boundary metadata unless independently eligible research evidence is supplied.
+
+Execution-derived evidence classes blocked by the SARA execution firewall must not be promoted into research-verification evidence.
+
+
 외부 자료를 사용했다면 출처와 검증 범위를 기록한다.
 
 ## 10. Confession Requirement
