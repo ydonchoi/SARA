@@ -50,7 +50,7 @@ response:
 2. truthfulness_status defaults to UNASSESSED; structural validity does not establish truthfulness. ESTABLISHED requires external_citation_verification.status=VERIFIED.
 3. SIMULATED_REPRODUCTION is never verification evidence.
 4. External citation verification remains a separate field.
-5. Missing provenance for a consequential result is an execution-contract failure.
+5. Missing provenance for a consequential result is an execution-contract failure. Request/input provenance must not be reused as external-result provenance.
 6. Execution SUCCEEDED does not imply verification VERIFIED.
 7. SARA does not make a Human Decision.
 8. Unknown capabilities or malformed requests must be rejected explicitly.
