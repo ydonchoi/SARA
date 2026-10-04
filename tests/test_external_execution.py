@@ -562,3 +562,33 @@ def test_sara_executor_preserves_strength_alignment_as_review_metadata():
 
     result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
     assert result.verification_status == "VERIFIED"
+
+
+def test_sara_executor_rejects_non_fact_claim_without_inference_basis():
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-INFERENCE-BASIS-MISSING",
+        capability="verify_claim",
+        claim={
+            "id": "CLAIM-INFERRED",
+            "text": "claim inferred from evidence",
+            "inference_level": "INFERENCE",
+            "evidence_ids": ["E-INFERRED"],
+        },
+        evidence=({
+            "id": "E-INFERRED",
+            "evidence_type": "observation",
+            "verification_layer": "research_verification",
+            "supports_claims": ["CLAIM-INFERRED"],
+        },),
+        provenance_ids=("INPUT-INFERRED",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            raise AssertionError("schema-invalid inference claim must not reach backend")
+
+    with pytest.raises(MODULE.SARAExecutionError):
+        MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
