@@ -128,6 +128,8 @@ class SARAExecutor:
             raise SARAExecutionError("provider identity mismatch")
         if response.verification_layer != "research_verification":
             raise SARAExecutionError("invalid verification layer")
+        if response.status not in {"SUCCEEDED", "FAILED", "REJECTED"}:
+            raise SARAExecutionError("invalid execution status")
         if response.verification_status not in {
             "VERIFIED",
             "PARTIALLY VERIFIED",
