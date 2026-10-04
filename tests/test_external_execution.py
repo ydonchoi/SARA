@@ -592,3 +592,115 @@ def test_sara_executor_rejects_non_fact_claim_without_inference_basis():
 
     with pytest.raises(MODULE.SARAExecutionError):
         MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+
+
+@pytest.mark.parametrize("inference_level", ["BAD", "", "fact", "CONCLUSION"])
+def test_sara_executor_rejects_invalid_inference_level(inference_level):
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-INFERENCE-INVALID",
+        capability="verify_claim",
+        claim={
+            "id": "CLAIM-INVALID",
+            "text": "invalid inference level",
+            "inference_level": inference_level,
+            "inference_basis": "basis",
+        },
+        evidence=(),
+        provenance_ids=("INPUT-INVALID",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            raise AssertionError("invalid inference level must not reach backend")
+
+    with pytest.raises(MODULE.SARAExecutionError):
+        MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+
+
+def test_sara_executor_accepts_fact_without_inference_basis():
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-INFERENCE-FACT",
+        capability="verify_claim",
+        claim={
+            "id": "CLAIM-FACT",
+            "text": "fact claim",
+            "inference_level": "FACT",
+        },
+        evidence=(),
+        provenance_ids=("INPUT-FACT",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-INFERENCE-FACT",
+                claim_id="CLAIM-FACT",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="RESULT-FACT",
+                external_result_provenance_ids=("RESULT-FACT-PROV",),
+                verification_status="UNVERIFIED",
+                verification_layer="research_verification",
+                findings=(),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+            )
+
+    result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+    assert result.verification_status == "UNVERIFIED"
+
+
+@pytest.mark.parametrize("inference_level", ["INFERENCE", "HYPOTHESIS", "SPECULATION"])
+def test_sara_executor_accepts_non_fact_claim_with_inference_basis(inference_level):
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-INFERENCE-VALID",
+        capability="verify_claim",
+        claim={
+            "id": f"CLAIM-{inference_level}",
+            "text": "non-fact claim",
+            "inference_level": inference_level,
+            "inference_basis": "explicit basis",
+        },
+        evidence=(),
+        provenance_ids=("INPUT-VALID",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id=request.request_id,
+                claim_id=request.claim["id"],
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="RESULT-VALID",
+                external_result_provenance_ids=("RESULT-VALID-PROV",),
+                verification_status="UNVERIFIED",
+                verification_layer="research_verification",
+                findings=(),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+            )
+
+    result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+    assert result.claim_id == request.claim["id"]
