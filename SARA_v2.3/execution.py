@@ -82,6 +82,18 @@ class SARAExecutor:
             "cognitive_execution",
             "agent_execution",
         }
+        evidence_ids = request.claim.get("evidence_ids")
+        if evidence_ids is not None:
+            if not isinstance(evidence_ids, (list, tuple)):
+                raise SARAExecutionError("claim evidence_ids must be a list")
+            available_evidence_ids = {
+                evidence.get("id")
+                for evidence in request.evidence
+                if isinstance(evidence, dict) and evidence.get("id")
+            }
+            if any(evidence_id not in available_evidence_ids for evidence_id in evidence_ids):
+                raise SARAExecutionError("claim references missing evidence")
+        
         for evidence in request.evidence:
             if not isinstance(evidence, dict):
                 raise SARAExecutionError("evidence must be an object")
