@@ -106,7 +106,9 @@ class SARAExecutor:
                 raise SARAExecutionError("invalid evidence verification layer")
             supports_claims = evidence.get("supports_claims")
             if supports_claims is not None:
-                if not isinstance(supports_claims, (list, tuple)) or request.claim.get("id") not in supports_claims:
+                if not isinstance(supports_claims, (list, tuple)):
+                    raise SARAExecutionError("evidence supports_claims must be a list")
+                if request.claim.get("id") not in supports_claims:
                     raise SARAExecutionError("evidence is not bound to the requested claim")
 
     def _validate_response(
