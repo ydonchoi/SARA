@@ -104,3 +104,33 @@ def test_sara_executor_rejects_simulated_reproduction_as_verified():
 
     with pytest.raises(MODULE.SARAExecutionError):
         MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+
+
+@pytest.mark.parametrize("evidence_type", [
+    "simulated_reproduction",
+    "cognitive_execution",
+    "agent_execution",
+])
+def test_sara_executor_blocks_execution_derived_evidence(evidence_type):
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-FIREWALL",
+        capability="verify_claim",
+        claim={"id": "C1", "text": "claim"},
+        evidence=({
+            "id": "E1",
+            "evidence_type": evidence_type,
+            "verification_layer": "research_verification",
+            "usable_as_verification_evidence": True,
+        },),
+        provenance_ids=("P1",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            raise AssertionError("blocked evidence must not reach backend")
+
+    with pytest.raises(MODULE.SARAExecutionError):
+        MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
