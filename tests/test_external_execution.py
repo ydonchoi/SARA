@@ -134,3 +134,44 @@ def test_sara_executor_blocks_execution_derived_evidence(evidence_type):
 
     with pytest.raises(MODULE.SARAExecutionError):
         MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+
+
+def test_sara_executor_rejects_truthfulness_established_without_citation_verification():
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-TRUTH-1",
+        capability="verify_claim",
+        claim={"id": "C1", "text": "claim"},
+        evidence=({
+            "id": "E1",
+            "evidence_type": "empirical data",
+            "verification_layer": "research_verification",
+        },),
+        provenance_ids=("P1",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-TRUTH-1",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="X-TRUTH-1",
+                external_result_provenance_ids=("PX-TRUTH-1",),
+                verification_status="VERIFIED",
+                verification_layer="research_verification",
+                findings=(),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="ESTABLISHED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+            )
+
+    with pytest.raises(MODULE.SARAExecutionError):
+        MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
