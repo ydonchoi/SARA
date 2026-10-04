@@ -873,3 +873,83 @@ def test_sara_executor_rejects_invalid_verification_status(verification_status):
 
     with pytest.raises(MODULE.SARAExecutionError):
         MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+
+
+@pytest.mark.parametrize("status", ["PENDING", "CANCELLED", "SUCCESS", ""])
+def test_sara_executor_rejects_invalid_execution_status(status):
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-STATUS-INVALID",
+        capability="verify_claim",
+        claim={"id": "CLAIM-S", "text": "claim"},
+        evidence=(),
+        provenance_ids=("INPUT-S",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-STATUS-INVALID",
+                claim_id="CLAIM-S",
+                provider_id="SARA",
+                adapter_revision="test",
+                status=status,
+                external_result_id=None,
+                external_result_provenance_ids=(),
+                verification_status="UNVERIFIED",
+                verification_layer="research_verification",
+                findings=(),
+                uncertainty="execution did not complete",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+                failure={"code": "BACKEND_FAILURE"},
+            )
+
+    with pytest.raises(MODULE.SARAExecutionError):
+        MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+
+
+def test_sara_executor_accepts_failed_response_without_external_result_provenance():
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-FAILED-VALID",
+        capability="verify_claim",
+        claim={"id": "CLAIM-S", "text": "claim"},
+        evidence=(),
+        provenance_ids=("INPUT-S",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-FAILED-VALID",
+                claim_id="CLAIM-S",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="FAILED",
+                external_result_id=None,
+                external_result_provenance_ids=(),
+                verification_status="UNVERIFIED",
+                verification_layer="research_verification",
+                findings=(),
+                uncertainty="backend failed",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+                failure={"code": "BACKEND_FAILURE"},
+            )
+
+    result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+    assert result.status == "FAILED"
+    assert result.external_result_provenance_ids == ()
