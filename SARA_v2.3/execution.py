@@ -113,6 +113,10 @@ class SARAExecutor:
             raise SARAExecutionError(
                 "successful consequential result requires external provenance"
             )
+        if set(response.external_result_provenance_ids) & set(request.provenance_ids):
+            raise SARAExecutionError(
+                "request provenance cannot be reused as external result provenance"
+            )
         if response.verification_status == "VERIFIED" and not response.external_result_provenance_ids:
             raise SARAExecutionError("verified result requires external provenance")
         if response.reproduction_status == "SIMULATED_REPRODUCTION" and response.verification_status == "VERIFIED":
