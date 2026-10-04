@@ -130,8 +130,17 @@ class SARAExecutor:
             raise SARAExecutionError("invalid verification layer")
         if response.truthfulness_status not in {"UNASSESSED", "ESTABLISHED"}:
             raise SARAExecutionError("invalid truthfulness status")
+        citation = response.external_citation_verification
+        if citation is not None:
+            if not isinstance(citation, dict) or citation.get("status") not in {
+                "VERIFIED",
+                "PARTIALLY VERIFIED",
+                "UNVERIFIED",
+                "CONTRADICTED",
+                "NOT_COMPLETED",
+            }:
+                raise SARAExecutionError("invalid external citation verification status")
         if response.truthfulness_status == "ESTABLISHED":
-            citation = response.external_citation_verification
             if not isinstance(citation, dict) or citation.get("status") != "VERIFIED":
                 raise SARAExecutionError(
                     "established truthfulness requires verified external citation verification"
