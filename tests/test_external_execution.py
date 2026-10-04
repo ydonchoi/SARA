@@ -512,3 +512,53 @@ def test_sara_executor_does_not_treat_evidence_status_as_claim_verification_stat
 
     result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
     assert result.verification_status == "VERIFIED"
+
+
+def test_sara_executor_preserves_strength_alignment_as_review_metadata():
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-STRENGTH-SEPARATION",
+        capability="verify_claim",
+        claim={
+            "id": "CLAIM-B",
+            "text": "claim B",
+            "evidence_ids": ["E-B"],
+            "strength_alignment": "overreach",
+        },
+        evidence=({
+            "id": "E-B",
+            "evidence_type": "observation",
+            "verification_layer": "research_verification",
+            "evidence_strength": "weak",
+            "usable_as_verification_evidence": True,
+            "supports_claims": ["CLAIM-B"],
+        },),
+        provenance_ids=("INPUT-B",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-STRENGTH-SEPARATION",
+                claim_id="CLAIM-B",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="RESULT-B",
+                external_result_provenance_ids=("RESULT-B-PROV",),
+                verification_status="VERIFIED",
+                verification_layer="research_verification",
+                findings=("verification completed; strength overreach remains a review finding",),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+            )
+
+    result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+    assert result.verification_status == "VERIFIED"
