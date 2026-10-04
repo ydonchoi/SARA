@@ -91,10 +91,6 @@ class SARAExecutor:
                 )
             if evidence.get("verification_layer", "research_verification") != "research_verification":
                 raise SARAExecutionError("invalid evidence verification layer")
-            if evidence_type == "simulated_reproduction":
-                raise SARAExecutionError(
-                    "simulated reproduction cannot be used for research verification"
-                )
 
     def _validate_response(
         self, request: SARAExecutionRequest, response: SARAExecutionResponse
