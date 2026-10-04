@@ -213,3 +213,40 @@ def test_sara_executor_rejects_verified_result_with_unverified_external_citation
     result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
     assert result.verification_status == "VERIFIED"
     assert result.truthfulness_status == "UNASSESSED"
+
+
+def test_sara_executor_rejects_verified_result_reusing_request_provenance_as_external_provenance():
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-PROV-1",
+        capability="verify_claim",
+        claim={"id": "C1", "text": "claim"},
+        evidence=(),
+        provenance_ids=("INPUT-PROV-1",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-PROV-1",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="X-PROV-1",
+                external_result_provenance_ids=request.provenance_ids,
+                verification_status="VERIFIED",
+                verification_layer="research_verification",
+                findings=(),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+            )
+
+    with pytest.raises(MODULE.SARAExecutionError):
+        MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
