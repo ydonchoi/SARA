@@ -55,7 +55,7 @@ response:
 5. Missing provenance for a consequential result is an execution-contract failure. Request/input provenance must not be reused as external-result provenance.
 6. Execution SUCCEEDED does not imply verification VERIFIED.
 7. SARA does not make a Human Decision.
-8. Unknown capabilities or malformed requests must be rejected explicitly.
+8. Unknown capabilities or malformed requests must be rejected explicitly. If claim.inference_level is provided, it must be FACT, INFERENCE, HYPOTHESIS, or SPECULATION; non-FACT levels require inference_basis.
 
 ## Compatibility target
 This contract is intentionally transport-neutral. A Python API, CLI, or HTTP service may implement it without changing the Research OS Core boundary.
