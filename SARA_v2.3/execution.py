@@ -24,6 +24,7 @@ class SARAExecutionRequest:
 @dataclass(frozen=True)
 class SARAExecutionResponse:
     request_id: str
+    claim_id: str
     provider_id: str
     adapter_revision: str
     status: str
@@ -97,6 +98,8 @@ class SARAExecutor:
     ) -> None:
         if response.request_id != request.request_id:
             raise SARAExecutionError("request identity mismatch")
+        if response.claim_id != request.claim.get("id"):
+            raise SARAExecutionError("claim identity mismatch")
         if response.provider_id != self.provider_id:
             raise SARAExecutionError("provider identity mismatch")
         if response.verification_layer != "research_verification":
