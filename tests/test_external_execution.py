@@ -404,3 +404,32 @@ def test_sara_executor_accepts_legacy_evidence_without_supports_claims():
 
     result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
     assert result.claim_id == "CLAIM-B"
+
+
+def test_sara_executor_rejects_dangling_claim_evidence_reference():
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-EVID-DANGLING",
+        capability="verify_claim",
+        claim={
+            "id": "CLAIM-B",
+            "text": "claim B",
+            "evidence_ids": ["E-MISSING"],
+        },
+        evidence=({
+            "id": "E-ACTUAL",
+            "evidence_type": "empirical data",
+            "verification_layer": "research_verification",
+            "supports_claims": ["CLAIM-B"],
+        },),
+        provenance_ids=("INPUT-B",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            raise AssertionError("dangling evidence reference must not reach backend")
+
+    with pytest.raises(MODULE.SARAExecutionError):
+        MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
