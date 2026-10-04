@@ -76,6 +76,26 @@ class SARAExecutor:
         if not request.adapter_revision:
             raise SARAExecutionError("adapter_revision is required")
 
+        blocked_evidence_types = {
+            "simulated_reproduction",
+            "cognitive_execution",
+            "agent_execution",
+        }
+        for evidence in request.evidence:
+            if not isinstance(evidence, dict):
+                raise SARAExecutionError("evidence must be an object")
+            evidence_type = evidence.get("evidence_type")
+            if evidence_type in blocked_evidence_types:
+                raise SARAExecutionError(
+                    "execution-derived evidence cannot be used for research verification"
+                )
+            if evidence.get("verification_layer", "research_verification") != "research_verification":
+                raise SARAExecutionError("invalid evidence verification layer")
+            if evidence_type == "simulated_reproduction":
+                raise SARAExecutionError(
+                    "simulated reproduction cannot be used for research verification"
+                )
+
     def _validate_response(
         self, request: SARAExecutionRequest, response: SARAExecutionResponse
     ) -> None:
