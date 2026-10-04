@@ -1,0 +1,99 @@
+"""SARA v2.3 external execution facade.
+
+The facade validates the external execution contract and delegates actual
+research verification to an injected backend. It intentionally does not
+invent a verification algorithm.
+"""
+
+from dataclasses import dataclass
+from typing import Any, Protocol
+
+
+@dataclass(frozen=True)
+class SARAExecutionRequest:
+    request_id: str
+    capability: str
+    claim: dict[str, Any]
+    evidence: tuple[dict[str, Any], ...]
+    provenance_ids: tuple[str, ...]
+    adapter_revision: str
+    requested_at: str
+    environment: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class SARAExecutionResponse:
+    request_id: str
+    provider_id: str
+    adapter_revision: str
+    status: str
+    external_result_id: str | None
+    external_result_provenance_ids: tuple[str, ...]
+    verification_status: str
+    verification_layer: str
+    findings: tuple[str, ...]
+    uncertainty: str
+    structural_validity: str
+    truthfulness_status: str
+    reproduction_status: str | None
+    external_citation_verification: dict[str, Any] | None
+    timestamp: str
+    environment: dict[str, Any]
+    failure: dict[str, Any] | None = None
+
+
+class VerificationBackend(Protocol):
+    def verify(self, request: SARAExecutionRequest) -> SARAExecutionResponse:
+        ...
+
+
+class SARAExecutionError(ValueError):
+    """Raised when an external execution request violates the contract."""
+
+
+class SARAExecutor:
+    """Callable SARA boundary; verification is delegated to an injected backend."""
+
+    provider_id = "SARA"
+
+    def __init__(self, backend: VerificationBackend, adapter_revision: str):
+        self.backend = backend
+        self.adapter_revision = adapter_revision
+
+    def verify_claim(self, request: SARAExecutionRequest) -> SARAExecutionResponse:
+        self._validate_request(request)
+        response = self.backend.verify(request)
+        self._validate_response(request, response)
+        return response
+
+    def _validate_request(self, request: SARAExecutionRequest) -> None:
+        if not request.request_id:
+            raise SARAExecutionError("request_id is required")
+        if request.capability != "verify_claim":
+            raise SARAExecutionError("unsupported capability")
+        if not request.claim.get("id") or not request.claim.get("text"):
+            raise SARAExecutionError("claim id and text are required")
+        if not request.adapter_revision:
+            raise SARAExecutionError("adapter_revision is required")
+
+    def _validate_response(
+        self, request: SARAExecutionRequest, response: SARAExecutionResponse
+    ) -> None:
+        if response.request_id != request.request_id:
+            raise SARAExecutionError("request identity mismatch")
+        if response.provider_id != self.provider_id:
+            raise SARAExecutionError("provider identity mismatch")
+        if response.verification_layer != "research_verification":
+            raise SARAExecutionError("invalid verification layer")
+        if response.truthfulness_status not in {"UNASSESSED", "ESTABLISHED"}:
+            raise SARAExecutionError("invalid truthfulness status")
+        if response.status == "SUCCEEDED" and not response.external_result_provenance_ids:
+            raise SARAExecutionError(
+                "successful consequential result requires external provenance"
+            )
+        if response.verification_status == "VERIFIED" and not response.external_result_provenance_ids:
+            raise SARAExecutionError("verified result requires external provenance")
+        if response.reproduction_status == "SIMULATED_REPRODUCTION" and response.verification_status == "VERIFIED":
+            raise SARAExecutionError(
+                "simulated reproduction cannot establish verification"
+            )
