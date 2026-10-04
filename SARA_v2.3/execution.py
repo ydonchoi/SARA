@@ -128,6 +128,15 @@ class SARAExecutor:
             raise SARAExecutionError("provider identity mismatch")
         if response.verification_layer != "research_verification":
             raise SARAExecutionError("invalid verification layer")
+        if response.verification_status not in {
+            "VERIFIED",
+            "PARTIALLY VERIFIED",
+            "INFERRED",
+            "HYPOTHESIZED",
+            "UNVERIFIED",
+            "CONTRADICTED",
+        }:
+            raise SARAExecutionError("invalid verification status")
         if response.truthfulness_status not in {"UNASSESSED", "ESTABLISHED"}:
             raise SARAExecutionError("invalid truthfulness status")
         citation = response.external_citation_verification
