@@ -433,3 +433,32 @@ def test_sara_executor_rejects_dangling_claim_evidence_reference():
 
     with pytest.raises(MODULE.SARAExecutionError):
         MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+
+
+def test_sara_executor_rejects_conflicting_claim_evidence_binding():
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-EVID-CONFLICT",
+        capability="verify_claim",
+        claim={
+            "id": "CLAIM-B",
+            "text": "claim B",
+            "evidence_ids": ["E-A"],
+        },
+        evidence=({
+            "id": "E-A",
+            "evidence_type": "empirical data",
+            "verification_layer": "research_verification",
+            "supports_claims": ["CLAIM-A"],
+        },),
+        provenance_ids=("INPUT-B",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            raise AssertionError("conflicting claim/evidence binding must not reach backend")
+
+    with pytest.raises(MODULE.SARAExecutionError):
+        MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
