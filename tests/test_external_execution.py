@@ -250,3 +250,40 @@ def test_sara_executor_rejects_verified_result_reusing_request_provenance_as_ext
 
     with pytest.raises(MODULE.SARAExecutionError):
         MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+
+
+def test_sara_executor_rejects_cross_claim_external_provenance_reuse():
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-PROV-2",
+        capability="verify_claim",
+        claim={"id": "CLAIM-B", "text": "claim B"},
+        evidence=(),
+        provenance_ids=("INPUT-B",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-PROV-2",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="RESULT-B",
+                external_result_provenance_ids=("RESULT-A-PROV",),
+                verification_status="VERIFIED",
+                verification_layer="research_verification",
+                findings=("claim B verified",),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={"source_claim_id": "CLAIM-A"},
+            )
+
+    with pytest.raises(MODULE.SARAExecutionError):
+        MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
