@@ -788,3 +788,88 @@ def test_sara_executor_rejects_invalid_external_citation_status(citation_status)
 
     with pytest.raises(MODULE.SARAExecutionError):
         MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+
+
+@pytest.mark.parametrize("verification_status", [
+    "VERIFIED",
+    "PARTIALLY VERIFIED",
+    "INFERRED",
+    "HYPOTHESIZED",
+    "UNVERIFIED",
+    "CONTRADICTED",
+])
+def test_sara_executor_accepts_scoped_verification_status(verification_status):
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-VERIFICATION-STATUS",
+        capability="verify_claim",
+        claim={"id": "CLAIM-V", "text": "claim"},
+        evidence=(),
+        provenance_ids=("INPUT-V",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-VERIFICATION-STATUS",
+                claim_id="CLAIM-V",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="RESULT-V",
+                external_result_provenance_ids=("RESULT-V-PROV",),
+                verification_status=verification_status,
+                verification_layer="research_verification",
+                findings=(),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+            )
+
+    result = MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
+    assert result.verification_status == verification_status
+
+
+@pytest.mark.parametrize("verification_status", ["ESTABLISHED", "VALID", "UNKNOWN", ""])
+def test_sara_executor_rejects_invalid_verification_status(verification_status):
+    request = MODULE.SARAExecutionRequest(
+        request_id="R-VERIFICATION-INVALID",
+        capability="verify_claim",
+        claim={"id": "CLAIM-V", "text": "claim"},
+        evidence=(),
+        provenance_ids=("INPUT-V",),
+        adapter_revision="test",
+        requested_at="2026-10-05T00:00:00Z",
+        environment={},
+    )
+
+    class Backend:
+        def verify(self, request):
+            return MODULE.SARAExecutionResponse(
+                request_id="R-VERIFICATION-INVALID",
+                claim_id="CLAIM-V",
+                provider_id="SARA",
+                adapter_revision="test",
+                status="SUCCEEDED",
+                external_result_id="RESULT-V",
+                external_result_provenance_ids=("RESULT-V-PROV",),
+                verification_status=verification_status,
+                verification_layer="research_verification",
+                findings=(),
+                uncertainty="",
+                structural_validity="VALID",
+                truthfulness_status="UNASSESSED",
+                reproduction_status=None,
+                external_citation_verification=None,
+                timestamp="2026-10-05T00:00:01Z",
+                environment={},
+            )
+
+    with pytest.raises(MODULE.SARAExecutionError):
+        MODULE.SARAExecutor(Backend(), "test").verify_claim(request)
