@@ -47,6 +47,7 @@ def test_sara_executor_preserves_verification_boundary():
         def verify(self, request):
             return MODULE.SARAExecutionResponse(
                 request_id="R2",
+                claim_id="C1",
                 provider_id="SARA",
                 adapter_revision="test",
                 status="SUCCEEDED",
@@ -85,6 +86,7 @@ def test_sara_executor_rejects_simulated_reproduction_as_verified():
         def verify(self, request):
             return MODULE.SARAExecutionResponse(
                 request_id="R3",
+                claim_id="C1",
                 provider_id="SARA",
                 adapter_revision="test",
                 status="SUCCEEDED",
@@ -156,6 +158,7 @@ def test_sara_executor_rejects_truthfulness_established_without_citation_verific
         def verify(self, request):
             return MODULE.SARAExecutionResponse(
                 request_id="R-TRUTH-1",
+                claim_id="C1",
                 provider_id="SARA",
                 adapter_revision="test",
                 status="SUCCEEDED",
@@ -193,6 +196,7 @@ def test_sara_executor_rejects_verified_result_with_unverified_external_citation
         def verify(self, request):
             return MODULE.SARAExecutionResponse(
                 request_id="R-STATUS-1",
+                claim_id="C1",
                 provider_id="SARA",
                 adapter_revision="test",
                 status="SUCCEEDED",
@@ -231,6 +235,7 @@ def test_sara_executor_rejects_verified_result_reusing_request_provenance_as_ext
         def verify(self, request):
             return MODULE.SARAExecutionResponse(
                 request_id="R-PROV-1",
+                claim_id="C1",
                 provider_id="SARA",
                 adapter_revision="test",
                 status="SUCCEEDED",
@@ -268,6 +273,7 @@ def test_sara_executor_rejects_cross_claim_external_provenance_reuse():
         def verify(self, request):
             return MODULE.SARAExecutionResponse(
                 request_id="R-PROV-2",
+                claim_id="CLAIM-A",
                 provider_id="SARA",
                 adapter_revision="test",
                 status="SUCCEEDED",
