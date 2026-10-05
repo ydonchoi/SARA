@@ -5,7 +5,6 @@ promotion, truthfulness, or evidence state.
 """
 from __future__ import annotations
 
-from collections.abc import Iterable
 from typing import Any
 
 from evidence_flow_observation import EvidenceFlowObservation
@@ -27,14 +26,12 @@ class EvidenceFlowObservationSink:
         return tuple(self._records)
 
     def summary(self) -> dict[str, Any]:
-        records: Iterable[EvidenceFlowObservation] = self._records
         total = len(self._records)
-        verified = sum(r.verification_status == "VERIFIED" for r in records)
+        verified = sum(r.verification_status == "VERIFIED" for r in self._records)
         recoverable = sum(r.recoverability == "RECOVERABLE" for r in self._records)
         return {
             "total": total,
             "verified": verified,
             "unverified": total - verified,
             "recoverable": recoverable,
-            "truthfulness_status": "UNASSESSED",
         }
