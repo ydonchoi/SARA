@@ -12,6 +12,9 @@ from datetime import datetime, timezone
 from hashlib import sha256
 from typing import Any, Callable, Mapping
 
+from evidence_flow_observation import build_observation
+from evidence_flow_observation_adapter import EvidenceFlowObservationAdapter
+
 
 class ProductionVerificationBackend:
     """SARA backend for a real external verification provider."""
@@ -24,10 +27,12 @@ class ProductionVerificationBackend:
         *,
         a2_pipeline: Any | None = None,
         content_accessor: Any | None = None,
+        observation_adapter: EvidenceFlowObservationAdapter | None = None,
     ):
         self._provider = provider
         self._a2_pipeline = a2_pipeline
         self._content_accessor = content_accessor
+        self._observation_adapter = observation_adapter
 
     def _resolve_content_access(self, provider_result: Mapping[str, Any]) -> Mapping[str, Any]:
         supplied = provider_result.get("content_access")
@@ -65,6 +70,20 @@ class ProductionVerificationBackend:
 
         status = provider_result.get("status", "FAILED")
         if status != "SUCCEEDED":
+            if self._observation_adapter is not None:
+                try:
+                    self._observation_adapter.observe(build_observation(
+                        request_id=request["request_id"],
+                        claim_id=claim["id"],
+                        provider_status=status,
+                        content_access_status="NOT_COMPLETED",
+                        content_scope=provider_result.get("content_scope", "UNKNOWN"),
+                        evidence_identity_status="UNKNOWN",
+                        verification_status="UNVERIFIED",
+                        finding_codes=tuple(provider_result.get("findings", ())),
+                    ))
+                except Exception:
+                    pass
             return {
                 "request_id": request["request_id"],
                 "claim_id": claim["id"],
@@ -133,6 +152,31 @@ class ProductionVerificationBackend:
                 f"{request['request_id']}|{claim['id']}|{result_id}".encode()
             ).hexdigest()
             provenance_ids = (f"SARA-PROV-{fingerprint[:16]}",)
+
+        if self._observation_adapter is not None:
+            try:
+                content_access = self._resolve_content_access(provider_result)
+                content_evidence_id = content_access.get("evidence_id")
+                provider_evidence_id = provider_result.get("evidence_id")
+                if content_evidence_id and provider_evidence_id:
+                    evidence_identity_status = (
+                        "MATCHED" if content_evidence_id == provider_evidence_id else "MISMATCHED"
+                    )
+                else:
+                    evidence_identity_status = "UNKNOWN"
+                self._observation_adapter.observe(build_observation(
+                    request_id=request["request_id"],
+                    claim_id=claim["id"],
+                    provider_status="SUCCEEDED",
+                    content_access_status=content_access.get("status", "NOT_COMPLETED"),
+                    content_scope=content_access.get("content_scope", content_scope or "UNKNOWN"),
+                    evidence_identity_status=evidence_identity_status,
+                    verification_status=verification_status,
+                    finding_codes=provider_findings
+                    + (tuple(a2_result.findings) if a2_result is not None else ()),
+                ))
+            except Exception:
+                pass
 
         return {
             "request_id": request["request_id"],
