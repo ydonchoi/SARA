@@ -9,7 +9,6 @@ from __future__ import annotations
 from typing import Protocol
 
 from evidence_flow_observation import EvidenceFlowObservation
-from evidence_flow_observation_sink import EvidenceFlowObservationSink
 
 
 class EvidenceFlowObservationRecorder(Protocol):
@@ -21,6 +20,8 @@ class EvidenceFlowObservationAdapter:
     def __init__(self, recorder: EvidenceFlowObservationRecorder) -> None:
         self._recorder = recorder
 
-    def observe(self, observation: EvidenceFlowObservation) -> EvidenceFlowObservation:
+    def observe(
+        self, observation: EvidenceFlowObservation
+    ) -> EvidenceFlowObservation:
         self._recorder.record(observation)
         return observation
