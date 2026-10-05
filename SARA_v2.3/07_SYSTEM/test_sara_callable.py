@@ -55,7 +55,7 @@ class CallableSARATest(unittest.TestCase):
     def test_established_truthfulness_requires_verified_citation(self):
         res = response()
         res["verification"]["truthfulness_status"] = "ESTABLISHED"
-        with self.assertRaisesRegex(SARAExecutionError, "WITHOUT_CITATION"):
+        with self.assertRaisesRegex(SARAExecutionError, "CITATION_INVALID"):
             CallableSARA(lambda _: res)(request())
 
 if __name__ == "__main__":
