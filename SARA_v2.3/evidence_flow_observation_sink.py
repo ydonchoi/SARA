@@ -31,8 +31,24 @@ class EvidenceFlowObservationSink:
         recovery_candidates = sum(
             r.recovery_candidate for r in self._records
         )
+        return {
+            "total": total,
+            "verified": verified,
+            "unverified": total - verified,
+            "recovery_candidates": recovery_candidates,
+        }
+
+    def telemetry_summary(self) -> dict[str, Any]:
+        """Return bounded operational metrics without changing observation state."""
+        total = len(self._records)
+        verified = sum(r.verification_status == "VERIFIED" for r in self._records)
         unverified = total - verified
-        provider_completed = sum(r.provider_status == "SUCCEEDED" for r in self._records)
+        recovery_candidates = sum(
+            r.recovery_candidate for r in self._records
+        )
+        provider_completed = sum(
+            r.provider_status == "SUCCEEDED" for r in self._records
+        )
         content_retrieved = sum(
             r.content_access_status == "RETRIEVED" for r in self._records
         )
