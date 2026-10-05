@@ -35,6 +35,11 @@ class CallableSARATest(unittest.TestCase):
         self.assertEqual(result["status"], "SUCCEEDED")
         self.assertEqual(result["verification"]["verification_status"], "VERIFIED")
 
+    def test_named_verify_claim_alias_preserves_callable_contract(self):
+        result = CallableSARA(lambda _: response()).verify_claim(request())
+        self.assertEqual(result["status"], "SUCCEEDED")
+        self.assertEqual(result["claim_id"], "C1")
+
     def test_provider_failure_never_becomes_verification(self):
         def fail(_):
             raise RuntimeError("provider unavailable")
