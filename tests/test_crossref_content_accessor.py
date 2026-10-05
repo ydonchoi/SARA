@@ -30,6 +30,7 @@ def test_content_accessor_records_retrieval_without_truthfulness():
 
     assert result.status == "RETRIEVED"
     assert result.byte_length == len(b"content")
+    assert result.content_type == "text/plain"
     assert result.findings == ("CONTENT_ACCESS_COMPLETED",)
 
 
