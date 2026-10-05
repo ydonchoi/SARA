@@ -19,6 +19,7 @@ def test_p31_executes_p8_to_p13_and_promotes_without_truthfulness():
         content_access={
             "status": "RETRIEVED",
             "content": "The paper reports Measured measurement in its results.",
+            "evidence_id": "E1",
         },
         content_scope="SUBSTANTIVE_CONTENT",
     )
@@ -48,6 +49,7 @@ def test_p31_does_not_promote_when_claim_binding_is_missing():
         content_access={
             "status": "RETRIEVED",
             "content": "Measured measurement",
+            "evidence_id": "E1",
         },
     )
 
@@ -67,6 +69,7 @@ def test_p31_does_not_promote_without_retrieved_content():
         content_access={
             "status": "NOT_COMPLETED",
             "content": "",
+            "evidence_id": "E1",
         },
     )
 
@@ -105,3 +108,40 @@ def test_unknown_content_scope_is_not_promotable():
     )
     assert result.verification_status == "UNVERIFIED"
     assert "P37_UNKNOWN_CONTENT_SCOPE_NOT_PROMOTABLE" in result.findings
+
+
+def test_p38_content_evidence_identity_mismatch_fails_closed():
+    result = A2EvidencePipeline().evaluate(
+        claim_id="C-P38-1",
+        claim_text="Bound content",
+        evidence_id="E-P38-1",
+        supports_claim_ids=("C-P38-1",),
+        source_exists=True,
+        bibliographic_accuracy="VERIFIED",
+        content_access={
+            "status": "RETRIEVED",
+            "content": "Bound content",
+            "evidence_id": "E-OTHER",
+        },
+        content_scope="SUBSTANTIVE_CONTENT",
+    )
+    assert result.verification_status == "UNVERIFIED"
+    assert "P38_CONTENT_EVIDENCE_ID_MISMATCH" in result.findings
+
+
+def test_p38_content_evidence_identity_is_required():
+    result = A2EvidencePipeline().evaluate(
+        claim_id="C-P38-2",
+        claim_text="Unbound content",
+        evidence_id="E-P38-2",
+        supports_claim_ids=("C-P38-2",),
+        source_exists=True,
+        bibliographic_accuracy="VERIFIED",
+        content_access={
+            "status": "RETRIEVED",
+            "content": "Unbound content",
+        },
+        content_scope="SUBSTANTIVE_CONTENT",
+    )
+    assert result.verification_status == "UNVERIFIED"
+    assert "P38_CONTENT_EVIDENCE_ID_MISMATCH" in result.findings
