@@ -88,6 +88,10 @@ class CallableSARA:
     def __init__(self, verifier: Callable[[Mapping[str, Any]], Mapping[str, Any]]):
         self._verifier = verifier
 
+    def verify_claim(self, request: Mapping[str, Any]) -> dict[str, Any]:
+        """Explicit method alias for integrations that prefer named capability calls."""
+        return self(request)
+
     def __call__(self, request: Mapping[str, Any]) -> dict[str, Any]:
         _validate_request(request)
         try:
