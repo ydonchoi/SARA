@@ -94,11 +94,21 @@ class ProductionVerificationBackend:
         verification_status = provider_result.get("verification_status", "UNVERIFIED")
         a2_result = None
         content_scope = provider_result.get("content_scope")
-        if self._a2_pipeline is None and content_scope is not None:
-            verification_status = "UNVERIFIED"
-            provider_findings = tuple(provider_result.get("findings", ())) + (
-                "P39_CONTENT_SCOPE_REQUIRES_A2_PIPELINE",
+        implicit_content_path = (
+            content_scope is None
+            and (
+                provider_result.get("source_url") is not None
+                or provider_result.get("content_access") is not None
             )
+        )
+        if self._a2_pipeline is None and (content_scope is not None or implicit_content_path):
+            verification_status = "UNVERIFIED"
+            finding = (
+                "P40_IMPLICIT_CONTENT_REQUIRES_A2_PIPELINE"
+                if implicit_content_path
+                else "P39_CONTENT_SCOPE_REQUIRES_A2_PIPELINE"
+            )
+            provider_findings = tuple(provider_result.get("findings", ())) + (finding,)
         else:
             provider_findings = tuple(provider_result.get("findings", ()))
         if self._a2_pipeline is not None:
