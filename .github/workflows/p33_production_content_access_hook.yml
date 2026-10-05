@@ -1,0 +1,16 @@
+name: P33 production content access hook
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  p33:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_p33_production_content_access_hook.py tests/test_p32_production_a2_pipeline_hook.py tests/test_p31_a2_evidence_pipeline.py
