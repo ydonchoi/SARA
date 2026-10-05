@@ -72,3 +72,35 @@ def test_p31_does_not_promote_without_retrieved_content():
     assert result.verification_status == "UNVERIFIED"
     assert result.truthfulness_status == "UNASSESSED"
     assert result.citation_fit == "UNVERIFIED"
+
+
+def test_substantive_scope_requires_retrieved_payload():
+    pipeline = A2EvidencePipeline()
+    result = pipeline.evaluate(
+        claim_id="C-P37-1",
+        claim_text="A substantive claim",
+        evidence_id="E-P37-1",
+        supports_claim_ids=("C-P37-1",),
+        source_exists=True,
+        bibliographic_accuracy="VERIFIED",
+        content_access={"status": "NOT_COMPLETED", "content": ""},
+        content_scope="SUBSTANTIVE_CONTENT",
+    )
+    assert result.verification_status == "UNVERIFIED"
+    assert "P37_SUBSTANTIVE_CONTENT_REQUIRES_RETRIEVED_PAYLOAD" in result.findings
+
+
+def test_unknown_content_scope_is_not_promotable():
+    pipeline = A2EvidencePipeline()
+    result = pipeline.evaluate(
+        claim_id="C-P37-2",
+        claim_text="An unknown-scope claim",
+        evidence_id="E-P37-2",
+        supports_claim_ids=("C-P37-2",),
+        source_exists=True,
+        bibliographic_accuracy="VERIFIED",
+        content_access={"status": "RETRIEVED", "content": "An unknown-scope claim"},
+        content_scope="UNKNOWN",
+    )
+    assert result.verification_status == "UNVERIFIED"
+    assert "P37_UNKNOWN_CONTENT_SCOPE_NOT_PROMOTABLE" in result.findings
