@@ -87,7 +87,7 @@ def test_substantive_scope_requires_retrieved_payload():
         supports_claim_ids=("C-P37-1",),
         source_exists=True,
         bibliographic_accuracy="VERIFIED",
-        content_access={"status": "NOT_COMPLETED", "content": ""},
+        content_access={"status": "NOT_COMPLETED", "content": "", "evidence_id": "E-P37-1"},
         content_scope="SUBSTANTIVE_CONTENT",
     )
     assert result.verification_status == "UNVERIFIED"
@@ -103,7 +103,7 @@ def test_unknown_content_scope_is_not_promotable():
         supports_claim_ids=("C-P37-2",),
         source_exists=True,
         bibliographic_accuracy="VERIFIED",
-        content_access={"status": "RETRIEVED", "content": "An unknown-scope claim"},
+        content_access={"status": "RETRIEVED", "content": "An unknown-scope claim", "evidence_id": "E-P37-2"},
         content_scope="UNKNOWN",
     )
     assert result.verification_status == "UNVERIFIED"
