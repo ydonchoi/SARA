@@ -50,6 +50,7 @@ class A2EvidencePipeline:
         source_exists: bool,
         bibliographic_accuracy: str,
         content_access: Mapping[str, Any],
+        content_scope: str = "UNKNOWN",
     ) -> A2EvidencePipelineResult:
         if not claim_id:
             raise ValueError("CLAIM_ID_REQUIRED")
@@ -80,6 +81,12 @@ class A2EvidencePipeline:
             citation_fit=citation.status,
             evidence_strength=strength.strength,
         )
+        if content_scope == "BIBLIOGRAPHIC_METADATA":
+            promotion_status = "UNVERIFIED"
+            scope_finding = "P31_BIBLIOGRAPHIC_METADATA_NOT_SUBSTANTIVE_EVIDENCE"
+        else:
+            promotion_status = promotion.verification_status
+            scope_finding = "P31_CONTENT_SCOPE_ACCEPTED"
 
         findings = (
             "P31_P8_CONTENT_PAYLOAD_CONSUMED",
@@ -87,9 +94,10 @@ class A2EvidencePipeline:
             "P31_P10_EVIDENCE_STRENGTH_EXECUTED",
             "P31_P12_CLAIM_BINDING_EXECUTED",
             "P31_P13_PROMOTION_EXECUTED",
+            scope_finding,
         )
         return A2EvidencePipelineResult(
-            verification_status=promotion.verification_status,
+            verification_status=promotion_status,
             truthfulness_status="UNASSESSED",
             citation_fit=citation.status,
             evidence_strength=strength.strength,
