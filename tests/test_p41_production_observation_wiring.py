@@ -94,13 +94,14 @@ class CountingAccessor:
     def fetch(self, url):
         self.calls += 1
         class Result:
-            status = "SUCCEEDED"
-            content = "content"
-            url = url
-            content_type = "text/plain"
-            byte_length = 7
-            findings = ()
-        return Result()
+            def __init__(self, source_url):
+                self.status = "SUCCEEDED"
+                self.content = "content"
+                self.url = source_url
+                self.content_type = "text/plain"
+                self.byte_length = 7
+                self.findings = ()
+        return Result(url)
 
 
 class AcceptingA2:
