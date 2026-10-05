@@ -30,18 +30,18 @@ def test_sink_only_observes_and_does_not_change_status():
         "total": 1,
         "verified": 0,
         "unverified": 1,
-        "recoverable": 0,
+        "recovery_candidates": 0,
     }
 
 
-def test_sink_counts_recoverable_rejections_without_promoting():
+def test_sink_counts_recovery_candidates_without_promoting():
     sink = EvidenceFlowObservationSink()
     observation = make_observation(
         "UNVERIFIED",
         ("P40_IMPLICIT_CONTENT_REQUIRES_A2_PIPELINE",),
     )
     sink.record(observation)
-    assert sink.summary()["recoverable"] == 1
+    assert sink.summary()["recovery_candidates"] == 1
     assert sink.records()[0].verification_status == "UNVERIFIED"
 
 
