@@ -12,12 +12,13 @@ class FakeContentAccessor:
     def fetch(self, url):
         class Result:
             status = "RETRIEVED"
-            content = "Measured measurement"
-            url = url
             content_type = "text/plain"
-            byte_length = len(content)
             findings = ("CONTENT_ACCESS_COMPLETED",)
-        return Result()
+        result = Result()
+        result.content = "Measured measurement"
+        result.url = url
+        result.byte_length = len(result.content)
+        return result
 
 
 def test_p33_production_resolves_source_url_through_content_accessor():
