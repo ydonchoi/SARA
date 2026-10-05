@@ -1,0 +1,20 @@
+name: P41 live Crossref observation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "SARA_v2.3/crossref_content_accessor.py"
+      - "SARA_v2.3/evidence_flow_observation.py"
+      - "SARA_v2.3/evidence_flow_observation_sink.py"
+      - "tests/test_p41_live_crossref_observation.py"
+
+jobs:
+  p41-live-crossref:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pytest -q -s tests/test_p41_live_crossref_observation.py
