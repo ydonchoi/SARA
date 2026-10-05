@@ -1,0 +1,16 @@
+name: P9 citation evidence firewall
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  firewall:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - run: python -m pytest tests/test_citation_evidence_firewall.py -q
