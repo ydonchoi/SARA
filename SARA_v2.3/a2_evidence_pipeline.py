@@ -59,6 +59,17 @@ class A2EvidencePipeline:
         if not isinstance(content_access, Mapping):
             raise ValueError("CONTENT_ACCESS_RESULT_INVALID")
 
+        content_evidence_id = content_access.get("evidence_id")
+        if content_evidence_id != evidence_id:
+            return A2EvidencePipelineResult(
+                verification_status="UNVERIFIED",
+                truthfulness_status="UNASSESSED",
+                citation_fit="UNVERIFIED",
+                evidence_strength="UNASSESSED",
+                claim_bound=False,
+                findings=("P38_CONTENT_EVIDENCE_ID_MISMATCH",),
+            )
+
         content_status = content_access.get("status")
         content = content_access.get("content", "")
         citation = self._citation_fit.evaluate(claim_id, claim_text, content)
