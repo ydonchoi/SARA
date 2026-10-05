@@ -2,11 +2,7 @@ name: P31 A2 evidence pipeline integration
 
 on:
   push:
-    branches:
-      - feat/p31-production-a2-evidence-pipeline
   pull_request:
-    branches:
-      - feat/p31-production-a2-evidence-pipeline
 
 jobs:
   p31:
