@@ -1,0 +1,17 @@
+name: SARA callable boundary
+
+on:
+  push:
+    branches: ["main", "feat/**"]
+  pull_request:
+
+jobs:
+  callable-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Run callable boundary tests
+        run: python SARA_v2.3/07_SYSTEM/test_sara_callable.py
