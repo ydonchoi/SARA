@@ -45,6 +45,7 @@ class ProductionVerificationBackend:
             "byte_length": result.byte_length,
             "findings": result.findings,
             "content_scope": provider_result.get("content_scope", "UNKNOWN"),
+            "evidence_id": provider_result.get("evidence_id", ""),
         }
 
     def __call__(self, request: Mapping[str, Any]) -> dict[str, Any]:
