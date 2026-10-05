@@ -98,3 +98,31 @@ def test_p32_legacy_backend_without_pipeline_is_unchanged():
 
     assert result["verification"]["verification_status"] == "VERIFIED"
     assert result["verification"]["truthfulness_status"] == "UNASSESSED"
+
+
+def test_p39_content_scope_cannot_promote_without_a2_pipeline():
+    def provider(_request):
+        return {
+            "status": "SUCCEEDED",
+            "external_result_id": "CR-P39",
+            "external_result_provenance_ids": ["CR-P39-PROV"],
+            "verification_status": "VERIFIED",
+            "source_exists": True,
+            "bibliographic_accuracy": "VERIFIED",
+            "content_scope": "SUBSTANTIVE_CONTENT",
+            "evidence_id": "E-P39",
+            "supports_claim_ids": ["C-P39"],
+        }
+
+    result = ProductionVerificationBackend(provider)(
+        {
+            "request_id": "REQ-P39",
+            "claim": {"id": "C-P39", "text": "Content-scoped claim"},
+            "evidence": [],
+            "requested_at": "2026-10-05T00:00:00Z",
+        }
+    )
+
+    assert result["verification"]["verification_status"] == "UNVERIFIED"
+    assert result["verification"]["truthfulness_status"] == "UNASSESSED"
+    assert "P39_CONTENT_SCOPE_REQUIRES_A2_PIPELINE" in result["verification"]["findings"]
