@@ -15,6 +15,7 @@ class ContentAccessResult:
     content_type: str | None
     byte_length: int
     findings: tuple[str, ...]
+    content: str
 
 
 class CrossrefContentAccessor:
@@ -39,4 +40,5 @@ class CrossrefContentAccessor:
             content_type=content_type,
             byte_length=len(body),
             findings=("CONTENT_ACCESS_COMPLETED",),
+            content=body.decode("utf-8", errors="replace"),
         )
