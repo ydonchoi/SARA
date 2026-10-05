@@ -101,7 +101,7 @@ def test_sink_summary_exposes_bounded_flow_metrics_without_promotion():
         latency_ms=None,
     ))
 
-    summary = sink.summary()
+    summary = sink.telemetry_summary()
 
     assert summary["provider_completion_rate"] == 2 / 3
     assert summary["content_retrieval_success_rate"] == 2 / 3
@@ -118,7 +118,7 @@ def test_sink_summary_exposes_bounded_flow_metrics_without_promotion():
 
 
 def test_sink_summary_empty_dataset_is_bounded_and_deterministic():
-    summary = EvidenceFlowObservationSink().summary()
+    summary = EvidenceFlowObservationSink().telemetry_summary()
 
     assert summary["total"] == 0
     assert summary["provider_completion_rate"] == 0.0
