@@ -18,8 +18,14 @@ class ProductionVerificationBackend:
 
     provider_id = "SARA"
 
-    def __init__(self, provider: Callable[[Mapping[str, Any]], Mapping[str, Any]]):
+    def __init__(
+        self,
+        provider: Callable[[Mapping[str, Any]], Mapping[str, Any]],
+        *,
+        a2_pipeline: Any | None = None,
+    ):
         self._provider = provider
+        self._a2_pipeline = a2_pipeline
 
     def __call__(self, request: Mapping[str, Any]) -> dict[str, Any]:
         claim = request["claim"]
@@ -63,6 +69,20 @@ class ProductionVerificationBackend:
             }
 
         verification_status = provider_result.get("verification_status", "UNVERIFIED")
+        a2_result = None
+        if self._a2_pipeline is not None:
+            a2_result = self._a2_pipeline.evaluate(
+                claim_id=claim["id"],
+                claim_text=claim["text"],
+                evidence_id=provider_result.get("evidence_id", ""),
+                supports_claim_ids=tuple(provider_result.get("supports_claim_ids", ())),
+                source_exists=bool(provider_result.get("source_exists", False)),
+                bibliographic_accuracy=provider_result.get(
+                    "bibliographic_accuracy", "UNASSESSED"
+                ),
+                content_access=provider_result.get("content_access", {}),
+            )
+            verification_status = a2_result.verification_status
         result_id = provider_result.get("external_result_id")
         provenance_ids = tuple(provider_result.get("external_result_provenance_ids", ()))
 
