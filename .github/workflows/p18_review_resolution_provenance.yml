@@ -2,6 +2,9 @@ name: P18 review resolution provenance
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feat/p18-review-resolution-provenance
   pull_request:
 
 jobs:
