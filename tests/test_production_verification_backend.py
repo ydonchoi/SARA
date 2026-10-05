@@ -1,4 +1,10 @@
-from SARA_v2.3.production_verification_backend import ProductionVerificationBackend
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1] / "SARA_v2.3"
+sys.path.insert(0, str(ROOT))
+
+from production_verification_backend import ProductionVerificationBackend
 
 
 def test_production_backend_preserves_live_provider_verification_boundary():
@@ -13,8 +19,7 @@ def test_production_backend_preserves_live_provider_verification_boundary():
             "external_citation_verification": {"status": "NOT_COMPLETED"},
         }
 
-    backend = ProductionVerificationBackend(provider)
-    result = backend(
+    result = ProductionVerificationBackend(provider)(
         {
             "request_id": "REQ-1",
             "claim": {"id": "C1", "text": "claim"},
@@ -36,10 +41,7 @@ def test_production_backend_preserves_live_provider_verification_boundary():
 
 def test_production_backend_rejects_silent_provider_failure_as_verification():
     def provider(_request):
-        return {
-            "status": "FAILED",
-            "failure": {"code": "PROVIDER_TIMEOUT"},
-        }
+        return {"status": "FAILED", "failure": {"code": "PROVIDER_TIMEOUT"}}
 
     result = ProductionVerificationBackend(provider)(
         {
