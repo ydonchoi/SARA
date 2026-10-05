@@ -44,6 +44,7 @@ class ProductionVerificationBackend:
             "content_type": result.content_type,
             "byte_length": result.byte_length,
             "findings": result.findings,
+            "content_scope": provider_result.get("content_scope", "UNKNOWN"),
         }
 
     def __call__(self, request: Mapping[str, Any]) -> dict[str, Any]:
@@ -100,6 +101,7 @@ class ProductionVerificationBackend:
                     "bibliographic_accuracy", "UNASSESSED"
                 ),
                 content_access=self._resolve_content_access(provider_result),
+                content_scope=provider_result.get("content_scope", "UNKNOWN"),
             )
             verification_status = a2_result.verification_status
         result_id = provider_result.get("external_result_id")
