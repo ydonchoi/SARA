@@ -20,6 +20,7 @@ def test_p31_executes_p8_to_p13_and_promotes_without_truthfulness():
             "status": "RETRIEVED",
             "content": "The paper reports Measured measurement in its results.",
         },
+        content_scope="SUBSTANTIVE_CONTENT",
     )
 
     assert result.verification_status == "VERIFIED"
