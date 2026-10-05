@@ -52,6 +52,13 @@ def _validate_request(request: Mapping[str, Any]) -> None:
             raise SARAExecutionError("SARA_CLAIM_EVIDENCE_REFERENCE_DANGLING")
     if not request.get("request_id"):
         raise SARAExecutionError("SARA_REQUEST_ID_REQUIRED")
+    review_context = request.get("review_context")
+    if review_context is not None:
+        if not isinstance(review_context, Mapping):
+            raise SARAExecutionError("SARA_REVIEW_CONTEXT_INVALID")
+        for forbidden in ("verification_status", "truthfulness_status", "evidence_ids"):
+            if review_context.get(forbidden) is not None:
+                raise SARAExecutionError("SARA_REVIEW_CONTEXT_EPISTEMIC_FIELD_FORBIDDEN")
 
 def _validate_response(request: Mapping[str, Any], response: Mapping[str, Any]) -> dict[str, Any]:
     result = dict(_mapping(response, "SARA_RESPONSE"))
