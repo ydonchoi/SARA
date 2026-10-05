@@ -19,12 +19,12 @@ def test_observation_records_flow_without_truthfulness():
         finding_codes=(),
         latency_ms=42,
     )
-    assert result.recoverability == "UNKNOWN"
+    assert result.recovery_candidate is False
     assert result.verification_status == "VERIFIED"
     assert "truthfulness_status" not in result.to_dict()
 
 
-def test_recoverable_gate_findings_are_classified_without_promotion():
+def test_recovery_candidate_does_not_promote():
     result = build_observation(
         request_id="REQ-P41-REC",
         claim_id="C-P41-REC",
@@ -35,11 +35,25 @@ def test_recoverable_gate_findings_are_classified_without_promotion():
         verification_status="UNVERIFIED",
         finding_codes=("P40_IMPLICIT_CONTENT_REQUIRES_A2_PIPELINE",),
     )
-    assert result.recoverability == "RECOVERABLE"
+    assert result.recovery_candidate is True
     assert result.verification_status == "UNVERIFIED"
 
 
-def test_invalid_recoverability_is_rejected():
+def test_non_candidate_findings_remain_unclassified():
+    result = build_observation(
+        request_id="REQ-P41-OTHER",
+        claim_id="C-P41-OTHER",
+        provider_status="FAILED",
+        content_access_status="NOT_COMPLETED",
+        content_scope="UNKNOWN",
+        evidence_identity_status="UNKNOWN",
+        verification_status="UNVERIFIED",
+        finding_codes=("PROVIDER_FAILED",),
+    )
+    assert result.recovery_candidate is False
+
+
+def test_invalid_recovery_candidate_is_rejected():
     try:
         EvidenceFlowObservation(
             request_id="REQ",
@@ -50,10 +64,10 @@ def test_invalid_recoverability_is_rejected():
             evidence_identity_status="MATCHED",
             verification_status="UNVERIFIED",
             finding_codes=(),
-            recoverability="VERIFIED",
+            recovery_candidate="RECOVERABLE",
             latency_ms=None,
         )
     except ValueError as exc:
-        assert str(exc) == "OBSERVATION_RECOVERABILITY_INVALID"
+        assert str(exc) == "OBSERVATION_RECOVERY_CANDIDATE_INVALID"
     else:
-        raise AssertionError("invalid recoverability must fail closed")
+        raise AssertionError("invalid recovery candidate must fail closed")

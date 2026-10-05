@@ -3,11 +3,10 @@
 This module records operational flow outcomes only. Observation data is not
 verification evidence and must never promote verification or truthfulness.
 """
-
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import Any, Mapping
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -20,7 +19,7 @@ class EvidenceFlowObservation:
     evidence_identity_status: str
     verification_status: str
     finding_codes: tuple[str, ...]
-    recoverability: str
+    recovery_candidate: bool
     latency_ms: int | None
 
     def __post_init__(self) -> None:
@@ -28,28 +27,26 @@ class EvidenceFlowObservation:
             raise ValueError("OBSERVATION_REQUEST_ID_REQUIRED")
         if not self.claim_id:
             raise ValueError("OBSERVATION_CLAIM_ID_REQUIRED")
-        if self.recoverability not in {"UNKNOWN", "RECOVERABLE", "IRRECOVERABLE"}:
-            raise ValueError("OBSERVATION_RECOVERABILITY_INVALID")
+        if not isinstance(self.recovery_candidate, bool):
+            raise ValueError("OBSERVATION_RECOVERY_CANDIDATE_INVALID")
         if self.verification_status not in {"VERIFIED", "UNVERIFIED"}:
             raise ValueError("OBSERVATION_VERIFICATION_STATUS_INVALID")
+        if self.latency_ms is not None and self.latency_ms < 0:
+            raise ValueError("OBSERVATION_LATENCY_INVALID")
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
-def classify_recoverability(*, findings: tuple[str, ...]) -> str:
-    """Classify operational recovery potential; never changes verification."""
-    recoverable_codes = {
+def classify_recovery_candidate(*, findings: tuple[str, ...]) -> bool:
+    """Mark only operational candidates; never assert actual recoverability."""
+    candidate_codes = {
         "P40_IMPLICIT_CONTENT_REQUIRES_A2_PIPELINE",
         "P39_CONTENT_SCOPE_REQUIRES_A2_PIPELINE",
         "P37_SUBSTANTIVE_CONTENT_REQUIRES_RETRIEVED_PAYLOAD",
         "P37_UNKNOWN_CONTENT_SCOPE_NOT_PROMOTABLE",
     }
-    if any(code in recoverable_codes for code in findings):
-        return "RECOVERABLE"
-    if findings:
-        return "UNKNOWN"
-    return "UNKNOWN"
+    return any(code in candidate_codes for code in findings)
 
 
 def build_observation(
@@ -73,6 +70,6 @@ def build_observation(
         evidence_identity_status=evidence_identity_status,
         verification_status=verification_status,
         finding_codes=finding_codes,
-        recoverability=classify_recoverability(findings=finding_codes),
+        recovery_candidate=classify_recovery_candidate(findings=finding_codes),
         latency_ms=latency_ms,
     )
