@@ -32,7 +32,9 @@ class ProductionVerificationBackend:
     def _resolve_content_access(self, provider_result: Mapping[str, Any]) -> Mapping[str, Any]:
         supplied = provider_result.get("content_access")
         if supplied is not None:
-            return supplied
+            resolved = dict(supplied)
+            resolved.setdefault("evidence_id", provider_result.get("evidence_id", ""))
+            return resolved
         url = provider_result.get("source_url")
         if self._content_accessor is None or not url:
             return {"status": "NOT_COMPLETED", "content": ""}
