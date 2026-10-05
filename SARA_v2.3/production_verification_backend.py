@@ -103,7 +103,8 @@ class ProductionVerificationBackend:
             "verification": {
                 "verification_status": verification_status,
                 "verification_layer": "research_verification",
-                "findings": tuple(provider_result.get("findings", ())),
+                "findings": tuple(provider_result.get("findings", ()))
+                + (tuple(a2_result.findings) if a2_result is not None else ()),
                 "uncertainty": provider_result.get(
                     "uncertainty",
                     "Provider-scoped verification only; truthfulness was not established.",
