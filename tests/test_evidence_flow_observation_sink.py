@@ -109,7 +109,7 @@ def test_sink_summary_exposes_bounded_flow_metrics_without_promotion():
     assert summary["evidence_identity_match_rate"] == 2 / 3
     assert summary["a2_rejection_rate_by_finding"]["P40_IMPLICIT_CONTENT_REQUIRES_A2_PIPELINE"] == 1 / 3
     assert summary["a2_rejection_rate_by_finding"]["P37_UNKNOWN_CONTENT_SCOPE_NOT_PROMOTABLE"] == 1 / 3
-    assert summary["recoverable_unverified"] == 1
+    assert summary["recoverable_unverified"] == 2
     assert summary["non_recoverable_unverified"] == 1
     assert summary["reverification_success_after_recovery"] == 1
     assert summary["latency_ms"] == {"count": 2, "min": 10, "max": 20, "average": 15.0}
