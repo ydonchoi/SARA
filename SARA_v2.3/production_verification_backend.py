@@ -93,6 +93,14 @@ class ProductionVerificationBackend:
 
         verification_status = provider_result.get("verification_status", "UNVERIFIED")
         a2_result = None
+        content_scope = provider_result.get("content_scope")
+        if self._a2_pipeline is None and content_scope is not None:
+            verification_status = "UNVERIFIED"
+            provider_findings = tuple(provider_result.get("findings", ())) + (
+                "P39_CONTENT_SCOPE_REQUIRES_A2_PIPELINE",
+            )
+        else:
+            provider_findings = tuple(provider_result.get("findings", ()))
         if self._a2_pipeline is not None:
             a2_result = self._a2_pipeline.evaluate(
                 claim_id=claim["id"],
@@ -104,7 +112,7 @@ class ProductionVerificationBackend:
                     "bibliographic_accuracy", "UNASSESSED"
                 ),
                 content_access=self._resolve_content_access(provider_result),
-                content_scope=provider_result.get("content_scope", "UNKNOWN"),
+                content_scope=content_scope or "UNKNOWN",
             )
             verification_status = a2_result.verification_status
         result_id = provider_result.get("external_result_id")
@@ -127,7 +135,7 @@ class ProductionVerificationBackend:
             "verification": {
                 "verification_status": verification_status,
                 "verification_layer": "research_verification",
-                "findings": tuple(provider_result.get("findings", ()))
+                "findings": provider_findings
                 + (tuple(a2_result.findings) if a2_result is not None else ()),
                 "uncertainty": provider_result.get(
                     "uncertainty",
