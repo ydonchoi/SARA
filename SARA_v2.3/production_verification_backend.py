@@ -120,6 +120,7 @@ class ProductionVerificationBackend:
                 or provider_result.get("content_access") is not None
             )
         )
+        resolved_content_access = None
         if self._a2_pipeline is None and (content_scope is not None or implicit_content_path):
             verification_status = "UNVERIFIED"
             finding = (
@@ -131,6 +132,7 @@ class ProductionVerificationBackend:
         else:
             provider_findings = tuple(provider_result.get("findings", ()))
         if self._a2_pipeline is not None:
+            resolved_content_access = self._resolve_content_access(provider_result)
             a2_result = self._a2_pipeline.evaluate(
                 claim_id=claim["id"],
                 claim_text=claim["text"],
@@ -140,7 +142,7 @@ class ProductionVerificationBackend:
                 bibliographic_accuracy=provider_result.get(
                     "bibliographic_accuracy", "UNASSESSED"
                 ),
-                content_access=self._resolve_content_access(provider_result),
+                content_access=resolved_content_access,
                 content_scope=content_scope or "UNKNOWN",
             )
             verification_status = a2_result.verification_status
@@ -155,7 +157,9 @@ class ProductionVerificationBackend:
 
         if self._observation_adapter is not None:
             try:
-                content_access = self._resolve_content_access(provider_result)
+                content_access = resolved_content_access
+                if content_access is None:
+                    content_access = self._resolve_content_access(provider_result)
                 content_evidence_id = content_access.get("evidence_id")
                 provider_evidence_id = provider_result.get("evidence_id")
                 if content_evidence_id and provider_evidence_id:
