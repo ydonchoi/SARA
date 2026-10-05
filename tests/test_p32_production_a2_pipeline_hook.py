@@ -18,6 +18,7 @@ def test_p32_production_backend_executes_a2_pipeline():
             "findings": ["CROSSREF_SOURCE_RESOLVED"],
             "source_exists": True,
             "bibliographic_accuracy": "VERIFIED",
+            "content_scope": "SUBSTANTIVE_CONTENT",
             "evidence_id": "E1",
             "supports_claim_ids": ["C1"],
             "content_access": {
