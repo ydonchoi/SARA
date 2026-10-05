@@ -19,6 +19,7 @@ class SARAExecutionRequest:
     adapter_revision: str
     requested_at: str
     environment: dict[str, Any]
+    review_context: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,16 @@ class SARAExecutor:
         return response
 
     def _validate_request(self, request: SARAExecutionRequest) -> None:
+        review_context = request.review_context
+        if review_context is not None:
+            if not isinstance(review_context, dict):
+                raise SARAExecutionError("review_context must be an object")
+            if review_context.get("verification_status") is not None:
+                raise SARAExecutionError("review context cannot carry verification status")
+            if review_context.get("truthfulness_status") is not None:
+                raise SARAExecutionError("review context cannot carry truthfulness status")
+            if review_context.get("evidence_ids") is not None:
+                raise SARAExecutionError("review context cannot carry evidence ids")
         if not request.request_id:
             raise SARAExecutionError("request_id is required")
         if request.capability != "verify_claim":
