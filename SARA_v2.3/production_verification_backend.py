@@ -31,6 +31,7 @@ class ProductionVerificationBackend:
             "adapter_revision": request.get("adapter_revision", ""),
             "requested_at": request["requested_at"],
             "environment": request.get("environment", {}),
+            "review_context": request.get("review_context"),
         }))
 
         status = provider_result.get("status", "FAILED")
