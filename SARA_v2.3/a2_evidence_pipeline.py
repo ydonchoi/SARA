@@ -84,9 +84,16 @@ class A2EvidencePipeline:
         if content_scope == "BIBLIOGRAPHIC_METADATA":
             promotion_status = "UNVERIFIED"
             scope_findings = ("P31_BIBLIOGRAPHIC_METADATA_NOT_SUBSTANTIVE_EVIDENCE",)
+        elif content_scope == "SUBSTANTIVE_CONTENT":
+            if content_status != "RETRIEVED" or not content:
+                promotion_status = "UNVERIFIED"
+                scope_findings = ("P37_SUBSTANTIVE_CONTENT_REQUIRES_RETRIEVED_PAYLOAD",)
+            else:
+                promotion_status = promotion.verification_status
+                scope_findings = ()
         else:
-            promotion_status = promotion.verification_status
-            scope_findings = ()
+            promotion_status = "UNVERIFIED"
+            scope_findings = ("P37_UNKNOWN_CONTENT_SCOPE_NOT_PROMOTABLE",)
 
         findings = (
             "P31_P8_CONTENT_PAYLOAD_CONSUMED",
