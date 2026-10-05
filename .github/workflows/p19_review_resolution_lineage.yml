@@ -2,6 +2,9 @@ name: P19 review resolution lineage
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feat/p19-review-resolution-lineage
   pull_request:
 
 jobs:
