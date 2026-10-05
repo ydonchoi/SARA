@@ -30,6 +30,7 @@ def test_p33_production_resolves_source_url_through_content_accessor():
             "verification_status": "VERIFIED",
             "source_exists": True,
             "bibliographic_accuracy": "VERIFIED",
+            "content_scope": "SUBSTANTIVE_CONTENT",
             "evidence_id": "E1",
             "supports_claim_ids": ["C1"],
             "source_url": "https://example.test/source",
