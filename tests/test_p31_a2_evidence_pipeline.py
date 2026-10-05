@@ -1,0 +1,74 @@
+"""Tests for the bounded P31 A2 evidence pipeline."""
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1] / "SARA_v2.3"
+sys.path.insert(0, str(ROOT))
+
+from a2_evidence_pipeline import A2EvidencePipeline
+
+
+def test_p31_executes_p8_to_p13_and_promotes_without_truthfulness():
+    result = A2EvidencePipeline().evaluate(
+        claim_id="C1",
+        claim_text="Measured measurement",
+        evidence_id="E1",
+        supports_claim_ids=("C1",),
+        source_exists=True,
+        bibliographic_accuracy="VERIFIED",
+        content_access={
+            "status": "RETRIEVED",
+            "content": "The paper reports Measured measurement in its results.",
+        },
+    )
+
+    assert result.verification_status == "VERIFIED"
+    assert result.truthfulness_status == "UNASSESSED"
+    assert result.citation_fit == "VERIFIED"
+    assert result.evidence_strength == "STRONG"
+    assert result.claim_bound is True
+    assert result.findings == (
+        "P31_P8_CONTENT_PAYLOAD_CONSUMED",
+        "P31_P9_CITATION_FIT_EXECUTED",
+        "P31_P10_EVIDENCE_STRENGTH_EXECUTED",
+        "P31_P12_CLAIM_BINDING_EXECUTED",
+        "P31_P13_PROMOTION_EXECUTED",
+    )
+
+
+def test_p31_does_not_promote_when_claim_binding_is_missing():
+    result = A2EvidencePipeline().evaluate(
+        claim_id="C1",
+        claim_text="Measured measurement",
+        evidence_id="E1",
+        supports_claim_ids=("OTHER",),
+        source_exists=True,
+        bibliographic_accuracy="VERIFIED",
+        content_access={
+            "status": "RETRIEVED",
+            "content": "Measured measurement",
+        },
+    )
+
+    assert result.verification_status == "UNVERIFIED"
+    assert result.truthfulness_status == "UNASSESSED"
+    assert result.claim_bound is False
+
+
+def test_p31_does_not_promote_without_retrieved_content():
+    result = A2EvidencePipeline().evaluate(
+        claim_id="C1",
+        claim_text="Measured measurement",
+        evidence_id="E1",
+        supports_claim_ids=("C1",),
+        source_exists=True,
+        bibliographic_accuracy="VERIFIED",
+        content_access={
+            "status": "NOT_COMPLETED",
+            "content": "",
+        },
+    )
+
+    assert result.verification_status == "UNVERIFIED"
+    assert result.truthfulness_status == "UNASSESSED"
+    assert result.citation_fit == "UNVERIFIED"
