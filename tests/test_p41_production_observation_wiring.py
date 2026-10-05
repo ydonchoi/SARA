@@ -85,3 +85,52 @@ def test_failed_provider_is_observed_as_unverified():
     assert result["verification"]["truthfulness_status"] == "UNASSESSED"
     assert len(recorder.records) == 1
     assert recorder.records[0].verification_status == "UNVERIFIED"
+
+
+class CountingAccessor:
+    def __init__(self):
+        self.calls = 0
+
+    def fetch(self, url):
+        self.calls += 1
+        class Result:
+            status = "SUCCEEDED"
+            content = "content"
+            url = url
+            content_type = "text/plain"
+            byte_length = 7
+            findings = ()
+        return Result()
+
+
+class AcceptingA2:
+    def evaluate(self, **kwargs):
+        class Result:
+            verification_status = "VERIFIED"
+            findings = ()
+        return Result()
+
+
+def test_observation_reuses_a2_content_access_resolution():
+    def provider(_request):
+        return {
+            "status": "SUCCEEDED",
+            "external_result_id": "RESULT-REUSE",
+            "verification_status": "UNVERIFIED",
+            "source_url": "https://example.test/source",
+            "content_scope": "SUBSTANTIVE",
+            "evidence_id": "E-REUSE",
+        }
+
+    accessor = CountingAccessor()
+    recorder = RecordingRecorder()
+    result = ProductionVerificationBackend(
+        provider,
+        a2_pipeline=AcceptingA2(),
+        content_accessor=accessor,
+        observation_adapter=EvidenceFlowObservationAdapter(recorder),
+    )(request("REQ-P41-CONTENT-REUSE"))
+
+    assert result["verification"]["verification_status"] == "VERIFIED"
+    assert len(recorder.records) == 1
+    assert accessor.calls == 1
