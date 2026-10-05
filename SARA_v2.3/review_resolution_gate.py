@@ -1,4 +1,8 @@
-"""Bounded human-review resolution gate for P17."""
+"""Explicit human-review resolution gate for conflict states (P17).
+
+A human review resolves the review state only. It never establishes
+truthfulness or silently promotes a claim to VERIFIED.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -19,11 +23,21 @@ class ReviewResolutionGate:
         resolution: str,
     ) -> ReviewResolution:
         if not review_completed:
-            return ReviewResolution("CONTRADICTED", "REVIEW_REQUIRED", "UNASSESSED")
+            return ReviewResolution(
+                "CONTRADICTED", "REVIEW_REQUIRED", "UNASSESSED"
+            )
+
         if resolution == "UPHOLD":
-            return ReviewResolution("VERIFIED", "UPHELD", "UNASSESSED")
+            return ReviewResolution(
+                "UNVERIFIED", "UPHELD", "UNASSESSED"
+            )
         if resolution == "REJECT":
-            return ReviewResolution("UNVERIFIED", "REJECTED", "UNASSESSED")
+            return ReviewResolution(
+                "UNVERIFIED", "REJECTED", "UNASSESSED"
+            )
         if resolution == "REVISE":
-            return ReviewResolution("UNVERIFIED", "REVISION_REQUIRED", "UNASSESSED")
+            return ReviewResolution(
+                "UNVERIFIED", "REVISION_REQUIRED", "UNASSESSED"
+            )
+
         raise ValueError("UNKNOWN_REVIEW_RESOLUTION")
