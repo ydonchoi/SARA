@@ -28,10 +28,12 @@ class EvidenceFlowObservationSink:
     def summary(self) -> dict[str, Any]:
         total = len(self._records)
         verified = sum(r.verification_status == "VERIFIED" for r in self._records)
-        recoverable = sum(r.recoverability == "RECOVERABLE" for r in self._records)
+        recovery_candidates = sum(
+            r.recovery_candidate for r in self._records
+        )
         return {
             "total": total,
             "verified": verified,
             "unverified": total - verified,
-            "recoverable": recoverable,
+            "recovery_candidates": recovery_candidates,
         }
