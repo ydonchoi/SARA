@@ -1,11 +1,10 @@
-from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+import sys
 
-MODULE_PATH = Path(__file__).parents[1] / "SARA_v2.3" / "review_resolution_lineage.py"
-spec = spec_from_file_location("review_resolution_lineage", MODULE_PATH)
-module = module_from_spec(spec)
-spec.loader.exec_module(module)
-ReviewResolutionLineageGate = module.ReviewResolutionLineageGate
+ROOT = Path(__file__).resolve().parents[1] / "SARA_v2.3"
+sys.path.insert(0, str(ROOT))
+
+from review_resolution_lineage import ReviewResolutionLineageGate
 
 
 def test_valid_resolution_is_bound_to_claim_and_prior_review_state():
