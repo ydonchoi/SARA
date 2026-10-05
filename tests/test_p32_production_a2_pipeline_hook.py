@@ -126,3 +126,60 @@ def test_p39_content_scope_cannot_promote_without_a2_pipeline():
     assert result["verification"]["verification_status"] == "UNVERIFIED"
     assert result["verification"]["truthfulness_status"] == "UNASSESSED"
     assert "P39_CONTENT_SCOPE_REQUIRES_A2_PIPELINE" in result["verification"]["findings"]
+
+
+def test_p40_source_url_cannot_promote_without_a2_pipeline():
+    def provider(_request):
+        return {
+            "status": "SUCCEEDED",
+            "external_result_id": "CR-P40",
+            "external_result_provenance_ids": ["CR-P40-PROV"],
+            "verification_status": "VERIFIED",
+            "source_exists": True,
+            "bibliographic_accuracy": "VERIFIED",
+            "evidence_id": "E-P40",
+            "supports_claim_ids": ["C-P40"],
+            "source_url": "https://example.test/source",
+        }
+
+    result = ProductionVerificationBackend(provider)(
+        {
+            "request_id": "REQ-P40",
+            "claim": {"id": "C-P40", "text": "Implicit content claim"},
+            "evidence": [],
+            "requested_at": "2026-10-05T00:00:00Z",
+        }
+    )
+
+    assert result["verification"]["verification_status"] == "UNVERIFIED"
+    assert result["verification"]["truthfulness_status"] == "UNASSESSED"
+    assert "P40_IMPLICIT_CONTENT_REQUIRES_A2_PIPELINE" in result["verification"]["findings"]
+
+
+def test_p40_explicit_content_access_cannot_promote_without_a2_pipeline():
+    def provider(_request):
+        return {
+            "status": "SUCCEEDED",
+            "external_result_id": "CR-P40-2",
+            "external_result_provenance_ids": ["CR-P40-2-PROV"],
+            "verification_status": "VERIFIED",
+            "evidence_id": "E-P40-2",
+            "supports_claim_ids": ["C-P40-2"],
+            "content_access": {
+                "status": "RETRIEVED",
+                "content": "Implicitly supplied content",
+            },
+        }
+
+    result = ProductionVerificationBackend(provider)(
+        {
+            "request_id": "REQ-P40-2",
+            "claim": {"id": "C-P40-2", "text": "Implicitly supplied content"},
+            "evidence": [],
+            "requested_at": "2026-10-05T00:00:00Z",
+        }
+    )
+
+    assert result["verification"]["verification_status"] == "UNVERIFIED"
+    assert result["verification"]["truthfulness_status"] == "UNASSESSED"
+    assert "P40_IMPLICIT_CONTENT_REQUIRES_A2_PIPELINE" in result["verification"]["findings"]
