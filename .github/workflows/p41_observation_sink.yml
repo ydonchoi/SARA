@@ -1,0 +1,21 @@
+name: P41 observation sink
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "SARA_v2.3/evidence_flow_observation.py"
+      - "SARA_v2.3/evidence_flow_observation_sink.py"
+      - "tests/test_evidence_flow_observation.py"
+      - "tests/test_evidence_flow_observation_sink.py"
+
+jobs:
+  p41-sink:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_evidence_flow_observation.py tests/test_evidence_flow_observation_sink.py
