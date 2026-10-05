@@ -1,0 +1,20 @@
+name: P41 E2E observation inspection
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "SARA_v2.3/evidence_flow_observation.py"
+      - "SARA_v2.3/evidence_flow_observation_sink.py"
+      - "tests/test_p41_e2e_observation_inspection.py"
+
+jobs:
+  p41-e2e-observation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - run: python -m pytest -q -s tests/test_p41_e2e_observation_inspection.py
