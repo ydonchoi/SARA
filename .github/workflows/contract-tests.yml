@@ -17,3 +17,7 @@ jobs:
         run: python -m pip install pytest
       - name: Run external execution contract tests
         run: python -m pytest tests/test_external_execution.py -q
+      - name: Run P8 content access tests
+        run: python -m pytest tests/test_crossref_content_accessor.py -q
+      - name: Run P18 review resolution provenance tests
+        run: python -m pytest tests/test_review_resolution_provenance.py -q

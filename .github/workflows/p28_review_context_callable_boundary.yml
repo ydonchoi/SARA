@@ -1,0 +1,17 @@
+name: P28 review context callable boundary
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/p28-cross-repo-review-context
+  pull_request:
+jobs:
+  review-context:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - run: python -m pytest tests/test_p28_review_context_boundary.py -q
