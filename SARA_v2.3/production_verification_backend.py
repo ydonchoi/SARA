@@ -23,9 +23,29 @@ class ProductionVerificationBackend:
         provider: Callable[[Mapping[str, Any]], Mapping[str, Any]],
         *,
         a2_pipeline: Any | None = None,
+        content_accessor: Any | None = None,
     ):
         self._provider = provider
         self._a2_pipeline = a2_pipeline
+        self._content_accessor = content_accessor
+
+    def _resolve_content_access(self, provider_result: Mapping[str, Any]) -> Mapping[str, Any]:
+        supplied = provider_result.get("content_access")
+        if supplied is not None:
+            return supplied
+        url = provider_result.get("source_url")
+        if self._content_accessor is None or not url:
+            return {"status": "NOT_COMPLETED", "content": ""}
+        result = self._content_accessor.fetch(url)
+        return {
+            "status": result.status,
+            "content": result.content,
+            "url": result.url,
+            "content_type": result.content_type,
+            "byte_length": result.byte_length,
+            "findings": result.findings,
+            "content_scope": provider_result.get("content_scope", "UNKNOWN"),
+        }
 
     def __call__(self, request: Mapping[str, Any]) -> dict[str, Any]:
         claim = request["claim"]
@@ -80,7 +100,8 @@ class ProductionVerificationBackend:
                 bibliographic_accuracy=provider_result.get(
                     "bibliographic_accuracy", "UNASSESSED"
                 ),
-                content_access=provider_result.get("content_access", {}),
+                content_access=self._resolve_content_access(provider_result),
+                content_scope=provider_result.get("content_scope", "UNKNOWN"),
             )
             verification_status = a2_result.verification_status
         result_id = provider_result.get("external_result_id")
