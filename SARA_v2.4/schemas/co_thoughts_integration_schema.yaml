@@ -1,0 +1,86 @@
+version: "2.4"
+name: sara_co_thoughts_integration
+purpose: >
+  Boundary contract between Co-thoughts v2.0 cognitive generation and
+  SARA epistemic verification. Cognitive output never self-promotes to evidence.
+
+integration:
+  source: co-thoughts
+  operations:
+    - knowledge_gate
+    - thought_gate
+
+claim:
+  required:
+    - id
+    - text
+    - type
+  type:
+    - FACT
+    - INTERPRETATION
+    - INFERENCE
+    - HYPOTHESIS
+    - SIMULATION
+
+premise:
+  required:
+    - id
+    - text
+    - type
+  type:
+    - FACT
+    - INTERPRETATION
+    - INFERENCE
+    - HYPOTHESIS
+    - SIMULATION
+
+evidence:
+  required:
+    - id
+    - source
+  alignment:
+    - SUPPORTS_CLAIM
+    - SUPPORTS_PREMISE
+    - CHALLENGES_CLAIM
+    - CHALLENGES_PREMISE
+    - NEUTRAL
+    - UNASSESSED
+
+context:
+  temporal:
+    - HISTORICAL
+    - POST_PUBLICATION
+    - CONTEMPORARY
+  interpretive:
+    - AUTHOR_EXPLICIT
+    - AUTHOR_SUPPORTED
+    - SOURCE_INFERRED
+    - FIELD_INTERPRETATION
+    - MODERN_INTERPRETATION
+    - SPECULATIVE
+    - UNKNOWN
+
+verification:
+  status:
+    - VERIFIED
+    - PARTIALLY_VERIFIED
+    - UNVERIFIED
+    - CONTRADICTED
+
+provenance:
+  source_types:
+    - SOURCE
+    - HUMAN
+    - MODEL
+    - DIALOGUE
+    - INFERENCE
+    - EXTERNAL_EVIDENCE
+    - VERIFICATION
+    - REVISION
+
+firewall:
+  - modern_interpretation_must_not_promote_to_author_explicit_without_source_evidence
+  - model_inference_must_not_promote_to_source_claim_without_source_evidence
+  - dialogue_agreement_must_not_promote_verification_status
+  - checkpoint_must_not_be_used_as_evidence
+  - execution_success_must_not_promote_research_verification
