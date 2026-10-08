@@ -326,3 +326,9 @@ v2.4 adds:
 **Status: ACTIVE / INTEGRATION BASELINE**
 
 v2.4는 Co-thoughts v2.0과 연결되는 verification baseline이다.
+
+## v2.4 Runtime Modules
+
+Implemented modules: `SARA_v2.4/sara_v24_epistemic.py`, `SARA_v2.4/co_thoughts_sara_adapter.py`.
+
+The adapter accepts Co-thoughts claims/premises but never promotes generated output to evidence. Premise verification remains independent from Claim verification.
