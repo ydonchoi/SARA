@@ -11,6 +11,8 @@ from reverification_runner import (
     SelectiveReverificationRunner,
     compute_evidence_digest,
 )
+from provenance_ledger import ProvenanceEventLedger
+
 
 
 SCOPE = {
@@ -77,7 +79,8 @@ def valid_result(request, status="VERIFIED"):
 
 
 def execute(verify, *, selected_plan=None, selected_revision=None,
-            selected_evidence=None, selected_prior=None, selected_digest=None):
+            selected_evidence=None, selected_prior=None, selected_digest=None,
+            ledger=None):
     selected_plan = selected_plan or plan()
     selected_revision = selected_revision or revision()
     selected_evidence = selected_evidence if selected_evidence is not None else EVIDENCE
@@ -87,6 +90,7 @@ def execute(verify, *, selected_plan=None, selected_revision=None,
         verify,
         verifier_revision="verify-1",
         verification_contract_revision="contract-1",
+        ledger=ledger,
     ).execute(
         plan=selected_plan,
         claim_revisions={selected_revision["claim_id"]: selected_revision},
@@ -279,3 +283,39 @@ def test_only_impacted_claim_is_sent_to_verifier():
     assert calls == ["C1"]
     assert result["failed_claim_ids"] == ["C2"]
     assert result["results"][1]["failure_code"] == "CURRENT_CLAIM_REVISION_MISSING"
+
+
+def test_successful_reverification_proposal_is_logged_but_not_committed():
+    ledger = ProvenanceEventLedger()
+    result = execute(
+        lambda request, _timeout: valid_result(request, "VERIFIED"),
+        ledger=ledger,
+    )
+    assert ledger.verify_chain()["valid"] is True
+    assert len(ledger.events) == 1
+    event = ledger.events[0]
+    assert event["event_type"] == "VERIFICATION_RESULT_PROPOSED"
+    replay = ledger.replay_claim("C1")
+    assert replay["committed_verification_status"] is None
+    assert replay["proposed_results"] == [{
+        "event_id": event["event_id"],
+        "revision_id": "R2",
+        "payload": event["payload"],
+    }]
+    assert result["results"][0]["commit_status"] == "NOT_COMMITTED"
+    assert result["provenance_event_ids"] == [event["event_id"]]
+
+
+def test_failed_reverification_attempt_is_logged_separately_from_proposal():
+    ledger = ProvenanceEventLedger()
+
+    def timeout(_request, _timeout):
+        raise TimeoutError("do not persist provider details")
+
+    result = execute(timeout, ledger=ledger)
+    event = ledger.events[0]
+    assert event["event_type"] == "REVERIFICATION_ATTEMPT_COMPLETED"
+    assert event["payload"]["execution_status"] == "TIMEOUT"
+    assert "do not persist provider details" not in ledger.to_jsonl()
+    assert result["results"][0]["commit_status"] == "NOT_COMMITTED"
+    assert ledger.verify_chain()["valid"] is True
