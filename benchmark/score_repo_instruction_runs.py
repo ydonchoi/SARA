@@ -11,6 +11,7 @@ import json
 import math
 from collections import defaultdict
 from pathlib import Path
+from statistics import median
 from typing import Any, Iterable
 
 NUMERIC_METRICS = {
@@ -114,7 +115,7 @@ def score_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
             name: {
                 "n": len(values),
                 "mean": sum(values) / len(values) if values else None,
-                "median": sorted(values)[len(values) // 2] if values else None,
+                "median": median(values) if values else None,
             }
             for name, values in sorted(operational.items())
         }
