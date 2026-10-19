@@ -1,0 +1,27 @@
+name: Repository Instruction Benchmark Scorer
+
+on:
+  pull_request:
+    paths:
+      - "benchmark/score_repo_instruction_runs.py"
+      - "benchmark/tests/**"
+      - "benchmark/repo_instruction_run.schema.json"
+      - "docs/external-repository-instruction-llm-benchmark-v0.1.md"
+  push:
+    branches: [main]
+    paths:
+      - "benchmark/score_repo_instruction_runs.py"
+      - "benchmark/tests/**"
+      - "benchmark/repo_instruction_run.schema.json"
+      - "docs/external-repository-instruction-llm-benchmark-v0.1.md"
+
+jobs:
+  scorer-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install pytest
+      - run: python -m pytest benchmark/tests/test_score_repo_instruction_runs.py -q
