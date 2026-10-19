@@ -361,3 +361,49 @@ def test_no_external_results_does_not_call_verifier_or_claim_falsehood():
     assert item["verification_status"] == "UNVERIFIED"
     assert item["external_search_status"] == "NO_RESULTS"
     assert result["claim_truth_assessed"] is False
+
+def test_external_search_invocation_is_reported_when_provider_fails():
+    verify_calls = []
+
+    def verifier(payload):
+        verify_calls.append(payload)
+        return provider_result()
+
+    def search(_payload, _timeout):
+        raise TimeoutError("provider timeout")
+
+    result = process_dialogue_turn(
+        request(),
+        judgment_generate=generate_for(
+            "NO_INFERENCE_DETECTED", "HIGH", claim_refs=["C-1"],
+            verification_need="REQUIRED", external_check_need="REQUIRED",
+        ),
+        verification_provider=verifier,
+        external_search_provider=search,
+        model_id="sara-model",
+        model_revision="runtime-test-double",
+    )
+
+    assert result["external_search_invoked"] is True
+    assert result["verification_provider_invoked"] is False
+    assert verify_calls == []
+    verification_results = result["route_execution"]["output"]["verification_results"]
+    assert verification_results[0]["external_search_status"] == "FAILED"
+    assert verification_results[0]["verification_status"] == "UNVERIFIED"
+
+
+def test_verifier_invocation_is_reported_when_verifier_raises():
+    def verifier(_payload):
+        raise TimeoutError("verification backend timeout")
+
+    result = process_dialogue_turn(
+        request(),
+        judgment_generate=generate_for(),
+        verification_provider=verifier,
+        model_id="sara-model",
+        model_revision="runtime-test-double",
+    )
+
+    assert result["verification_provider_invoked"] is True
+    assert result["route_execution"]["output"]["verification_results"][0]["execution_status"] == "FAILED"
+
