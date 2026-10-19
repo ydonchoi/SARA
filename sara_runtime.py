@@ -1,8 +1,9 @@
-"""Minimal independently callable SARA v2.3 runtime entrypoint.
+"""Callable SARA runtime with v2.4 epistemic and structured logical-audit boundaries.
 
-The runtime exposes the already-validated execution contract as a CLI.
-It deliberately requires an injected provider callable instead of inventing
-an HTTP/SDK transport or a verification algorithm.
+Provider execution continues through the existing v2.3 execution contract, while
+this entrypoint now runs the v2.4 epistemic adapter before provider invocation
+and the v2.4 structural graph checker when an explicit argument graph is supplied.
+It requires an injected provider rather than inventing an HTTP/SDK transport.
 """
 
 from __future__ import annotations
@@ -271,7 +272,7 @@ def process_dialogue_turn(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run one SARA v2.3 verification request.")
+    parser = argparse.ArgumentParser(description="Run SARA verification with v2.4 boundary checks and the injected provider facade.")
     parser.add_argument("--provider", required=True, help="Provider callable as MODULE:ATTRIBUTE")
     parser.add_argument(
         "--request",
