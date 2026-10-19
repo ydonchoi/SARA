@@ -16,6 +16,12 @@ REQUEST = {
     "turn_id": "TURN-7",
     "content": "The outcome fell after the policy, so the policy caused the decline.",
     "context": {"speaker": "assistant"},
+    "reference_catalog": {
+        "premise_refs": ["P1"],
+        "claim_refs": ["C1"],
+        "evidence_ids": ["E1"],
+        "provenance_ids": ["SRC-1"],
+    },
 }
 
 
@@ -144,3 +150,22 @@ def test_malformed_semantic_output_fails_closed():
     assert result["execution_status"] == "INVALID_OUTPUT"
     assert result["judgment_status"] == "NOT_ASSESSED"
     assert result["review_required"] is True
+
+
+def test_unknown_reference_is_rejected_as_invalid_output():
+    def generate(_system, payload, _timeout):
+        return output_for(payload, evidence_ids=["FABRICATED-EVIDENCE"])
+
+    result = model(generate).judge(REQUEST, timeout_seconds=1)
+    assert result["execution_status"] == "INVALID_OUTPUT"
+    assert result["judgment_status"] == "NOT_ASSESSED"
+    assert result["review_required"] is True
+
+
+def test_basis_span_must_be_verbatim_from_input():
+    def generate(_system, payload, _timeout):
+        return output_for(payload, basis_spans=["invented words not in the input"])
+
+    result = model(generate).judge(REQUEST, timeout_seconds=1)
+    assert result["execution_status"] == "INVALID_OUTPUT"
+    assert result["judgment_status"] == "NOT_ASSESSED"
