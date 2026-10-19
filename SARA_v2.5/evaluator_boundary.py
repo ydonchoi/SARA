@@ -55,6 +55,9 @@ def validate_evaluator_signal(
             if not isinstance(value, str) or not value.strip():
                 raise ValueError(error)
 
+    if not isinstance(signal.rationale, str):
+        raise ValueError("INVALID_EVALUATOR_RATIONALE")
+
     if signal.execution_status not in EXECUTION_STATUSES:
         raise ValueError("INVALID_EVALUATOR_EXECUTION_STATUS")
     if signal.signal_status not in SIGNAL_STATUSES:
