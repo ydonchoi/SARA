@@ -28,6 +28,12 @@ event:
     - HUMAN_REVIEW_RESOLUTION
     - CLAIM_STATUS_COMMITTED
 
+claim_revision_identity:
+  - claim_id_plus_revision_id_is_unique
+  - revision_id_is_bound_to_one_content_digest
+  - duplicate_registration_is_rejected
+  - rebinding_revision_id_to_new_digest_is_rejected
+
 integrity:
   - events_are_append_only
   - sequence_is_monotonic_and_contiguous
