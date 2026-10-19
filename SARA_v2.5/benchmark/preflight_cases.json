@@ -1,8 +1,8 @@
 {
   "dataset_id": "SARA-V25-PREFLIGHT-SEED",
-  "dataset_version": "0.1.0-draft",
+  "dataset_version": "0.2.0-draft",
   "status": "DRAFT_NOT_INDEPENDENTLY_ADJUDICATED",
-  "purpose": "Synthetic seed cases for later evaluation harness implementation; not a gold benchmark yet.",
+  "purpose": "Synthetic seed cases for v2.4 logical-audit and v2.5 claim-version/conflict prototypes; not a gold benchmark yet.",
   "boundaries": [
     "Synthetic labels require independent review before performance claims.",
     "The current v2.4 graph checker checks structure only, not semantic fallacies.",
@@ -47,7 +47,8 @@
       ],
       "expected_issue_categories": [],
       "expected_action": "NO_MATERIAL_LOGICAL_ISSUE",
-      "label_status": "DRAFT"
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
     },
     {
       "case_id": "LA-002",
@@ -89,7 +90,8 @@
         "FORMAL_VALIDITY"
       ],
       "expected_action": "REQUIRES_REVIEW",
-      "label_status": "DRAFT"
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
     },
     {
       "case_id": "LA-003",
@@ -120,7 +122,8 @@
         "ALTERNATIVE_EXPLANATION"
       ],
       "expected_action": "REQUIRES_REVIEW",
-      "label_status": "DRAFT"
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
     },
     {
       "case_id": "LA-004",
@@ -151,7 +154,8 @@
         "INFERENCE_STRENGTH"
       ],
       "expected_action": "REQUIRES_REVIEW",
-      "label_status": "DRAFT"
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
     },
     {
       "case_id": "LA-005",
@@ -188,7 +192,8 @@
         "CIRCULAR_REASONING"
       ],
       "expected_action": "CANDIDATE_ONLY",
-      "label_status": "DRAFT"
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
     },
     {
       "case_id": "LA-006",
@@ -219,7 +224,8 @@
         "GENERALIZATION"
       ],
       "expected_action": "REQUIRES_REVIEW",
-      "label_status": "DRAFT"
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
     },
     {
       "case_id": "LA-007",
@@ -247,6 +253,120 @@
       ],
       "expected_issue_categories": [],
       "expected_action": "UNASSESSED",
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
+    },
+    {
+      "case_id": "CV-001",
+      "suite": "claim_identity",
+      "case_type": "STALE_VERIFICATION_BINDING",
+      "current_revision": {
+        "claim_id": "C1",
+        "revision_id": "R2",
+        "text": "The intervention reduces readmission.",
+        "scope": {
+          "population": "adults",
+          "setting": "one hospital",
+          "time_range": "2020-2024",
+          "modality": "observational",
+          "outcome": "readmission",
+          "causal_strength": "causal"
+        },
+        "content_digest": "CURRENT_DIGEST"
+      },
+      "prior_binding": {
+        "claim_id": "C1",
+        "revision_id": "R1",
+        "content_digest": "OLD_DIGEST",
+        "verifier_revision": "verify-1",
+        "evidence_digest": "EVIDENCE-1",
+        "verification_status": "VERIFIED"
+      },
+      "current_verifier_revision": "verify-1",
+      "current_evidence_digest": "EVIDENCE-1",
+      "expected_review_state": "REQUIRES_REVERIFICATION",
+      "expected_reuse_allowed": false,
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "EC-001",
+      "suite": "evidence_conflict",
+      "case_type": "MIXED_VERIFIED_POLARITY_SAME_CONTEXT",
+      "claim_id": "C1",
+      "evidence_positions": [
+        {
+          "evidence_id": "E1",
+          "relation": "SUPPORTS",
+          "evidence_status": "VERIFIED",
+          "scope_key": "adults",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-A"
+        },
+        {
+          "evidence_id": "E2",
+          "relation": "CHALLENGES",
+          "evidence_status": "VERIFIED",
+          "scope_key": "adults",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-B"
+        }
+      ],
+      "expected_conflict_status": "UNRESOLVED_CONFLICT",
+      "expected_claim_verification_status": "UNASSESSED",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "EC-002",
+      "suite": "evidence_conflict",
+      "case_type": "PARTIALLY_VERIFIED_OPPOSING_SIGNAL",
+      "claim_id": "C1",
+      "evidence_positions": [
+        {
+          "evidence_id": "E1",
+          "relation": "SUPPORTS",
+          "evidence_status": "VERIFIED",
+          "scope_key": "adults",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-A"
+        },
+        {
+          "evidence_id": "E2",
+          "relation": "CHALLENGES",
+          "evidence_status": "PARTIALLY_VERIFIED",
+          "scope_key": "adults",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-B"
+        }
+      ],
+      "expected_conflict_status": "POTENTIAL_CONFLICT_REVIEW",
+      "expected_claim_verification_status": "UNASSESSED",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "EC-003",
+      "suite": "evidence_conflict",
+      "case_type": "OPPOSING_EVIDENCE_DIFFERENT_SCOPE",
+      "claim_id": "C1",
+      "evidence_positions": [
+        {
+          "evidence_id": "E1",
+          "relation": "SUPPORTS",
+          "evidence_status": "VERIFIED",
+          "scope_key": "adults",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-A"
+        },
+        {
+          "evidence_id": "E2",
+          "relation": "CHALLENGES",
+          "evidence_status": "VERIFIED",
+          "scope_key": "children",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-B"
+        }
+      ],
+      "expected_conflict_status": "CONTEXTUAL_DIVERGENCE_REVIEW",
+      "expected_claim_verification_status": "UNASSESSED",
       "label_status": "DRAFT"
     }
   ]
