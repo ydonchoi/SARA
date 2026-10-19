@@ -24,6 +24,20 @@ def append(
             payload = {"content_digest": "CLAIM-DIGEST-1"}
         else:
             payload = {}
+    input_digest = None
+    if event_type == "CLAIM_REVISION_REGISTERED":
+        input_digest = payload.get("content_digest")
+    else:
+        registered = next((
+            event for event in reversed(ledger.events)
+            if event.get("event_type") == "CLAIM_REVISION_REGISTERED"
+            and event.get("claim_id") == claim_id
+            and event.get("revision_id") == revision_id
+        ), None)
+        if registered is not None:
+            input_digest = registered["payload"]["content_digest"]
+        else:
+            input_digest = "UNBOUND-DIGEST"
     return ledger.append_event(
         event_id=event_id,
         event_type=event_type,
@@ -31,7 +45,7 @@ def append(
         revision_id=revision_id,
         actor_id="test-runner",
         occurred_at="2026-10-19T00:00:00Z",
-        input_digest="CLAIM-DIGEST-1",
+        input_digest=input_digest,
         payload=payload,
     )
 
@@ -112,7 +126,16 @@ def test_jsonl_round_trip_preserves_events_and_chain():
         ledger,
         "EV-2",
         "VERIFICATION_RESULT_PROPOSED",
-        payload={"proposed_verification_status": "VERIFIED"},
+        payload={
+            "proposed_verification_status": "VERIFIED",
+            "external_result_id": "RESULT-1",
+            "external_result_provenance_ids": ["RESULT-PROV-1"],
+            "input_provenance_ids": [],
+            "evidence_digest": "EVIDENCE-DIGEST-1",
+            "verifier_revision": "verify-1",
+            "verification_contract_revision": "contract-1",
+            "commit_status": "NOT_COMMITTED",
+        },
     )
     restored = ProvenanceEventLedger.from_jsonl(ledger.to_jsonl())
     assert restored.events == ledger.events
@@ -137,7 +160,16 @@ def test_replay_keeps_proposed_status_separate_from_committed_status():
         ledger,
         "EV-2",
         "VERIFICATION_RESULT_PROPOSED",
-        payload={"proposed_verification_status": "VERIFIED"},
+        payload={
+            "proposed_verification_status": "VERIFIED",
+            "external_result_id": "RESULT-1",
+            "external_result_provenance_ids": ["RESULT-PROV-1"],
+            "input_provenance_ids": [],
+            "evidence_digest": "EVIDENCE-DIGEST-1",
+            "verifier_revision": "verify-1",
+            "verification_contract_revision": "contract-1",
+            "commit_status": "NOT_COMMITTED",
+        },
     )
     replay = ledger.replay_claim("C1")
     assert replay["current_revision_id"] == "R1"
@@ -150,18 +182,32 @@ def test_explicit_status_commit_changes_replayed_status_and_not_truthfulness():
     ledger = ProvenanceEventLedger()
     append(ledger, "EV-1", "CLAIM_REVISION_REGISTERED", payload={"content_digest": "D1"})
     append(
-        ledger,
-        "EV-2",
-        "VERIFICATION_RESULT_PROPOSED",
-        payload={"proposed_verification_status": "UNVERIFIED"},
+        ledger, "EV-2", "VERIFICATION_RESULT_PROPOSED",
+        payload={
+            "proposed_verification_status": "UNVERIFIED",
+            "external_result_id": "RESULT-1",
+            "external_result_provenance_ids": ["RESULT-PROV-1"],
+            "input_provenance_ids": [],
+            "evidence_digest": "EVIDENCE-DIGEST-1",
+            "verifier_revision": "verify-1",
+            "verification_contract_revision": "contract-1",
+            "commit_status": "NOT_COMMITTED",
+        },
     )
     append(
-        ledger,
-        "EV-3",
-        "CLAIM_STATUS_COMMITTED",
+        ledger, "EV-3", "HUMAN_REVIEW_RESOLUTION",
+        payload={
+            "reviewer_id": "reviewer-1",
+            "decision": "ACCEPT",
+            "rationale": "Reviewed the source alignment and accepted the bounded result.",
+            "proposal_event_id": "EV-2",
+        },
+    )
+    append(
+        ledger, "EV-4", "CLAIM_STATUS_COMMITTED",
         payload={
             "verification_status": "UNVERIFIED",
-            "review_event_id": "REVIEW-1",
+            "review_event_id": "EV-3",
             "proposal_event_id": "EV-2",
         },
     )
@@ -194,22 +240,37 @@ def test_new_claim_revision_invalidates_replayed_old_commit():
     ledger = ProvenanceEventLedger()
     append(ledger, "EV-1", "CLAIM_REVISION_REGISTERED", payload={"content_digest": "DIGEST-R1"})
     append(
-        ledger,
-        "EV-2",
-        "CLAIM_STATUS_COMMITTED",
+        ledger, "EV-2", "VERIFICATION_RESULT_PROPOSED", revision_id="R1",
         payload={
-            "verification_status": "VERIFIED",
-            "review_event_id": "REVIEW-1",
-            "proposal_event_id": "PROPOSAL-1",
+            "proposed_verification_status": "VERIFIED",
+            "external_result_id": "RESULT-1",
+            "external_result_provenance_ids": ["RESULT-PROV-1"],
+            "input_provenance_ids": [],
+            "evidence_digest": "EVIDENCE-DIGEST-1",
+            "verifier_revision": "verify-1",
+            "verification_contract_revision": "contract-1",
+            "commit_status": "NOT_COMMITTED",
         },
     )
     append(
-        ledger,
-        "EV-3",
-        "CLAIM_REVISION_REGISTERED",
-        revision_id="R2",
-        payload={"content_digest": "DIGEST-R2"},
+        ledger, "EV-3", "HUMAN_REVIEW_RESOLUTION", revision_id="R1",
+        payload={
+            "reviewer_id": "reviewer-1",
+            "decision": "ACCEPT",
+            "rationale": "Reviewed the bounded result.",
+            "proposal_event_id": "EV-2",
+        },
     )
+    append(
+        ledger, "EV-4", "CLAIM_STATUS_COMMITTED", revision_id="R1",
+        payload={
+            "verification_status": "VERIFIED",
+            "review_event_id": "EV-3",
+            "proposal_event_id": "EV-2",
+        },
+    )
+    append(ledger, "EV-5", "CLAIM_REVISION_REGISTERED", revision_id="R2",
+           payload={"content_digest": "DIGEST-R2"})
     replay = ledger.replay_claim("C1")
     assert replay["current_revision_id"] == "R2"
     assert replay["committed_verification_status"] is None
