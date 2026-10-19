@@ -1,20 +1,29 @@
 from copy import deepcopy
-import sys
 from pathlib import Path
+import sys
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from provenance_ledger import (
-    GENESIS_HASH,
-    ProvenanceEventLedger,
-    ProvenanceLedgerError,
-)
+from provenance_ledger import GENESIS_HASH, ProvenanceEventLedger, ProvenanceLedgerError
 
 
-def append(ledger, event_id="EV-1", event_type="VERIFICATION_RESULT_PROPOSED",
-           claim_id="C1", revision_id="R1", payload=None):
+def append(
+    ledger,
+    event_id="EV-1",
+    event_type="VERIFICATION_RESULT_PROPOSED",
+    claim_id="C1",
+    revision_id="R1",
+    payload=None,
+):
+    if payload is None:
+        if event_type == "VERIFICATION_RESULT_PROPOSED":
+            payload = {"proposed_verification_status": "VERIFIED"}
+        elif event_type == "CLAIM_REVISION_REGISTERED":
+            payload = {"content_digest": "CLAIM-DIGEST-1"}
+        else:
+            payload = {}
     return ledger.append_event(
         event_id=event_id,
         event_type=event_type,
@@ -23,7 +32,7 @@ def append(ledger, event_id="EV-1", event_type="VERIFICATION_RESULT_PROPOSED",
         actor_id="test-runner",
         occurred_at="2026-10-19T00:00:00Z",
         input_digest="CLAIM-DIGEST-1",
-        payload=payload or {"verification_status": "VERIFIED"},
+        payload=payload,
     )
 
 
@@ -49,19 +58,18 @@ def test_append_builds_sequential_hash_chain():
 def test_event_output_and_events_property_are_detached_copies():
     ledger = ProvenanceEventLedger()
     event = append(ledger)
-    event["payload"]["verification_status"] = "CONTRADICTED"
+    event["payload"]["proposed_verification_status"] = "CONTRADICTED"
     exposed = ledger.events
-    exposed[0]["payload"]["verification_status"] = "UNVERIFIED"
-    assert ledger.events[0]["payload"]["verification_status"] == "VERIFIED"
+    exposed[0]["payload"]["proposed_verification_status"] = "UNVERIFIED"
+    assert ledger.events[0]["payload"]["proposed_verification_status"] == "VERIFIED"
     assert ledger.verify_chain()["valid"] is True
 
 
 def test_tampering_event_payload_invalidates_hash_chain():
     ledger = ProvenanceEventLedger()
     append(ledger)
-    raw = [dict(item) for item in ledger.events]
-    raw[0] = deepcopy(raw[0])
-    raw[0]["payload"]["verification_status"] = "CONTRADICTED"
+    raw = [deepcopy(item) for item in ledger.events]
+    raw[0]["payload"]["proposed_verification_status"] = "CONTRADICTED"
     restored = object.__new__(ProvenanceEventLedger)
     restored._events = raw
     result = restored.verify_chain()
@@ -99,8 +107,13 @@ def test_invalid_payload_is_rejected_before_ledger_mutation():
 
 def test_jsonl_round_trip_preserves_events_and_chain():
     ledger = ProvenanceEventLedger()
-    append(ledger, "EV-1", "CLAIM_REVISION_REGISTERED", payload={"text": "Claim A"})
-    append(ledger, "EV-2", "VERIFICATION_RESULT_PROPOSED", payload={"verification_status": "VERIFIED"})
+    append(ledger, "EV-1", "CLAIM_REVISION_REGISTERED", payload={"content_digest": "D1"})
+    append(
+        ledger,
+        "EV-2",
+        "VERIFICATION_RESULT_PROPOSED",
+        payload={"proposed_verification_status": "VERIFIED"},
+    )
     restored = ProvenanceEventLedger.from_jsonl(ledger.to_jsonl())
     assert restored.events == ledger.events
     assert restored.verify_chain()["valid"] is True
@@ -109,46 +122,113 @@ def test_jsonl_round_trip_preserves_events_and_chain():
 def test_invalid_imported_chain_is_rejected():
     ledger = ProvenanceEventLedger()
     append(ledger)
-    raw = ledger.to_jsonl().replace('"verification_status":"VERIFIED"', '"verification_status":"CONTRADICTED"')
+    raw = ledger.to_jsonl().replace(
+        '"proposed_verification_status":"VERIFIED"',
+        '"proposed_verification_status":"CONTRADICTED"',
+    )
     with pytest.raises(ProvenanceLedgerError, match="INVALID_IMPORTED_EVENT_CHAIN"):
         ProvenanceEventLedger.from_jsonl(raw)
 
 
 def test_replay_keeps_proposed_status_separate_from_committed_status():
     ledger = ProvenanceEventLedger()
-    append(ledger, "EV-1", "CLAIM_REVISION_REGISTERED", payload={"text": "Claim A"})
-    append(ledger, "EV-2", "VERIFICATION_RESULT_PROPOSED", payload={"verification_status": "VERIFIED"})
+    append(ledger, "EV-1", "CLAIM_REVISION_REGISTERED", payload={"content_digest": "D1"})
+    append(
+        ledger,
+        "EV-2",
+        "VERIFICATION_RESULT_PROPOSED",
+        payload={"proposed_verification_status": "VERIFIED"},
+    )
     replay = ledger.replay_claim("C1")
     assert replay["current_revision_id"] == "R1"
     assert replay["committed_verification_status"] is None
-    assert replay["proposed_results"][0]["payload"]["verification_status"] == "VERIFIED"
+    assert replay["proposed_results"][0]["payload"]["proposed_verification_status"] == "VERIFIED"
     assert replay["truthfulness_status"] == "UNASSESSED"
 
 
 def test_explicit_status_commit_changes_replayed_status_and_not_truthfulness():
     ledger = ProvenanceEventLedger()
-    append(ledger, "EV-1", "CLAIM_REVISION_REGISTERED", payload={"text": "Claim A"})
-    append(ledger, "EV-2", "CLAIM_STATUS_COMMITTED", payload={"verification_status": "UNVERIFIED"})
+    append(ledger, "EV-1", "CLAIM_REVISION_REGISTERED", payload={"content_digest": "D1"})
+    append(
+        ledger,
+        "EV-2",
+        "VERIFICATION_RESULT_PROPOSED",
+        payload={"proposed_verification_status": "UNVERIFIED"},
+    )
+    append(
+        ledger,
+        "EV-3",
+        "CLAIM_STATUS_COMMITTED",
+        payload={
+            "verification_status": "UNVERIFIED",
+            "review_event_id": "REVIEW-1",
+            "proposal_event_id": "EV-2",
+        },
+    )
     replay = ledger.replay_claim("C1")
     assert replay["committed_verification_status"] == "UNVERIFIED"
+    assert replay["last_committed_verification_status"] == "UNVERIFIED"
+    assert replay["committed_status_current"] is True
+    assert replay["reverification_required"] is False
     assert replay["committed_revision_id"] == "R1"
     assert replay["truthfulness_status"] == "UNASSESSED"
 
 
-def test_invalid_committed_status_is_rejected_during_replay():
+def test_invalid_committed_status_is_rejected_at_append():
     ledger = ProvenanceEventLedger()
-    append(ledger, "EV-1", "CLAIM_STATUS_COMMITTED", payload={"verification_status": "ABSOLUTELY_TRUE"})
+    append(ledger, "EV-1", "CLAIM_REVISION_REGISTERED", payload={"content_digest": "D1"})
     with pytest.raises(ProvenanceLedgerError, match="INVALID_COMMITTED_VERIFICATION_STATUS"):
-        ledger.replay_claim("C1")
+        append(
+            ledger,
+            "EV-2",
+            "CLAIM_STATUS_COMMITTED",
+            payload={
+                "verification_status": "ABSOLUTELY_TRUE",
+                "review_event_id": "REVIEW-1",
+                "proposal_event_id": "EV-1",
+            },
+        )
+
+
+def test_new_claim_revision_invalidates_replayed_old_commit():
+    ledger = ProvenanceEventLedger()
+    append(ledger, "EV-1", "CLAIM_REVISION_REGISTERED", payload={"content_digest": "DIGEST-R1"})
+    append(
+        ledger,
+        "EV-2",
+        "CLAIM_STATUS_COMMITTED",
+        payload={
+            "verification_status": "VERIFIED",
+            "review_event_id": "REVIEW-1",
+            "proposal_event_id": "PROPOSAL-1",
+        },
+    )
+    append(
+        ledger,
+        "EV-3",
+        "CLAIM_REVISION_REGISTERED",
+        revision_id="R2",
+        payload={"content_digest": "DIGEST-R2"},
+    )
+    replay = ledger.replay_claim("C1")
+    assert replay["current_revision_id"] == "R2"
+    assert replay["committed_verification_status"] is None
+    assert replay["last_committed_verification_status"] == "VERIFIED"
+    assert replay["committed_status_current"] is False
+    assert replay["reverification_required"] is True
 
 
 def test_empty_required_event_fields_are_rejected():
     ledger = ProvenanceEventLedger()
     with pytest.raises(ProvenanceLedgerError, match="EVENT_ACTOR_REQUIRED"):
         ledger.append_event(
-            event_id="EV-X", event_type="EVALUATOR_RUN_COMPLETED",
-            claim_id="C1", revision_id="R1", actor_id=" ",
-            occurred_at="2026-10-19T00:00:00Z", input_digest="D1",
+            event_id="EV-X",
+            event_type="EVALUATOR_RUN_COMPLETED",
+            claim_id="C1",
+            revision_id="R1",
+            actor_id=" ",
+            occurred_at="2026-10-19T00:00:00Z",
+            input_digest="D1",
             payload={},
         )
     assert ledger.events == ()
