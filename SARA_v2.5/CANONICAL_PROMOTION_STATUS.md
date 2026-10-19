@@ -10,7 +10,7 @@ SARA v2.4 remains the canonical verification baseline. The v2.5 branch contains 
 2. A real evaluator provider is configured and its transport-level timeout, version binding, output validation, and provenance behavior are integration-tested.
 3. The selective reverification runner is exercised against the injected verifier contract; successful results remain proposals until the explicit verification commit gate finds a matching proposal, current claim/evidence/verifier/contract digests, and a bound ACCEPT review event.
 4. The provenance ledger passes append, tamper detection, export/import, and semantic replay tests. Durable storage, access control, authenticated reviewer identity, signatures, and deployment-level recovery must be established for the intended deployment.
-5. Schema, code, tests, and documentation vocabulary are consistent.
+5. Schema, code, tests, and documentation vocabulary are consistent, including the explicit verification commit gate.
 6. The Preflight cases are independently adjudicated; at least two independent reviewers record each decision and rationale, and disagreements are resolved.
 7. A frozen comparative evaluation of the v2.3 baseline, v2.4 without semantic evaluator, and v2.4 with selective evaluation passes predeclared acceptance thresholds.
 8. The promotion-gate code/test, all required CI jobs, schema/version consistency, and root README/version docs are reviewed and reverified. Root README and version docs are updated to v2.5 only after all gates above pass.
@@ -24,3 +24,6 @@ SARA v2.4 remains the canonical verification baseline. The v2.5 branch contains 
 - A green CI result proves only that the executed tests passed at that head. It is not evidence of research-verification accuracy or real-world improvement.
 
 The machine-readable checklist is in promotion_evidence_template.json. Missing or unverified entries must remain blockers.
+
+
+The explicit status-commit gate is available as a prototype. It only commits after a matching ACCEPT review event and matching current proposal bindings; actual reviewer authentication/authorization is an external deployment responsibility.
