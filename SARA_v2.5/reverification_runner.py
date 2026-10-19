@@ -80,6 +80,7 @@ class SelectiveReverificationRunner:
         current_evidence_digests: Mapping[str, str],
         timeout_seconds: float,
     ) -> dict[str, Any]:
+        self._assert_ledger_revision_bindings(plan, claim_revisions)
         result = self._execute_unrecorded(
             plan=plan,
             claim_revisions=claim_revisions,
@@ -150,6 +151,57 @@ class SelectiveReverificationRunner:
                 event_ids.append(ledger_event["event_id"])
         result["provenance_event_ids"] = event_ids
         return result
+
+    def _assert_ledger_revision_bindings(
+        self,
+        plan: Mapping[str, Any],
+        claim_revisions: Mapping[str, Mapping[str, Any]],
+    ) -> None:
+        """Reject reuse of a registered immutable revision ID for changed content."""
+        if self._ledger is None:
+            return
+        if not self._ledger.verify_history()["valid"]:
+            raise ReverificationExecutionError("PROVENANCE_HISTORY_INVALID")
+        if not isinstance(plan, Mapping) or not isinstance(claim_revisions, Mapping):
+            return
+        impacted = plan.get("impacted_claims")
+        if not isinstance(impacted, list):
+            return
+        events = self._ledger.events
+        for impact in impacted:
+            if not isinstance(impact, Mapping):
+                continue
+            claim_id = impact.get("claim_id")
+            if not isinstance(claim_id, str) or not claim_id.strip():
+                continue
+            revision = claim_revisions.get(claim_id)
+            if not isinstance(revision, Mapping):
+                continue
+            revision_id = revision.get("revision_id")
+            text_value = revision.get("text")
+            scope = revision.get("scope")
+            if not (
+                isinstance(revision_id, str) and revision_id.strip()
+                and isinstance(text_value, str) and text_value.strip()
+                and isinstance(scope, Mapping)
+            ):
+                continue
+            try:
+                canonical_digest = compute_content_digest(text_value, scope)
+            except (TypeError, ValueError):
+                continue
+            existing = next((
+                event for event in events
+                if event.get("event_type") == "CLAIM_REVISION_REGISTERED"
+                and event.get("claim_id") == claim_id
+                and event.get("revision_id") == revision_id
+            ), None)
+            if existing is not None and (
+                existing.get("payload", {}).get("content_digest") != canonical_digest
+            ):
+                raise ReverificationExecutionError(
+                    "CLAIM_REVISION_ID_REBOUND_TO_DIFFERENT_DIGEST"
+                )
 
     def _execute_unrecorded(
         self,
