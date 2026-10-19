@@ -37,6 +37,7 @@ response:
     - commit_status
 
 rules:
+  - revision_id_must_not_be_rebound_to_new_content
   - only_claims_in_the_supplied_impact_plan_may_be_called
   - current_claim_digest_is_recomputed
   - current_evidence_digest_is_recomputed
