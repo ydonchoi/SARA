@@ -101,3 +101,32 @@ def test_label_criterion_names_must_be_nonempty_strings():
     record["observed"] = {"": True}
     with pytest.raises(BenchmarkRecordError, match="EXPECTED_CRITERION_NAME_REQUIRED"):
         score_records([record])
+
+
+def test_distinct_repetitions_for_same_case_condition_model_are_accepted():
+    first = row("R1")
+    first["repetition_id"] = "1"
+    second = row("R1", observed={"rule_applied": False, "evidence_traceable": True})
+    second["repetition_id"] = "2"
+    result = score_records([first, second])
+    group = result["groups"][0]
+    assert group["cases"] == 1
+    assert group["run_records"] == 2
+    assert group["repetitions"] == 2
+    assert group["criteria"]["rule_applied"] == {"n": 2, "correct": 1, "accuracy": 0.5}
+
+
+def test_same_repetition_for_same_case_condition_model_is_rejected():
+    first = row("R1")
+    second = row("R1")
+    first["repetition_id"] = "repeat-a"
+    second["repetition_id"] = "repeat-a"
+    with pytest.raises(BenchmarkRecordError, match="DUPLICATE_CASE_CONDITION_MODEL_REPETITION"):
+        score_records([first, second])
+
+
+def test_repetition_id_must_be_nonempty_string():
+    record = row("R1")
+    record["repetition_id"] = ""
+    with pytest.raises(BenchmarkRecordError, match="REPETITION_ID_REQUIRED"):
+        score_records([record])
