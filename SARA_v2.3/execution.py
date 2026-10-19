@@ -42,9 +42,6 @@ class SARAExecutionResponse:
     timestamp: str
     environment: dict[str, Any]
     failure: dict[str, Any] | None = None
-    # Additive envelope for the canonical v2.4 boundary; None means no
-    # assessment was attached by this host runtime.
-    sara_v24_assessment: dict[str, Any] | None = None
 
 
 class VerificationBackend(Protocol):
