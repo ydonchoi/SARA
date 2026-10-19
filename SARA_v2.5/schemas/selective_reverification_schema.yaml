@@ -1,0 +1,52 @@
+version: "2.5-draft"
+name: sara_selective_reverification_plan
+status: PROPOSED_PROTOTYPE
+
+purpose: >
+  Identify claims whose assessment may be stale after an upstream claim,
+  premise, evidence item, or method changes. The planner schedules review only;
+  it neither executes verification nor mutates the prior verification status.
+
+dependency_edge:
+  required:
+    - upstream_id
+    - dependent_id
+    - relation
+  direction: upstream_id_to_dependent_id
+  relation:
+    - SUPPORTS
+    - CHALLENGES
+    - DERIVED_FROM
+
+node_type:
+  - CLAIM
+  - PREMISE
+  - EVIDENCE
+  - METHOD
+
+plan_item:
+  required:
+    - claim_id
+    - prior_status_known
+    - review_state
+    - trigger
+    - triggering_changed_node_ids
+    - execution_status
+    - is_evidence
+  review_state:
+    - REQUIRES_REVERIFICATION
+  trigger:
+    - CLAIM_REVISION_CHANGED
+    - DEPENDENCY_CHANGED
+  execution_status:
+    - PLANNED_NOT_EXECUTED
+
+rules:
+  - dependency_edge_direction_is_explicit
+  - changed_inputs_propagate_to_transitive_dependent_claims
+  - unrelated_claims_are_not_scheduled
+  - preserve_prior_verification_status_without_overwriting_it
+  - missing_prior_status_is_reported_as_unknown
+  - dependency_cycles_must_terminate_without_infinite_traversal
+  - plan_is_not_execution_evidence
+  - only_claim_nodes_are_returned_as_reverification_targets

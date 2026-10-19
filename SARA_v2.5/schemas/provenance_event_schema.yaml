@@ -1,0 +1,63 @@
+version: "2.5-draft"
+name: sara_provenance_event_ledger
+status: PROPOSED_PROTOTYPE
+
+purpose: >
+  Record version-bound operational events in an append-only hash chain,
+  support JSONL export/import and replay, and keep proposed verification
+  results separate from explicitly committed claim status.
+
+event:
+  required:
+    - sequence
+    - event_id
+    - event_type
+    - claim_id
+    - revision_id
+    - actor_id
+    - occurred_at
+    - input_digest
+    - previous_event_hash
+    - payload
+    - event_hash
+  event_type:
+    - CLAIM_REVISION_REGISTERED
+    - EVALUATOR_RUN_COMPLETED
+    - REVERIFICATION_ATTEMPT_COMPLETED
+    - VERIFICATION_RESULT_PROPOSED
+    - HUMAN_REVIEW_RESOLUTION
+    - CLAIM_STATUS_COMMITTED
+
+claim_revision_identity:
+  - claim_id_plus_revision_id_is_unique
+  - revision_id_is_bound_to_one_content_digest
+  - duplicate_registration_is_rejected
+  - rebinding_revision_id_to_new_digest_is_rejected
+
+integrity:
+  - events_are_append_only
+  - sequence_is_monotonic_and_contiguous
+  - event_id_is_unique
+  - each_event_hash_covers_canonical_event_content
+  - previous_event_hash_must_match_prior_event_hash
+  - imported_chains_must_be_verified_before_replay
+  - imported_event_transition_semantics_must_be_validated_before_replay
+  - JSONL_export_import_must_preserve_chain_identity
+
+replay:
+  - claim_revision_registration_binds_content_digest_to_event_input_digest
+  - proposed_result_requires_registered_current_revision_and_external_result_provenance
+  - human_review_resolution_records_reviewer_decision_and_rationale
+  - claim_status_commit_must_match_proposal_status_revision_evidence_and_verifier_versions
+  - claim_status_commit_requires_linked_ACCEPT_review_event
+  - proposed_verification_result_does_not_change_committed_status
+  - only_CLAIM_STATUS_COMMITTED_changes_replayed_committed_status
+  - truthfulness_status_remains_UNASSESSED
+  - ledger_event_is_operational_provenance_not_research_evidence
+  - missing_or_invalid_chain_blocks_replay
+  - invalid_event_transition_history_blocks_replay
+
+limitations:
+  - persistence_backend_is_caller_managed_JSONL_in_this_prototype
+  - cryptographic_hash_chain_is_tamper_evident_not_a_signature_or_access_control
+  - event_authority_and_human_review_identity_require_external_governance
