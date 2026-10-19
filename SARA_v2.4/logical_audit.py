@@ -92,6 +92,95 @@ def validate_finding(
     return result
 
 
+def audit_conditional_inference(
+    *,
+    antecedent: str,
+    consequent: str,
+    second_premise_proposition: str,
+    second_premise_negated: bool,
+    conclusion_proposition: str,
+    conclusion_negated: bool,
+    premise_ids: tuple[str, ...],
+    conclusion_id: str,
+) -> dict:
+    """Audit a caller-supplied symbolic conditional form, not free-form prose.
+
+    Recognized patterns:
+    - P -> Q, P, therefore Q: modus ponens (valid form)
+    - P -> Q, not Q, therefore not P: modus tollens (valid form)
+    - P -> Q, Q, therefore P: affirming the consequent (invalid form)
+    - P -> Q, not P, therefore not Q: denying the antecedent (invalid form)
+
+    Unknown/mismatched forms remain UNASSESSED. Even a valid form does not
+    establish premise truth; a detected invalid form does not establish that
+    the conclusion itself is false.
+    """
+    values = (antecedent, consequent, second_premise_proposition, conclusion_proposition)
+    if any(not isinstance(value, str) or not value.strip() for value in values):
+        raise ValueError("CONDITIONAL_INFERENCE_PROPOSITIONS_REQUIRED")
+    if antecedent == consequent:
+        raise ValueError("CONDITIONAL_ANTECEDENT_AND_CONSEQUENT_MUST_DIFFER")
+    if not conclusion_id or not conclusion_id.strip():
+        raise ValueError("CONCLUSION_ID_REQUIRED")
+    if len(premise_ids) < 2 or any(not item or not item.strip() for item in premise_ids):
+        raise ValueError("CONDITIONAL_PREMISE_IDS_REQUIRED")
+    if len(set(premise_ids)) != len(premise_ids) or conclusion_id in premise_ids:
+        raise ValueError("CONDITIONAL_INFERENCE_NODE_IDS_MUST_BE_UNIQUE")
+
+    pattern = "UNRECOGNIZED"
+    validity = "UNASSESSED"
+    rationale = "The supplied symbolic form does not match a recognized pattern."
+    if second_premise_proposition == antecedent and not second_premise_negated:
+        if conclusion_proposition == consequent and not conclusion_negated:
+            pattern, validity = "MODUS_PONENS", "VALID_FORM"
+            rationale = "P implies Q; P; therefore Q is a valid conditional-inference form."
+    elif second_premise_proposition == consequent and second_premise_negated:
+        if conclusion_proposition == antecedent and conclusion_negated:
+            pattern, validity = "MODUS_TOLLENS", "VALID_FORM"
+            rationale = "P implies Q; not Q; therefore not P is a valid conditional-inference form."
+    elif second_premise_proposition == consequent and not second_premise_negated:
+        if conclusion_proposition == antecedent and not conclusion_negated:
+            pattern, validity = "AFFIRMING_CONSEQUENT", "INVALID_FORM"
+            rationale = "P implies Q; Q; therefore P affirms the consequent and is not deductively valid."
+    elif second_premise_proposition == antecedent and second_premise_negated:
+        if conclusion_proposition == consequent and conclusion_negated:
+            pattern, validity = "DENYING_ANTECEDENT", "INVALID_FORM"
+            rationale = "P implies Q; not P; therefore not Q denies the antecedent and is not deductively valid."
+
+    if pattern == "UNRECOGNIZED" and conclusion_proposition not in {antecedent, consequent}:
+        rationale = "The conclusion atom is outside the supplied conditional form."
+    result = {
+        "pattern": pattern,
+        "formal_form_status": validity,
+        "premises_truth_status": "UNASSESSED",
+        "conclusion_truth_status": "UNASSESSED",
+        "semantic_natural_language_audit": "NOT_PERFORMED",
+        "is_evidence": False,
+        "source": "SARA_LOGICAL_AUDIT",
+    }
+    if validity == "INVALID_FORM":
+        finding = LogicalAuditFinding(
+            finding_id=f"{conclusion_id}-{pattern.lower()}",
+            target_id=conclusion_id,
+            category="FORMAL_VALIDITY",
+            status="SUBSTANTIATED",
+            severity="MATERIAL",
+            related_node_ids=tuple(premise_ids),
+            rationale=rationale,
+        )
+        result["finding"] = validate_finding(
+            finding,
+            node_ids=set(premise_ids) | {conclusion_id},
+        )
+    elif validity == "VALID_FORM":
+        result["rationale"] = rationale
+        result["findings"] = []
+    else:
+        result["rationale"] = rationale
+        result["review_status"] = "UNASSESSED"
+    return result
+
+
 def validate_argument_graph(
     nodes: Iterable[ArgumentNode],
     edges: Iterable[ArgumentEdge],
