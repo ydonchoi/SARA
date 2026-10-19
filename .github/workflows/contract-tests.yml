@@ -57,3 +57,12 @@ jobs:
       - id: v25_preflight_json
         name: Validate v2.5 Preflight JSON fixture
         run: python -m json.tool SARA_v2.5/benchmark/preflight_cases.json > /dev/null
+      - id: v25_internal_judgment_model
+        name: Test SARA internal JEV-style judgment model
+        run: python -m pytest SARA_v2.5/tests/test_internal_judgment_model.py -q
+      - id: v25_inference_trigger
+        name: Test SARA inference activation policy
+        run: python -m pytest SARA_v2.5/tests/test_inference_trigger.py -q
+      - id: v25_inference_pipeline
+        name: Test SARA inference judgment-to-verification orchestration
+        run: python -m pytest SARA_v2.5/tests/test_inference_pipeline.py -q
