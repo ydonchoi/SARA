@@ -4,12 +4,18 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from promotion_gate import REQUIRED_CI_JOBS, REQUIRED_READINESS_FIELDS, evaluate_canonical_promotion
+from promotion_gate import (
+    REQUIRED_BENCHMARK_SUITES,
+    REQUIRED_CI_SUITES,
+    REQUIRED_READINESS_FIELDS,
+    evaluate_canonical_promotion,
+)
 
 
-def case(case_id="C-001", decisions=("PASS", "PASS")):
+def case(case_id="C-001", decisions=("PASS", "PASS"), suite="logical_audit"):
     return {
         "case_id": case_id,
+        "suite": suite,
         "label_status": "INDEPENDENTLY_ADJUDICATED",
         "adjudications": [
             {
@@ -26,8 +32,11 @@ def case(case_id="C-001", decisions=("PASS", "PASS")):
             },
         ],
         "disagreement_resolution": (
-            {"status": "RESOLVED", "resolver_id": "resolver-C",
-             "rationale": "Recorded resolution after comparing both justifications."}
+            {
+                "status": "RESOLVED",
+                "resolver_id": "resolver-C",
+                "rationale": "Recorded resolution after comparing both justifications.",
+            }
             if decisions[0] != decisions[1] else None
         ),
     }
@@ -35,17 +44,26 @@ def case(case_id="C-001", decisions=("PASS", "PASS")):
 
 def complete_evidence():
     head = "test-head-sha"
+    suites = sorted(REQUIRED_BENCHMARK_SUITES)
+    benchmark_cases = [
+        case(
+            f"C-{index + 1:03d}",
+            ("PASS", "REQUIRES_REVIEW") if index == 1 else ("PASS", "PASS"),
+            suites[index % len(suites)],
+        )
+        for index in range(18)
+    ]
     return {
         "head_sha": head,
         "ci": {
             "head_sha": head,
             "conclusion": "success",
-            "jobs": {job: "success" for job in REQUIRED_CI_JOBS},
+            "suites": {suite: "success" for suite in REQUIRED_CI_SUITES},
         },
         "readiness": {field: "VERIFIED" for field in REQUIRED_READINESS_FIELDS},
         "benchmark": {
             "dataset_status": "INDEPENDENTLY_ADJUDICATED",
-            "cases": [case("C-001"), case("C-002", ("PASS", "REQUIRES_REVIEW"))],
+            "cases": benchmark_cases,
             "comparison_status": "PASS",
             "metric_decisions": [
                 {"metric": "false_positive_rate", "status": "PASS", "protocol_revision": "P1"},
@@ -94,13 +112,13 @@ def test_ci_head_mismatch_blocks_promotion():
     assert any(item["code"] == "CI_HEAD_MISMATCH" for item in result["blockers"])
 
 
-def test_missing_required_ci_job_blocks_promotion():
+def test_missing_required_ci_suite_blocks_promotion():
     evidence = complete_evidence()
-    del evidence["ci"]["jobs"]["v2.5-provenance-ledger"]
+    del evidence["ci"]["suites"]["v25_provenance_ledger"]
     result = evaluate_canonical_promotion(evidence)
     assert result["status"] == "PROMOTION_BLOCKED"
     assert any(
-        item.get("detail", "").startswith("v2.5-provenance-ledger:")
+        item.get("detail", "").startswith("v25_provenance_ledger:")
         for item in result["blockers"]
     )
 
@@ -136,6 +154,20 @@ def test_disagreement_requires_an_explicit_resolution_record():
         item["code"] == "ADJUDICATOR_DISAGREEMENT_UNRESOLVED"
         for item in result["blockers"]
     )
+
+
+def test_benchmark_must_meet_minimum_case_count_and_required_suite_coverage():
+    evidence = complete_evidence()
+    evidence["benchmark"]["cases"] = evidence["benchmark"]["cases"][:10]
+    result = evaluate_canonical_promotion(evidence)
+    assert result["status"] == "PROMOTION_BLOCKED"
+    assert any(item["code"] == "BENCHMARK_CASE_COUNT_BELOW_MINIMUM" for item in result["blockers"])
+
+    evidence = complete_evidence()
+    evidence["benchmark"]["cases"][0]["suite"] = "unregistered_suite"
+    result = evaluate_canonical_promotion(evidence)
+    assert result["status"] == "PROMOTION_BLOCKED"
+    assert any(item["code"] == "BENCHMARK_SUITE_COVERAGE_INCOMPLETE" for item in result["blockers"])
 
 
 def test_unpassed_metrics_and_missing_open_blocker_declaration_fail_closed():
