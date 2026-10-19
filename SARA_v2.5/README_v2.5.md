@@ -208,7 +208,7 @@ histories are rejected, and missing provenance is visible.
 resolution runs the same frozen regression set. Draft synthetic labels must be
 independently reviewed before being treated as a gold standard.
 
-The 22-case draft fixture now has case templates across all 11 required
+The 23-case draft fixture now has case templates across all 12 required
 promotion benchmark suites, including the internal judgment, trigger, pipeline,
 and dialogue-runtime paths. Existing fixture checks execute the implemented
 claim-identity, evidence-conflict, evaluator-boundary, callable evaluator,
