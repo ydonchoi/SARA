@@ -30,6 +30,19 @@ class ProvenanceLedgerError(ValueError):
     """Raised when an event violates ledger schema or hash-chain integrity."""
 
 
+def _is_nonempty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _is_registered_revision(events: list[dict[str, Any]], claim_id: str, revision_id: str) -> bool:
+    return any(
+        event.get("event_type") == "CLAIM_REVISION_REGISTERED"
+        and event.get("claim_id") == claim_id
+        and event.get("revision_id") == revision_id
+        for event in events
+    )
+
+
 def _canonical(value: Any) -> str:
     try:
         return json.dumps(
@@ -99,6 +112,24 @@ class ProvenanceEventLedger:
             raise ProvenanceLedgerError("DUPLICATE_EVENT_ID")
 
         safe_payload = deepcopy(dict(payload))
+        # Event-specific policy checks prevent proposed output from masquerading
+        # as a committed claim state.
+        if event_type == "VERIFICATION_RESULT_PROPOSED":
+            if "verification_status" in safe_payload:
+                raise ProvenanceLedgerError("PROPOSED_RESULT_MUST_NOT_SET_COMMITTED_STATUS")
+            if safe_payload.get("proposed_verification_status") not in COMMITTED_STATUSES:
+                raise ProvenanceLedgerError("INVALID_PROPOSED_VERIFICATION_STATUS")
+        if event_type == "EVALUATOR_RUN_COMPLETED" and "verification_status" in safe_payload:
+            raise ProvenanceLedgerError("EVALUATOR_EVENT_MUST_NOT_SET_VERIFICATION_STATUS")
+        if event_type == "CLAIM_STATUS_COMMITTED":
+            if safe_payload.get("verification_status") not in COMMITTED_STATUSES:
+                raise ProvenanceLedgerError("INVALID_COMMITTED_VERIFICATION_STATUS")
+            if not _is_registered_revision(self._events, claim_id, revision_id):
+                raise ProvenanceLedgerError("COMMIT_REVISION_NOT_REGISTERED")
+            if not _is_nonempty_string(safe_payload.get("review_event_id")):
+                raise ProvenanceLedgerError("STATUS_COMMIT_REVIEW_EVENT_REQUIRED")
+            if not _is_nonempty_string(safe_payload.get("proposal_event_id")):
+                raise ProvenanceLedgerError("STATUS_COMMIT_PROPOSAL_EVENT_REQUIRED")
         # Pre-validate JSON encoding before mutating the ledger.
         _canonical(safe_payload)
         base = {
@@ -183,10 +214,24 @@ class ProvenanceEventLedger:
                 committed_status = status
                 committed_revision_id = event["revision_id"]
 
+        current_status = (
+            committed_status
+            if committed_revision_id is not None and committed_revision_id == current_revision_id
+            else None
+        )
         return {
             "claim_id": claim_id,
             "current_revision_id": current_revision_id,
-            "committed_verification_status": committed_status,
+            "committed_verification_status": current_status,
+            "last_committed_verification_status": committed_status,
+            "committed_status_current": (
+                committed_revision_id is not None
+                and committed_revision_id == current_revision_id
+            ),
+            "reverification_required": (
+                current_revision_id is not None
+                and committed_revision_id != current_revision_id
+            ),
             "committed_revision_id": committed_revision_id,
             "proposed_results": proposed_results,
             "review_events": review_events,
