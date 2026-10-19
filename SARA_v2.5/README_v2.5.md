@@ -171,9 +171,9 @@ versioned inputs and events, and can identify missing provenance.
 resolution runs the same frozen regression set. Draft synthetic labels must be
 independently reviewed before being treated as a gold standard.
 
-The current 13-case draft fixture includes executable checks for implemented
-claim-identity, evidence-conflict, evaluator-failure-boundary, and structural-cycle
-prototypes. Other semantic logical-audit cases remain target cases, not evidence
+The current 14-case draft fixture includes executable checks for implemented
+claim-identity, evidence-conflict, evaluator-failure-boundary, selective-reverification,
+and structural-cycle prototypes. Other semantic logical-audit cases remain target cases, not evidence
 that a natural-language fallacy detector exists. All labels remain DRAFT.
 
 ## Core state separation
