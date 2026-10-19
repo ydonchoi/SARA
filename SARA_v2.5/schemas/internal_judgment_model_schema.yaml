@@ -11,13 +11,22 @@ request:
     - content
   optional:
     - context
+    - reference_catalog
     - input_revision_digest
+  reference_catalog:
+    type: object
+    fields:
+      premise_refs: list of known premise IDs
+      claim_refs: list of known claim IDs
+      evidence_ids: list of known evidence IDs
+      provenance_ids: list of known provenance IDs
   digest_fields:
     - request_id
     - conversation_id
     - turn_id
     - content
     - context
+    - reference_catalog
   digest_algorithm: SHA256_CANONICAL_JSON
   supplied_digest_must_match: true
 
