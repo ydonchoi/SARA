@@ -108,11 +108,14 @@ def assess_verification_reuse(
     revision: ClaimRevision,
     prior_binding: Mapping[str, Any],
     current_verifier_revision: str,
+    current_contract_revision: str,
     current_evidence_digest: str,
 ) -> dict[str, Any]:
     """Decide whether a prior verification binding can be reused for this revision."""
     if not current_verifier_revision:
         raise ValueError("VERIFIER_REVISION_REQUIRED")
+    if not current_contract_revision:
+        raise ValueError("VERIFICATION_CONTRACT_REVISION_REQUIRED")
     if not current_evidence_digest:
         raise ValueError("CURRENT_EVIDENCE_DIGEST_REQUIRED")
     prior_status = prior_binding.get("verification_status")
@@ -128,6 +131,8 @@ def assess_verification_reuse(
         reasons.append("CLAIM_CONTENT_OR_SCOPE_CHANGED")
     if prior_binding.get("verifier_revision") != current_verifier_revision:
         reasons.append("VERIFIER_REVISION_CHANGED")
+    if prior_binding.get("verification_contract_revision") != current_contract_revision:
+        reasons.append("VERIFICATION_CONTRACT_CHANGED")
     if prior_binding.get("evidence_digest") != current_evidence_digest:
         reasons.append("RELEVANT_EVIDENCE_CHANGED")
 
@@ -143,6 +148,7 @@ def assess_verification_reuse(
         "claim_id": revision.claim_id,
         "revision_id": revision.revision_id,
         "content_digest": revision.content_digest,
+        "verification_contract_revision": current_contract_revision,
         "prior_verification_status": prior_status,
         "review_state": review_state,
         "reuse_allowed": review_state == "CURRENT",
