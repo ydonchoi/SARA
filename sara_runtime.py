@@ -152,21 +152,33 @@ def _run_v24_assessment(payload: Mapping[str, Any]) -> dict[str, Any]:
             for item in graph["nodes"]:
                 if not isinstance(item, Mapping):
                     raise ValueError("ARGUMENT_GRAPH_NODE_MUST_BE_OBJECT")
+                fields = [item.get(key) for key in ("node_id", "node_type", "text")]
+                if any(not isinstance(value, str) for value in fields):
+                    raise ValueError("ARGUMENT_GRAPH_NODE_FIELDS_MUST_BE_STRINGS")
                 nodes.append(ArgumentNode(
-                    node_id=item.get("node_id", ""),
-                    node_type=item.get("node_type", ""),
-                    text=item.get("text", ""),
+                    node_id=fields[0],
+                    node_type=fields[1],
+                    text=fields[2],
                 ))
             edges = []
             for item in graph["edges"]:
                 if not isinstance(item, Mapping):
                     raise ValueError("ARGUMENT_GRAPH_EDGE_MUST_BE_OBJECT")
+                fields = [
+                    item.get("edge_id"),
+                    item.get("source_id"),
+                    item.get("target_id"),
+                    item.get("relation"),
+                    item.get("inference_type", "UNKNOWN"),
+                ]
+                if any(not isinstance(value, str) for value in fields):
+                    raise ValueError("ARGUMENT_GRAPH_EDGE_FIELDS_MUST_BE_STRINGS")
                 edges.append(ArgumentEdge(
-                    edge_id=item.get("edge_id", ""),
-                    source_id=item.get("source_id", ""),
-                    target_id=item.get("target_id", ""),
-                    relation=item.get("relation", ""),
-                    inference_type=item.get("inference_type", "UNKNOWN"),
+                    edge_id=fields[0],
+                    source_id=fields[1],
+                    target_id=fields[2],
+                    relation=fields[3],
+                    inference_type=fields[4],
                 ))
             logical_audit = validate_argument_graph(nodes=nodes, edges=edges)
             logical_audit["audit_status"] = "STRUCTURE_CHECKED"
