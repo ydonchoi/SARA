@@ -130,3 +130,38 @@ def test_repetition_id_must_be_nonempty_string():
     record["repetition_id"] = ""
     with pytest.raises(BenchmarkRecordError, match="REPETITION_ID_REQUIRED"):
         score_records([record])
+
+
+def test_paired_coverage_reports_shared_and_unpaired_cases():
+    result = score_records([
+        row("R1", condition="A"),
+        row("R2", condition="A"),
+        row("R1", condition="B"),
+        row("R1", condition="C"),
+        row("R3", condition="C"),
+    ])
+    coverage = result["paired_coverage"][0]
+    assert coverage["model_id"] == "model-x"
+    assert coverage["conditions_present"] == ["A", "B", "C"]
+    assert coverage["missing_conditions"] == ["D"]
+    assert coverage["shared_case_count_across_present_conditions"] == 1
+    assert coverage["case_union_count"] == 3
+    assert coverage["complete_four_condition_pairing"] is False
+    assert coverage["unpaired_case_ids_by_condition"] == {
+        "A": ["R2"],
+        "C": ["R3"],
+    }
+
+
+def test_paired_coverage_marks_complete_four_condition_case_set():
+    records = [
+        row(case, condition=condition)
+        for condition in ("A", "B", "C", "D")
+        for case in ("R1", "R2")
+    ]
+    result = score_records(records)
+    coverage = result["paired_coverage"][0]
+    assert coverage["missing_conditions"] == []
+    assert coverage["shared_case_count_across_present_conditions"] == 2
+    assert coverage["case_union_count"] == 2
+    assert coverage["complete_four_condition_pairing"] is True
