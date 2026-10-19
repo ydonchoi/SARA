@@ -271,6 +271,13 @@ class ProvenanceEventLedger:
                 or proposal.get("payload", {}).get("proposed_verification_status") != status
             ):
                 raise ProvenanceLedgerError("STATUS_COMMIT_PROPOSAL_BINDING_MISMATCH")
+            proposal_payload = proposal.get("payload", {})
+            for field in ("evidence_digest", "verifier_revision", "verification_contract_revision"):
+                if (
+                    not _is_nonempty_string(payload.get(field))
+                    or payload.get(field) != proposal_payload.get(field)
+                ):
+                    raise ProvenanceLedgerError("STATUS_COMMIT_VERSION_BINDING_MISMATCH")
             review = cls._find_event(prior_events, review_event_id)
             if (
                 review is None
