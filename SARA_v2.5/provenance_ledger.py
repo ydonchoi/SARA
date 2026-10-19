@@ -66,7 +66,7 @@ class ProvenanceEventLedger:
 
     @property
     def head_hash(self) -> str:
-        return self._events[-1]["event_hash"] if self._events else GENESIS_HASH
+        return self._events[-1].get("event_hash", GENESIS_HASH) if self._events else GENESIS_HASH
 
     def append_event(
         self,
