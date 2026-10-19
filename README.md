@@ -31,7 +31,9 @@ Unless a file or directory explicitly states otherwise, the license applies to t
 | **v1.0** | 연구 문헌 분석을 위한 초기 통합 프레임워크 | 연구요약 · 방법론 · 인사이트 · 논의/리뷰 · 후속 연구 |
 | **v2.1** | 단일 Master Prompt를 계층형 모듈 구조로 분해 | MASTER · CORE · ROUTER · AGENTS · ANALYSIS · OUTPUT · SCHEMA |
 | **v2.2** | 모듈 간 실행 관계와 의존성 관리 도입 | v2.1 + SYSTEM / Dependency & Loading Architecture |
-| **v2.3** | 구조적 결함 수정 + 검증 계층 분리 + 재현/시뮬레이션 에이전트 도입 | v2.2 + A6 Simulator/Reproducer + Verification Layer Separation |\n| **v2.4** | Co-thoughts integration + premise/context/provenance verification | Knowledge Gate + Thought Gate + Premise Evaluation + Temporal/Interpretive Context + Attribution Firewall |
+| **v2.3** | 구조적 결함 수정 + 검증 계층 분리 + 재현/시뮬레이션 에이전트 도입 | v2.2 + A6 Simulator/Reproducer + Verification Layer Separation |
+| **v2.4** | Co-thoughts integration + premise/context/provenance verification | Knowledge Gate + Thought Gate + Premise Evaluation + Temporal/Interpretive Context + Attribution Firewall |
+| **v2.5 (prototype)** | Inference-trigger prototype, claim identity and revision/provenance controls | Promotion blocked pending independent evaluation and live integration evidence |
 
 > 버전별 폴더는 서로 다른 설계 단계를 보존하기 위한 **versioned snapshots**이다. 현재 canonical verification baseline은 `SARA_v2.4/`이다. v2.5는 별도 개발 브랜치의 프로토타입이며, 승격 조건을 충족하고 명시적으로 승인되기 전까지 canonical 버전으로 취급하지 않는다.
 
