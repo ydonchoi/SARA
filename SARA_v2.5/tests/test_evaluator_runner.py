@@ -65,7 +65,7 @@ def test_runner_invokes_provider_and_keeps_signal_out_of_evidence_and_verificati
     assert result["signal"]["is_evidence"] is False
     assert "verification_status" not in result
     assert result["commit_status"] == "NOT_COMMITTED"
-    assert result["signal"]["input_revision_digest"] == "DIGEST-1"
+    assert result["signal"]["input_revision_digest"] == compute_content_digest(REQUEST["claim_text"], REQUEST["scope"])
     assert result["signal"]["provenance_ids"] == [
         "EXT-EVAL-1", "EVALUATOR-RUN:REQ-1"
     ]
