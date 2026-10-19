@@ -9,6 +9,7 @@ from logical_audit import (
     ArgumentEdge,
     ArgumentNode,
     LogicalAuditFinding,
+    audit_conditional_inference,
     validate_argument_graph,
     validate_finding,
 )
@@ -88,3 +89,65 @@ def test_finding_must_reference_known_evidence_and_nodes():
     )
     with pytest.raises(ValueError, match="FINDING_EVIDENCE_UNKNOWN"):
         validate_finding(finding, node_ids={"C1", "P1"}, evidence_ids={"E1"})
+
+
+
+def _conditional_inference(second_prop, second_negated, conclusion_prop, conclusion_negated):
+    return audit_conditional_inference(
+        antecedent="P",
+        consequent="Q",
+        second_premise_proposition=second_prop,
+        second_premise_negated=second_negated,
+        conclusion_proposition=conclusion_prop,
+        conclusion_negated=conclusion_negated,
+        premise_ids=("P1", "P2"),
+        conclusion_id="C1",
+    )
+
+
+def test_modus_ponens_is_a_valid_form_without_establishing_truth():
+    result = _conditional_inference("P", False, "Q", False)
+    assert result["pattern"] == "MODUS_PONENS"
+    assert result["formal_form_status"] == "VALID_FORM"
+    assert result["premises_truth_status"] == "UNASSESSED"
+    assert result["is_evidence"] is False
+
+
+def test_modus_tollens_is_a_valid_form_without_establishing_truth():
+    result = _conditional_inference("Q", True, "P", True)
+    assert result["pattern"] == "MODUS_TOLLENS"
+    assert result["formal_form_status"] == "VALID_FORM"
+
+
+def test_affirming_consequent_is_reported_as_invalid_form():
+    result = _conditional_inference("Q", False, "P", False)
+    assert result["pattern"] == "AFFIRMING_CONSEQUENT"
+    assert result["formal_form_status"] == "INVALID_FORM"
+    assert result["finding"]["status"] == "SUBSTANTIATED"
+    assert result["finding"]["category"] == "FORMAL_VALIDITY"
+    assert result["conclusion_truth_status"] == "UNASSESSED"
+    assert result["is_evidence"] is False
+
+
+def test_denying_antecedent_is_reported_as_invalid_form():
+    result = _conditional_inference("P", True, "Q", True)
+    assert result["pattern"] == "DENYING_ANTECEDENT"
+    assert result["formal_form_status"] == "INVALID_FORM"
+    assert result["finding"]["status"] == "SUBSTANTIATED"
+
+
+def test_unknown_conditional_form_is_left_unassessed():
+    result = _conditional_inference("P", False, "P", False)
+    assert result["pattern"] == "UNRECOGNIZED"
+    assert result["formal_form_status"] == "UNASSESSED"
+    assert result["review_status"] == "UNASSESSED"
+
+
+def test_conditional_form_requires_distinct_atoms_and_node_ids():
+    with pytest.raises(ValueError, match="CONDITIONAL_ANTECEDENT_AND_CONSEQUENT_MUST_DIFFER"):
+        audit_conditional_inference(
+            antecedent="P", consequent="P",
+            second_premise_proposition="P", second_premise_negated=False,
+            conclusion_proposition="P", conclusion_negated=False,
+            premise_ids=("P1", "P2"), conclusion_id="C1",
+        )
