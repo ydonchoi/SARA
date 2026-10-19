@@ -175,6 +175,36 @@ def test_invalid_timeout_is_rejected_before_provider_invocation(timeout):
     assert called is False
 
 
+def test_registered_revision_id_cannot_be_reused_for_changed_claim_text():
+    ledger = ProvenanceEventLedger()
+    old_text = "An older claim revision."
+    old_digest = compute_content_digest(old_text, REQUEST["scope"])
+    ledger.append_event(
+        event_id="REV-REGISTERED",
+        event_type="CLAIM_REVISION_REGISTERED",
+        claim_id="C1",
+        revision_id="R1",
+        actor_id="test-fixture",
+        occurred_at="2026-10-19T00:00:00Z",
+        input_digest=old_digest,
+        payload={"content_digest": old_digest},
+    )
+    invoked = False
+
+    def provider(_payload, _timeout):
+        nonlocal invoked
+        invoked = True
+        return good_response(REQUEST)
+
+    with pytest.raises(EvaluatorInvocationError, match="CLAIM_REVISION_ID_REBOUND_TO_DIFFERENT_DIGEST"):
+        EvaluatorRunner(
+            provider, evaluator_id="JEV", evaluator_revision="jev-1.2",
+            rubric_revision="rubric-3", ledger=ledger,
+        ).run(REQUEST, timeout_seconds=1)
+    assert invoked is False
+    assert ledger.verify_history()["valid"] is True
+
+
 def test_stale_revision_digest_is_rejected_before_provider_invocation():
     called = False
 
