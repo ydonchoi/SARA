@@ -1,8 +1,8 @@
 """SARA activation policy for the internal JEV-style judgment result.
 
-This policy decides whether a dialogue turn needs verification and selects the
-does not verify a claim, mark an inference correct, or replace other verification
-routes for factual claims that contain no inference.
+This policy decides whether a dialogue turn needs verification and selects a
+verification route. It does not verify a claim, mark an inference correct, or
+replace other verification routes for factual claims that contain no inference.
 """
 from __future__ import annotations
 
