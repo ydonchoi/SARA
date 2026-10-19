@@ -94,3 +94,20 @@ def test_adapter_rejects_string_instead_of_evidence_id_list():
     }
     with pytest.raises(ValueError, match="ATTRIBUTION_EVIDENCE_IDS_MUST_BE_NONEMPTY_LIST"):
         CoThoughtsSARAAdapter().evaluate(payload)
+
+
+def test_adapter_rejects_string_instead_of_evidence_collection():
+    from co_thoughts_sara_adapter import CoThoughtsSARAAdapter
+    payload = {"claim": {"id": "C1", "text": "claim"}, "evidence": "E1"}
+    with pytest.raises(ValueError, match="EVIDENCE_ITEMS_MUST_BE_LIST"):
+        CoThoughtsSARAAdapter().evaluate(payload)
+
+
+def test_adapter_rejects_string_instead_of_provenance_id_list():
+    from co_thoughts_sara_adapter import CoThoughtsSARAAdapter
+    payload = {
+        "claim": {"id": "C1", "text": "claim"},
+        "provenance_ids": "P1",
+    }
+    with pytest.raises(ValueError, match="PROVENANCE_IDS_MUST_BE_NONEMPTY_LIST"):
+        CoThoughtsSARAAdapter().evaluate(payload)
