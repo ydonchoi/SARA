@@ -2,27 +2,98 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Repository Instruction LLM Benchmark Run",
   "type": "object",
-  "required": ["case_id", "condition", "model_id", "expected", "observed"],
+  "required": [
+    "case_id",
+    "condition",
+    "model_id",
+    "expected",
+    "observed"
+  ],
   "properties": {
-    "case_id": {"type": "string", "minLength": 1},
-    "condition": {"enum": ["A", "B", "C", "D"]},
-    "model_id": {"type": "string", "minLength": 1},
-    "model_revision": {"type": "string"},
-    "instruction_revision": {"type": "string"},
-    "dataset_revision": {"type": "string"},
-    "source_snapshot": {"type": "object"},
-    "expected": {"type": "object", "minProperties": 1, "additionalProperties": {"type": ["boolean", "string", "integer", "number", "null"]}},
-    "observed": {"type": "object", "minProperties": 1, "additionalProperties": {"type": ["boolean", "string", "integer", "number", "null"]}},
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "condition": {
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    "model_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model_revision": {
+      "type": "string"
+    },
+    "instruction_revision": {
+      "type": "string"
+    },
+    "dataset_revision": {
+      "type": "string"
+    },
+    "source_snapshot": {
+      "type": "object"
+    },
+    "expected": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": [
+          "boolean",
+          "string",
+          "integer",
+          "number",
+          "null"
+        ]
+      }
+    },
+    "observed": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": [
+          "boolean",
+          "string",
+          "integer",
+          "number",
+          "null"
+        ]
+      }
+    },
     "metrics": {
       "type": "object",
       "properties": {
-        "latency_ms": {"type": "number", "minimum": 0},
-        "tool_calls": {"type": "integer", "minimum": 0},
-        "prompt_tokens": {"type": "integer", "minimum": 0},
-        "completion_tokens": {"type": "integer", "minimum": 0},
-        "cost_usd": {"type": "number", "minimum": 0}
+        "latency_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "tool_calls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "prompt_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "completion_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cost_usd": {
+          "type": "number",
+          "minimum": 0
+        }
       },
       "additionalProperties": false
+    },
+    "repetition_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repeat index/identifier for this case-condition-model run; defaults to '1' when omitted."
     }
   },
   "additionalProperties": false
