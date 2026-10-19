@@ -70,6 +70,30 @@ class EvaluatorRunner:
             known_evidence_ids=known_evidence_ids,
         )
         if self._ledger is not None:
+            input_digest = request["input_revision_digest"]
+            claim_id = result["claim_id"]
+            revision_id = result["claim_revision_id"]
+            existing = any(
+                event.get("event_type") == "CLAIM_REVISION_REGISTERED"
+                and event.get("claim_id") == claim_id
+                and event.get("revision_id") == revision_id
+                and event.get("payload", {}).get("content_digest") == input_digest
+                for event in self._ledger.events
+            )
+            if not existing:
+                self._ledger.append_event(
+                    event_id=f"CLAIM-REVISION:{claim_id}:{revision_id}:{len(self._ledger.events) + 1}",
+                    event_type="CLAIM_REVISION_REGISTERED",
+                    claim_id=claim_id,
+                    revision_id=revision_id,
+                    actor_id=self._actor_id,
+                    occurred_at=datetime.now(timezone.utc).isoformat(),
+                    input_digest=input_digest,
+                    payload={
+                        "content_digest": input_digest,
+                        "registration_source": "SARA_EVALUATOR_RUNNER",
+                    },
+                )
             ledger_event = self._ledger.append_event(
                 event_id=f"EVALUATOR-RUN:{request['request_id']}:{len(self._ledger.events) + 1}",
                 event_type="EVALUATOR_RUN_COMPLETED",
