@@ -60,3 +60,37 @@ def test_adapter_never_promotes_to_evidence():
     result = CoThoughtsSARAAdapter().evaluate({"claim":{"id":"C1","text":"x"},"premises":[]})
     assert result["verification_status"] == "UNVERIFIED"
     assert result["is_evidence"] is False
+
+
+def test_adapter_requires_source_for_author_explicit_attribution():
+    from co_thoughts_sara_adapter import CoThoughtsSARAAdapter
+    payload = {
+        "claim": {"id": "C1", "text": "claim", "attribution_status": "AUTHOR_EXPLICIT",
+                  "attribution_evidence_ids": ["E1"]},
+        "evidence": [{"id": "E1", "source": "paper.pdf"}],
+    }
+    result = CoThoughtsSARAAdapter().evaluate(payload)
+    assert result["attribution_evidence_ids"] == ["E1"]
+    assert result["is_evidence"] is False
+
+
+def test_adapter_rejects_author_explicit_evidence_without_source():
+    from co_thoughts_sara_adapter import CoThoughtsSARAAdapter
+    payload = {
+        "claim": {"id": "C1", "text": "claim", "attribution_status": "AUTHOR_EXPLICIT",
+                  "attribution_evidence_ids": ["E1"]},
+        "evidence": [{"id": "E1", "source": ""}],
+    }
+    with pytest.raises(ValueError, match="AUTHOR_EXPLICIT_EVIDENCE_REFERENCE_UNKNOWN"):
+        CoThoughtsSARAAdapter().evaluate(payload)
+
+
+def test_adapter_rejects_string_instead_of_evidence_id_list():
+    from co_thoughts_sara_adapter import CoThoughtsSARAAdapter
+    payload = {
+        "claim": {"id": "C1", "text": "claim", "attribution_status": "AUTHOR_EXPLICIT",
+                  "attribution_evidence_ids": "E1"},
+        "evidence": [{"id": "E1", "source": "paper.pdf"}],
+    }
+    with pytest.raises(ValueError, match="ATTRIBUTION_EVIDENCE_IDS_MUST_BE_NONEMPTY_LIST"):
+        CoThoughtsSARAAdapter().evaluate(payload)
