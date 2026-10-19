@@ -8,12 +8,30 @@ current claim state or establish truthfulness.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from hashlib import sha256
+import json
 from math import isfinite
 from typing import Any
 
 from claim_identity import VERIFICATION_STATUSES, compute_content_digest
 
 VerificationCallable = Callable[[Mapping[str, Any], float], Mapping[str, Any]]
+
+
+def compute_evidence_digest(evidence: list[Mapping[str, Any]]) -> str:
+    """Hash canonical evidence content so the supplied digest can be checked."""
+    if not isinstance(evidence, list) or any(not isinstance(item, Mapping) for item in evidence):
+        raise ValueError("EVIDENCE_LIST_OF_OBJECTS_REQUIRED")
+    try:
+        canonical = json.dumps(
+            [dict(item) for item in evidence],
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError("EVIDENCE_CONTAINS_NON_JSON_VALUE") from exc
+    return sha256(canonical.encode("utf-8")).hexdigest()
 
 
 class ReverificationExecutionError(ValueError):
@@ -130,8 +148,28 @@ class SelectiveReverificationRunner:
                 continue
 
             expected_prior_status = impact.get("prior_verification_status")
-            if prior_binding.get("verification_status") != expected_prior_status:
-                results.append(self._failure(claim_id, revision["revision_id"], "INVALID_OUTPUT", "PRIOR_BINDING_STATUS_MISMATCH", impact, computed_digest))
+            prior_status_known = bool(impact.get("prior_status_known", expected_prior_status is not None))
+            if prior_status_known:
+                if not isinstance(prior_binding, Mapping):
+                    results.append(self._failure(claim_id, revision["revision_id"], "INCOMPLETE", "PRIOR_VERIFICATION_BINDING_MISSING", impact, computed_digest))
+                    continue
+                if prior_binding.get("claim_id") != claim_id:
+                    results.append(self._failure(claim_id, revision["revision_id"], "INVALID_OUTPUT", "PRIOR_BINDING_CLAIM_ID_MISMATCH", impact, computed_digest))
+                    continue
+                if prior_binding.get("verification_status") != expected_prior_status:
+                    results.append(self._failure(claim_id, revision["revision_id"], "INVALID_OUTPUT", "PRIOR_BINDING_STATUS_MISMATCH", impact, computed_digest))
+                    continue
+            elif prior_binding is not None and not isinstance(prior_binding, Mapping):
+                results.append(self._failure(claim_id, revision["revision_id"], "INVALID_OUTPUT", "PRIOR_BINDING_MUST_BE_MAPPING", impact, computed_digest))
+                continue
+
+            try:
+                computed_evidence_digest = compute_evidence_digest(evidence)
+            except ValueError:
+                results.append(self._failure(claim_id, revision["revision_id"], "INVALID_OUTPUT", "CURRENT_EVIDENCE_SET_INVALID", impact, computed_digest))
+                continue
+            if computed_evidence_digest != evidence_digest:
+                results.append(self._failure(claim_id, revision["revision_id"], "INVALID_OUTPUT", "CURRENT_EVIDENCE_DIGEST_MISMATCH", impact, computed_digest))
                 continue
 
             request_id = f"REVERIFY:{claim_id}:{revision['revision_id']}"
