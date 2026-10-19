@@ -429,6 +429,52 @@
       "expected_review_required": true,
       "expected_is_evidence": false,
       "label_status": "DRAFT"
+    },
+    {
+      "case_id": "RV-001",
+      "suite": "selective_reverification",
+      "case_type": "UPSTREAM_EVIDENCE_CHANGE_TRANSITIVE_IMPACT",
+      "nodes": {
+        "E1": "EVIDENCE",
+        "P1": "PREMISE",
+        "C1": "CLAIM",
+        "C2": "CLAIM",
+        "C3": "CLAIM"
+      },
+      "changed_node_ids": [
+        "E1"
+      ],
+      "dependency_edges": [
+        {
+          "upstream_id": "E1",
+          "dependent_id": "P1",
+          "relation": "SUPPORTS"
+        },
+        {
+          "upstream_id": "P1",
+          "dependent_id": "C1",
+          "relation": "SUPPORTS"
+        },
+        {
+          "upstream_id": "C1",
+          "dependent_id": "C2",
+          "relation": "DERIVED_FROM"
+        }
+      ],
+      "prior_verification_statuses": {
+        "C1": "VERIFIED",
+        "C2": "PARTIALLY_VERIFIED",
+        "C3": "VERIFIED"
+      },
+      "expected_impacted_claim_ids": [
+        "C1",
+        "C2"
+      ],
+      "expected_unaffected_claim_ids": [
+        "C3"
+      ],
+      "expected_plan_status": "PLANNED_NOT_EXECUTED",
+      "label_status": "DRAFT"
     }
   ]
 }
