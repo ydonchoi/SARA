@@ -151,3 +151,24 @@ def test_conditional_form_requires_distinct_atoms_and_node_ids():
             conclusion_proposition="P", conclusion_negated=False,
             premise_ids=("P1", "P2"), conclusion_id="C1",
         )
+
+
+
+def test_conditional_form_rejects_non_boolean_negation_flags():
+    with pytest.raises(ValueError, match="CONDITIONAL_NEGATION_FLAGS_MUST_BE_BOOLEAN"):
+        audit_conditional_inference(
+            antecedent="P", consequent="Q",
+            second_premise_proposition="P", second_premise_negated="false",
+            conclusion_proposition="Q", conclusion_negated=False,
+            premise_ids=("P1", "P2"), conclusion_id="C1",
+        )
+
+
+def test_conditional_form_rejects_non_string_node_ids():
+    with pytest.raises(ValueError, match="CONDITIONAL_PREMISE_IDS_REQUIRED"):
+        audit_conditional_inference(
+            antecedent="P", consequent="Q",
+            second_premise_proposition="P", second_premise_negated=False,
+            conclusion_proposition="Q", conclusion_negated=False,
+            premise_ids=("P1", 2), conclusion_id="C1",
+        )
