@@ -60,6 +60,7 @@ verification_binding:
     - revision_id
     - content_digest
     - verifier_revision
+    - verification_contract_revision
     - verification_status
   stale_when:
     - claim_revision_changed
