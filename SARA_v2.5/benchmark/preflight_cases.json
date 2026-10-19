@@ -1,0 +1,253 @@
+{
+  "dataset_id": "SARA-V25-PREFLIGHT-SEED",
+  "dataset_version": "0.1.0-draft",
+  "status": "DRAFT_NOT_INDEPENDENTLY_ADJUDICATED",
+  "purpose": "Synthetic seed cases for later evaluation harness implementation; not a gold benchmark yet.",
+  "boundaries": [
+    "Synthetic labels require independent review before performance claims.",
+    "The current v2.4 graph checker checks structure only, not semantic fallacies.",
+    "Expected categories are evaluation targets, not claims that a runtime detector already finds them."
+  ],
+  "cases": [
+    {
+      "case_id": "LA-001",
+      "case_type": "HARD_NEGATIVE_VALID_DEDUCTION",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "All mammals are warm-blooded."
+        },
+        {
+          "node_id": "P2",
+          "node_type": "PREMISE",
+          "text": "Whales are mammals."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "Whales are warm-blooded."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "DEDUCTIVE"
+        },
+        {
+          "edge_id": "A2",
+          "source_id": "P2",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "DEDUCTIVE"
+        }
+      ],
+      "expected_issue_categories": [],
+      "expected_action": "NO_MATERIAL_LOGICAL_ISSUE",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "LA-002",
+      "case_type": "FORMAL_FALLACY",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "If it rains, the road is wet."
+        },
+        {
+          "node_id": "P2",
+          "node_type": "PREMISE",
+          "text": "The road is wet."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "It rained."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "DEDUCTIVE"
+        },
+        {
+          "edge_id": "A2",
+          "source_id": "P2",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "DEDUCTIVE"
+        }
+      ],
+      "expected_issue_categories": [
+        "FORMAL_VALIDITY"
+      ],
+      "expected_action": "REQUIRES_REVIEW",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "LA-003",
+      "case_type": "CAUSAL_OVERREACH",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "The outcome increased after the policy began."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "The policy caused the increase."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "CAUSAL"
+        }
+      ],
+      "expected_issue_categories": [
+        "CAUSAL_INFERENCE",
+        "ALTERNATIVE_EXPLANATION"
+      ],
+      "expected_action": "REQUIRES_REVIEW",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "LA-004",
+      "case_type": "OVERGENERALIZATION",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "Two volunteers reported that the tool was easy to use."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "The tool is easy to use for all target users."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "INDUCTIVE"
+        }
+      ],
+      "expected_issue_categories": [
+        "GENERALIZATION",
+        "INFERENCE_STRENGTH"
+      ],
+      "expected_action": "REQUIRES_REVIEW",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "LA-005",
+      "case_type": "SUPPORT_CYCLE",
+      "nodes": [
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "Claim A is true because claim B is true."
+        },
+        {
+          "node_id": "C2",
+          "node_type": "CLAIM",
+          "text": "Claim B is true because claim A is true."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "C1",
+          "target_id": "C2",
+          "relation": "SUPPORTS",
+          "inference_type": "UNKNOWN"
+        },
+        {
+          "edge_id": "A2",
+          "source_id": "C2",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "UNKNOWN"
+        }
+      ],
+      "expected_issue_categories": [
+        "CIRCULAR_REASONING"
+      ],
+      "expected_action": "CANDIDATE_ONLY",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "LA-006",
+      "case_type": "EVIDENCE_SCOPE_MISMATCH",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "A study found an effect in adults from one hospital."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "The intervention works for all age groups in every setting."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "INDUCTIVE"
+        }
+      ],
+      "expected_issue_categories": [
+        "EVIDENCE_SCOPE_MISMATCH",
+        "GENERALIZATION"
+      ],
+      "expected_action": "REQUIRES_REVIEW",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "LA-007",
+      "case_type": "INSUFFICIENT_CONTEXT",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "The intervention was associated with an outcome."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "The intervention was effective."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "UNKNOWN"
+        }
+      ],
+      "expected_issue_categories": [],
+      "expected_action": "UNASSESSED",
+      "label_status": "DRAFT"
+    }
+  ]
+}
