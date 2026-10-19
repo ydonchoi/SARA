@@ -208,11 +208,15 @@ histories are rejected, and missing provenance is visible.
 resolution runs the same frozen regression set. Draft synthetic labels must be
 independently reviewed before being treated as a gold standard.
 
-The current 18-case draft fixture includes executable checks for implemented
+The 22-case draft fixture now has case templates across all 11 required
+promotion benchmark suites, including the internal judgment, trigger, pipeline,
+and dialogue-runtime paths. Existing fixture checks execute the implemented
 claim-identity, evidence-conflict, evaluator-boundary, callable evaluator,
-selective-planning, re-verification execution, and structural-cycle prototypes.
-Other semantic logical-audit cases remain target cases, not evidence that a
-natural-language fallacy detector exists. All labels remain DRAFT.
+selective-planning, re-verification execution, and structural-cycle prototypes;
+component/runtime contract tests cover the new judgment-to-verifier path. These
+are regression-contract tests, not an independently adjudicated performance
+benchmark. Other semantic logical-audit cases remain targets, not evidence that
+a general natural-language fallacy detector exists. All labels remain DRAFT.
 
 ## Core state separation
 
