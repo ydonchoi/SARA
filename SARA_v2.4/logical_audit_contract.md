@@ -2,9 +2,7 @@
 
 ## Status
 
-**Additive v2.4 improvement.** The structural graph checker is implemented in
-`logical_audit.py`. Semantic fallacy detection is **not** implemented as a
-deterministic algorithm; it requires an explicit evaluator or human review.
+**Additive v2.4 improvement.** The graph checker validates references and flags support/dependency cycles; the module also checks four explicitly supplied symbolic conditional forms. It does not parse free-form prose or establish premise/conclusion truth. Broader semantic review still requires an explicit evaluator or human reviewer.
 
 ## Purpose
 
@@ -31,6 +29,17 @@ Cycles in directed support/dependency edges are returned as
 the propositions form a circular argument. Challenge edges are excluded from
 cycle detection because challenge relations do not, by themselves, assert a
 dependency chain.
+
+## Explicit symbolic conditional-form check
+
+When the caller supplies antecedent/consequent atoms, a second literal premise, conclusion polarity, and node IDs as structured inputs, the module recognizes:
+
+- Modus ponens: P → Q; P; therefore Q — valid form.
+- Modus tollens: P → Q; not Q; therefore not P — valid form.
+- Affirming the consequent: P → Q; Q; therefore P — invalid deductive form.
+- Denying the antecedent: P → Q; not P; therefore not Q — invalid deductive form.
+
+These checks operate only on supplied symbolic structure; they do not extract it from prose. Unrecognized forms remain UNASSESSED. A valid form does not verify its premises; an invalid form does not prove its conclusion false. Outputs carry `is_evidence: false`.
 
 ## Semantic finding contract
 
@@ -62,7 +71,7 @@ evidence IDs must resolve. Output explicitly carries `is_evidence: false`.
 ## Integration
 
 The Co-thoughts adapter reports `logical_audit_status: NOT_RUN` until a semantic
-review actually runs. It also surfaces a review signal if a claim marked
+review actually runs. The symbolic form checker is a separate explicit call, not an automatic prose parser. It also surfaces a review signal if a claim marked
 `VERIFIED` contains a premise marked `CONTRADICTED`; neither status is silently
 rewritten. The signal is for review, not an automatic claim-level verdict.
 
