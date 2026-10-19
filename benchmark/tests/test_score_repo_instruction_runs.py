@@ -68,3 +68,10 @@ def test_read_jsonl_reports_malformed_line_number(tmp_path):
     path.write_text('{"case_id": "R1"\n', encoding="utf-8")
     with pytest.raises(BenchmarkRecordError, match="LINE_1:INVALID_JSONL_LINE"):
         read_jsonl(path)
+
+
+def test_malformed_condition_type_is_rejected():
+    malformed = row("R1")
+    malformed["condition"] = ["D"]
+    with pytest.raises(BenchmarkRecordError, match="CONDITION_MUST_BE_A_B_C_OR_D"):
+        score_records([malformed])
