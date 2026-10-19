@@ -30,10 +30,23 @@ def test_author_explicit_can_be_contemporary_when_source_grounded():
             attribution_status="AUTHOR_EXPLICIT",
             temporal_status="CONTEMPORARY",
             attribution_evidence_ids=("E1",),
-        )
+        ),
+        available_evidence_ids={"E1"},
     )
     assert state.attribution_status == "AUTHOR_EXPLICIT"
     assert state.temporal_status == "CONTEMPORARY"
+
+
+def test_author_explicit_rejects_unresolved_source_evidence_reference():
+    with pytest.raises(ValueError, match="AUTHOR_EXPLICIT_EVIDENCE_REFERENCE_UNKNOWN"):
+        validate_state(
+            ClaimEvaluationState(
+                "C1",
+                attribution_status="AUTHOR_EXPLICIT",
+                attribution_evidence_ids=("E404",),
+            ),
+            available_evidence_ids={"E1"},
+        )
 
 
 def test_premise_status_is_independent_but_conflict_requires_review_signal():
