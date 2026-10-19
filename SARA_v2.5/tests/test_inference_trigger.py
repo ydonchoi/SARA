@@ -1,6 +1,8 @@
 from pathlib import Path
 import sys
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from inference_trigger import decide_sara_activation
@@ -101,3 +103,13 @@ def test_ambiguous_verification_need_routes_to_precheck():
     result = decide_sara_activation(value, expected_input_revision_digest=DIGEST)
     assert result["activation_action"] == "SARA_PRECHECK_REVIEW"
     assert result["reason_code"] == "VERIFICATION_NEED_AMBIGUOUS"
+
+
+@pytest.mark.parametrize("confidence", ["LOW", "MEDIUM"])
+def test_detected_inference_with_low_or_medium_confidence_routes_to_precheck(confidence):
+    result = decide_sara_activation(
+        judgment("INFERENCE_PRESENT", confidence),
+        expected_input_revision_digest=DIGEST,
+    )
+    assert result["activation_action"] == "SARA_PRECHECK_REVIEW"
+    assert result["review_required"] is True
