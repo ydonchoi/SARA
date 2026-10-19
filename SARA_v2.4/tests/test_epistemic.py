@@ -111,3 +111,14 @@ def test_adapter_rejects_string_instead_of_provenance_id_list():
     }
     with pytest.raises(ValueError, match="PROVENANCE_IDS_MUST_BE_NONEMPTY_LIST"):
         CoThoughtsSARAAdapter().evaluate(payload)
+
+
+def test_public_validator_requires_evidence_resolution_context():
+    with pytest.raises(ValueError, match="AUTHOR_EXPLICIT_EVIDENCE_RESOLUTION_REQUIRED"):
+        validate_state(
+            ClaimEvaluationState(
+                "C1",
+                attribution_status="AUTHOR_EXPLICIT",
+                attribution_evidence_ids=("E1",),
+            )
+        )
