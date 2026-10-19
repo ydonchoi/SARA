@@ -52,7 +52,7 @@ def test_verification_binding_requires_exact_revision_and_digest():
             "revision_id": "R1",
             "content_digest": "old-digest",
             "verifier_revision": "verify-1",
-            "verification_contract_revision": "contract-1",
+        "verification_contract_revision": "contract-1",
             "evidence_digest": "evidence-1",
             "verification_status": "VERIFIED",
         },
