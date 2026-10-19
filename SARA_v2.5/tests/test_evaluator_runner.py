@@ -5,6 +5,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from claim_identity import compute_content_digest
 from evaluator_runner import EvaluatorInvocationError, EvaluatorRunner
 from provenance_ledger import ProvenanceEventLedger
 
@@ -14,7 +15,7 @@ REQUEST = {
     "claim_id": "C1",
     "claim_revision_id": "R1",
     "claim_text": "The policy reduced the outcome.",
-    "input_revision_digest": "DIGEST-1",
+    "input_revision_digest": compute_content_digest("The policy reduced the outcome.", {"population": "adults"}),
     "scope": {"population": "adults"},
     "premises": [{"id": "P1", "text": "The outcome decreased after the policy."}],
     "evidence": [{"id": "E1"}],
@@ -171,6 +172,22 @@ def test_invalid_timeout_is_rejected_before_provider_invocation(timeout):
 
     with pytest.raises(EvaluatorInvocationError, match="INVALID_EVALUATOR_TIMEOUT"):
         runner(provider).run(REQUEST, timeout_seconds=timeout)
+    assert called is False
+
+
+def test_stale_revision_digest_is_rejected_before_provider_invocation():
+    called = False
+
+    def provider(_payload, _timeout):
+        nonlocal called
+        called = True
+        return {}
+
+    with pytest.raises(EvaluatorInvocationError, match="EVALUATOR_INPUT_REVISION_DIGEST_MISMATCH"):
+        runner(provider).run(
+            {**REQUEST, "input_revision_digest": "OLD-DIGEST"},
+            timeout_seconds=1,
+        )
     assert called is False
 
 
