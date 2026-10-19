@@ -110,6 +110,13 @@ def test_unknown_node_and_evidence_references_are_rejected():
         validate(signal(evidence_ids=("E404",)))
 
 
+def test_non_string_status_fields_are_rejected_cleanly():
+    with pytest.raises(ValueError, match="INVALID_EVALUATOR_EXECUTION_STATUS"):
+        validate(signal(execution_status=[]))
+    with pytest.raises(ValueError, match="INVALID_EVALUATOR_SIGNAL_STATUS"):
+        validate(signal(signal_status=[]))
+
+
 def test_contract_and_input_identity_fields_are_required():
     with pytest.raises(ValueError, match="EVALUATOR_RUBRIC_REVISION_REQUIRED"):
         validate(signal(rubric_revision=" "))
