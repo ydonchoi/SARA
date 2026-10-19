@@ -75,3 +75,29 @@ def test_malformed_condition_type_is_rejected():
     malformed["condition"] = ["D"]
     with pytest.raises(BenchmarkRecordError, match="CONDITION_MUST_BE_A_B_C_OR_D"):
         score_records([malformed])
+
+
+@pytest.mark.parametrize(
+    "field,value,error",
+    [
+        ("expected", {"rule_applied": ["yes"]}, "EXPECTED_LABEL_MUST_BE_SCALAR"),
+        ("observed", {"rule_applied": {"nested": True}, "evidence_traceable": True},
+         "OBSERVED_LABEL_MUST_BE_SCALAR"),
+        ("expected", {"rule_applied": float("nan")}, "EXPECTED_LABEL_MUST_BE_FINITE"),
+        ("observed", {"rule_applied": float("inf"), "evidence_traceable": True},
+         "OBSERVED_LABEL_MUST_BE_FINITE"),
+    ],
+)
+def test_label_values_must_match_schema_scalar_types(field, value, error):
+    record = row("R1")
+    record[field] = value
+    with pytest.raises(BenchmarkRecordError, match=error):
+        score_records([record])
+
+
+def test_label_criterion_names_must_be_nonempty_strings():
+    record = row("R1")
+    record["expected"] = {"": True}
+    record["observed"] = {"": True}
+    with pytest.raises(BenchmarkRecordError, match="EXPECTED_CRITERION_NAME_REQUIRED"):
+        score_records([record])
