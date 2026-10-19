@@ -58,6 +58,13 @@ benchmark:
     - selective_reverification
     - reverification_runner
   minimum_distinct_reviewers_per_case: 2
+  case_record_required:
+    - case_id
+    - suite
+    - label_status
+    - reference_label
+    - adjudications
+  reference_label_must_match_agreed_or_resolved_adjudication: true
   review_record_required:
     - reviewer_id
     - independent_review
@@ -66,7 +73,26 @@ benchmark:
   reviewer_independence_required: true
   disagreement_resolution_required: true
   comparison_status: PASS
+  required_comparison_conditions:
+    - v2.3_baseline
+    - v2.4_no_evaluator
+    - v2.4_selective_evaluator
+  comparison_run_evidence_required:
+    - run_id
+    - result_artifact_id
   metric_decisions_must_all_pass: true
+  metric_decision_required:
+    - metric
+    - status
+    - observed_value
+    - threshold
+    - direction
+    - protocol_revision
+    - artifact_ref
+  metric_direction:
+    - MAXIMUM
+    - MINIMUM
+  metric_observed_value_must_satisfy_threshold: true
 
 documentation:
   root_current_version: v2.5
