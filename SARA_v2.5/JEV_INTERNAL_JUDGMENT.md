@@ -16,7 +16,7 @@ The activation policy is scoped to the inference-triggered path. `NO_INFERENCE_T
 
 ## Judgment contract
 
-The result is bound to a canonical digest of `request_id`, `conversation_id`, `turn_id`, `content`, and `context`. The rubric requires the model to separate inference presence from inference correctness, cite relevant spans and known references, state uncertainty, and avoid truth-verification claims.
+The result is bound to a canonical digest of `request_id`, `conversation_id`, `turn_id`, `content`, `context`, `reference_catalog`, and the full `claim_candidates` (IDs and text). A changed candidate proposition therefore changes the judgment digest. The rubric requires the model to separate inference presence from inference correctness, cite relevant spans and known references, bind selected claims to candidate IDs, state uncertainty, and avoid truth-verification claims.
 
 The output is decision support only:
 - it is not research evidence;
@@ -26,6 +26,13 @@ The output is decision support only:
 
 ## Integration boundary and evidence
 
-The Python contract invokes a supplied **SARA model-runtime callable**, not an external JEV provider. The test suite uses deterministic test doubles to verify request binding, structured output validation, and fail-closed activation policy. This is not a live-model quality test and does not prove that the repository is connected to an actual dialogue runtime.
+The callable route is now exposed as `sara_runtime.process_dialogue_turn(...)` and implemented in `SARA_v2.5/dialogue_runtime.py`. It takes an explicit SARA model-generation callable and routes judgment outcomes as follows:
 
-Before canonical promotion, the deployment must demonstrate that the actual SARA runtime calls the internal judgment component at the intended point in dialogue processing; that activation decisions route to the selective reverification workflow; that factual verification routes remain independent; and that a frozen, independently adjudicated benchmark meets predeclared false-trigger and missed-inference thresholds.
+- A detected inference is sent to the existing SARA claim-verification facade only when the judgment returns one or more candidate claim IDs bound to the turn.
+- A missing/unbound claim candidate, ambiguous/low-confidence judgment, invalid input, or model timeout goes to precheck instead of silently skipping review.
+- A high-confidence no-inference result skips only the inference-triggered route; other source/factual verification routes are untouched.
+- Verification execution output, judgment output, and truthfulness/evidence status remain separate. An optional event sink can record a turn decision, but the sink is caller-managed and does not establish durable storage.
+
+The test suite uses deterministic test doubles to verify the callable route, candidate binding, verifier invocation, fail-closed handling, and event-sink failure visibility. This is **contract/integration-test evidence only**: no real model SDK/provider is configured here, and the actual host dialogue loop/deployment is not independently verified.
+
+Before canonical promotion, the deployment must demonstrate that the actual model-generation and verification callables are bound to the live dialogue loop; that the invoked verification provider runs with the intended source/evidence semantics; that factual verification routes remain independent; that audit events are durable and access-controlled where required; and that a frozen, independently adjudicated benchmark meets predeclared false-trigger, missed-inference, latency, and cost thresholds.
