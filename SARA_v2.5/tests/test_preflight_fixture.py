@@ -42,6 +42,7 @@ def test_preflight_case_ids_are_unique_and_outcomes_are_explicit():
             "expected_judgment_status",
             "expected_inference_types",
             "expected_claim_refs",
+            "expected_logical_audit_status",
         ))
         for case in cases
     )
@@ -50,7 +51,7 @@ def test_preflight_case_ids_are_unique_and_outcomes_are_explicit():
 def test_preflight_covers_logical_audit_identity_and_evidence_conflict():
     data = load_fixture()
     suites = {case["suite"] for case in data["cases"]}
-    assert suites == {"logical_audit", "claim_identity", "evidence_conflict", "evaluator_boundary", "evaluator_runner", "selective_reverification", "reverification_runner", "internal_judgment_model", "inference_trigger", "inference_pipeline", "dialogue_runtime"}
+    assert suites == {"logical_audit", "claim_identity", "evidence_conflict", "evaluator_boundary", "evaluator_runner", "selective_reverification", "reverification_runner", "internal_judgment_model", "inference_trigger", "inference_pipeline", "dialogue_runtime", "v24_runtime_integration"}
 
 
 def test_claim_identity_cases_bind_verification_contract_revision():
@@ -295,7 +296,11 @@ def test_judgment_and_dialogue_route_seed_cases_are_explicit_but_still_draft():
     assert dialogue["suite"] == "dialogue_runtime"
     assert dialogue["expected_verified_claim_ids"] == ["C-DR-001"]
     assert dialogue["expected_claim_truth_assessed"] is False
+    v24_runtime = by_id["V24-RT-001"]
+    assert v24_runtime["suite"] == "v24_runtime_integration"
+    assert v24_runtime["expected_logical_audit_status"] == "STRUCTURE_CHECKED"
+    assert v24_runtime["expected_candidate_findings"] == 2
     assert all(
         by_id[case_id]["label_status"] == "DRAFT"
-        for case_id in ("IJ-001", "IT-001", "IP-001", "DR-001")
+        for case_id in ("IJ-001", "IT-001", "IP-001", "DR-001", "V24-RT-001")
     )
