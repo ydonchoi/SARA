@@ -343,3 +343,21 @@ v2.4는 Co-thoughts v2.0과 연결되는 verification baseline이다.
 Runtime modules: `SARA_v2.4/sara_v24_epistemic.py`, `SARA_v2.4/logical_audit.py`, and `SARA_v2.4/co_thoughts_sara_adapter.py`.
 
 The epistemic module normalizes the legacy PARTIALLY VERIFIED alias to schema spelling PARTIALLY_VERIFIED; reports a review signal when a VERIFIED Claim contains a CONTRADICTED premise without silently rewriting either status; and requires resolvable source-attribution evidence for AUTHOR_EXPLICIT. The logical-audit module checks graph integrity, reports support cycles as candidates, and audits four explicitly structured conditional forms; it does not parse natural-language claims. The adapter never promotes generated output to evidence. Regression tests cover these boundaries; CI results determine whether this change is verified.
+
+
+## Callable Runtime Integration (PR #46)
+
+The repository-level `sara_runtime.execute_request(...)` entrypoint now invokes
+`CoThoughtsSARAAdapter.evaluate(...)` before calling the injected verification
+provider. The returned `sara_v24_assessment` is a separate decision-support
+field; it is not evidence and does not establish claim truthfulness.
+`AUTHOR_EXPLICIT` attribution is rejected unless referenced evidence items
+have a non-empty string `source`.
+
+The v2.4 logical-audit checker is invoked only when the caller supplies an
+explicit structured `argument_graph` with `nodes` and `edges`. Without one,
+the result is `NOT_RUN`; the runtime does not infer a graph from free-form text.
+When a graph is supplied, structural cycle findings remain candidates and
+`semantic_audit_status` remains `NOT_PERFORMED`. Provider verification still
+uses the existing injected v2.3 execution/backend contract; no provider is
+invented or configured by this adapter.
