@@ -66,7 +66,7 @@ def test_negative_or_nonfinite_operational_metrics_are_rejected():
 def test_read_jsonl_reports_malformed_line_number(tmp_path):
     path = tmp_path / "runs.jsonl"
     path.write_text('{"case_id": "R1"\n', encoding="utf-8")
-    with pytest.raises(BenchmarkRecordError, match="LINE_1:INVALID_JSONL_LINE"):
+    with pytest.raises(BenchmarkRecordError, match="INVALID_JSONL_LINE:1"):
         read_jsonl(path)
 
 
