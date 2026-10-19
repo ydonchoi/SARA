@@ -13,7 +13,7 @@ SARA (**Senior Academic Research Architect**)는 연구의 Claim → Premise →
 | v2.1 | 모듈화 |
 | v2.2 | Dependency / Loading / Contract |
 | v2.3 | Verification Layer Separation / Reproduction / Runtime Boundary |
-| **v2.4** | **Co-thoughts Integration / Premise Evaluation / Provenance / Temporal & Interpretive Context** |
+| **v2.4** | **Co-thoughts Integration / Premise Evaluation / Provenance / Temporal & Interpretive Context / Logical Audit Boundary** |
 
 ## v2.4 Architecture
 
@@ -120,7 +120,7 @@ evidence:
 FACT / INTERPRETATION / INFERENCE / HYPOTHESIS / SIMULATION
 
 ### Verification
-VERIFIED / PARTIALLY VERIFIED / UNVERIFIED / CONTRADICTED
+VERIFIED / PARTIALLY_VERIFIED / UNVERIFIED / CONTRADICTED
 
 ### Attribution
 AUTHOR_EXPLICIT / AUTHOR_SUPPORTED / SOURCE_INFERRED / MODERN_INTERPRETATION / SPECULATIVE / UNKNOWN
