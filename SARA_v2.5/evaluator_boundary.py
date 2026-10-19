@@ -58,9 +58,9 @@ def validate_evaluator_signal(
     if not isinstance(signal.rationale, str):
         raise ValueError("INVALID_EVALUATOR_RATIONALE")
 
-    if signal.execution_status not in EXECUTION_STATUSES:
+    if not isinstance(signal.execution_status, str) or signal.execution_status not in EXECUTION_STATUSES:
         raise ValueError("INVALID_EVALUATOR_EXECUTION_STATUS")
-    if signal.signal_status not in SIGNAL_STATUSES:
+    if not isinstance(signal.signal_status, str) or signal.signal_status not in SIGNAL_STATUSES:
         raise ValueError("INVALID_EVALUATOR_SIGNAL_STATUS")
     if signal.input_revision_digest != expected_input_revision_digest:
         raise ValueError("EVALUATOR_INPUT_REVISION_MISMATCH")
