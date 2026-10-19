@@ -10,7 +10,7 @@
   },
   "readiness": {
     "internal_judgment_model_status": "PROTOTYPE_ONLY",
-    "live_dialogue_integration_status": "NOT_INTEGRATED",
+    "live_dialogue_integration_status": "CALLABLE_ENTRYPOINT_ADDED_NOT_LIVE_INTEGRATED",
     "inference_trigger_runtime_status": "PROTOTYPE_ONLY",
     "reverification_runtime_status": "PROTOTYPE_ONLY",
     "provenance_storage_replay_status": "PROTOTYPE_ONLY",
@@ -29,11 +29,12 @@
     "v2_5_release_status": "PROTOTYPE"
   },
   "open_blockers": [
-    "The SARA-internal JEV-style judgment model and trigger are implemented as prototypes but are not yet bound to the live dialogue runtime or evaluated against an independently adjudicated benchmark.",
-    "The candidate-head CI field must be populated from the latest successful run after all source changes are complete; prior green runs are not reusable for a newer head.",
+    "The internal JEV-style judgment and trigger now have a callable dialogue-turn entrypoint and deterministic tests, but the actual host dialogue loop and production model/verifier callables are not configured or independently integration-tested.",
+    "Candidate-head CI evidence is pending until all source and documentation changes are complete; a green run for an earlier head cannot verify a later head.",
     "The 18-case Preflight fixture has draft labels and is not an independently adjudicated gold benchmark with two independent reviews per case.",
     "Comparative baseline evaluation and predeclared acceptance thresholds are not yet evidenced.",
     "Human reviewer authentication/authorization and a durable deployment storage policy are not yet provided.",
-    "Canonical documentation must remain on v2.4 until every promotion gate passes."
+    "Canonical documentation must remain on v2.4 until every promotion gate passes.",
+    "The promotion gate now requires a dialogue_runtime benchmark suite; the current 18-case fixture does not cover it and remains draft, so this suite requires new cases and independent adjudication."
   ]
 }
