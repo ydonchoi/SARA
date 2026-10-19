@@ -65,6 +65,7 @@ class EvaluatorRunner:
         known_node_ids: tuple[str, ...] = (),
         known_evidence_ids: tuple[str, ...] = (),
     ) -> dict[str, Any]:
+        self._assert_ledger_revision_binding(request)
         result = self._run_unrecorded(
             request,
             timeout_seconds=timeout_seconds,
@@ -119,6 +120,30 @@ class EvaluatorRunner:
             result["provenance_event_id"] = ledger_event["event_id"]
             result["provenance_event_hash"] = ledger_event["event_hash"]
         return result
+
+    def _assert_ledger_revision_binding(self, request: Mapping[str, Any]) -> None:
+        """Prevent a registered immutable revision ID from being rebound before invocation."""
+        if self._ledger is None:
+            return
+        if not self._ledger.verify_history()["valid"]:
+            raise EvaluatorInvocationError("PROVENANCE_HISTORY_INVALID")
+        if not isinstance(request, Mapping):
+            return
+        claim_id = request.get("claim_id")
+        revision_id = request.get("claim_revision_id")
+        digest = request.get("input_revision_digest")
+        if not all(isinstance(value, str) and value.strip() for value in (claim_id, revision_id, digest)):
+            return  # The normal request validator emits the precise missing-field error.
+        for event in self._ledger.events:
+            if (
+                event.get("event_type") == "CLAIM_REVISION_REGISTERED"
+                and event.get("claim_id") == claim_id
+                and event.get("revision_id") == revision_id
+            ):
+                registered_digest = event.get("payload", {}).get("content_digest")
+                if registered_digest != digest:
+                    raise EvaluatorInvocationError("CLAIM_REVISION_ID_REBOUND_TO_DIFFERENT_DIGEST")
+                return
 
     def _run_unrecorded(
         self,
