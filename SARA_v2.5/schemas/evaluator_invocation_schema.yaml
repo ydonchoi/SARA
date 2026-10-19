@@ -39,6 +39,7 @@ execution_status:
   - INCOMPLETE
 
 rules:
+  - input_revision_digest_must_equal_canonical_claim_revision_digest
   - response_claim_and_revision_must_match_request
   - response_input_digest_must_match_request
   - malformed_outputs_fail_closed_as_INVALID_OUTPUT_or_INCOMPLETE
