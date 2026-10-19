@@ -346,6 +346,27 @@ def test_import_rejects_semantically_invalid_history_even_if_hashes_are_recomput
         ProvenanceEventLedger.from_jsonl(text)
 
 
+def test_claim_revision_id_cannot_be_rebound_to_new_digest():
+    ledger = ProvenanceEventLedger()
+    register(ledger, "EV-1", claim_id="C1", revision_id="R1", digest="DIGEST-1")
+    with pytest.raises(
+        ProvenanceLedgerError,
+        match="CLAIM_REVISION_ID_REBOUND_TO_DIFFERENT_DIGEST",
+    ):
+        register(ledger, "EV-2", claim_id="C1", revision_id="R1", digest="DIGEST-2")
+    assert len(ledger.events) == 1
+    assert ledger.verify_history()["valid"] is True
+
+
+def test_claim_revision_cannot_be_registered_twice_even_with_same_digest():
+    ledger = ProvenanceEventLedger()
+    register(ledger, "EV-1", claim_id="C1", revision_id="R1", digest="DIGEST-1")
+    with pytest.raises(ProvenanceLedgerError, match="CLAIM_REVISION_ALREADY_REGISTERED"):
+        register(ledger, "EV-2", claim_id="C1", revision_id="R1", digest="DIGEST-1")
+    assert len(ledger.events) == 1
+    assert ledger.verify_history()["valid"] is True
+
+
 def test_empty_required_event_fields_are_rejected():
     ledger = ProvenanceEventLedger()
     with pytest.raises(ProvenanceLedgerError, match="EVENT_ACTOR_REQUIRED"):
