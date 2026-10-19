@@ -9,7 +9,9 @@
     "suites": {}
   },
   "readiness": {
-    "external_evaluator_integration_status": "NOT_CONFIGURED",
+    "internal_judgment_model_status": "PROTOTYPE_ONLY",
+    "live_dialogue_integration_status": "NOT_INTEGRATED",
+    "inference_trigger_runtime_status": "PROTOTYPE_ONLY",
     "reverification_runtime_status": "PROTOTYPE_ONLY",
     "provenance_storage_replay_status": "PROTOTYPE_ONLY",
     "schema_consistency_status": "PENDING",
@@ -27,7 +29,7 @@
     "v2_5_release_status": "PROTOTYPE"
   },
   "open_blockers": [
-    "A real evaluator provider is not configured or independently integration-tested.",
+    "The SARA-internal JEV-style judgment model and trigger are implemented as prototypes but are not yet bound to the live dialogue runtime or evaluated against an independently adjudicated benchmark.",
     "The candidate-head CI field must be populated from the latest successful run after all source changes are complete; prior green runs are not reusable for a newer head.",
     "The 18-case Preflight fixture has draft labels and is not an independently adjudicated gold benchmark with two independent reviews per case.",
     "Comparative baseline evaluation and predeclared acceptance thresholds are not yet evidenced.",
