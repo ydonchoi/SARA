@@ -6,7 +6,7 @@
   "ci": {
     "head_sha": null,
     "conclusion": "PENDING",
-    "jobs": {}
+    "suites": {}
   },
   "readiness": {
     "external_evaluator_integration_status": "NOT_CONFIGURED",
@@ -28,8 +28,8 @@
   },
   "open_blockers": [
     "A real evaluator provider is not configured or independently integration-tested.",
-    "CI must pass on the exact latest candidate head, including the evaluator runner, reverification runner, ledger, and human-review commit gate.",
-    "The 18-case Preflight fixture has draft labels and is not an independently adjudicated gold benchmark.",
+    "The candidate-head CI field must be populated from the latest successful run after all source changes are complete; prior green runs are not reusable for a newer head.",
+    "The 18-case Preflight fixture has draft labels and is not an independently adjudicated gold benchmark with two independent reviews per case.",
     "Comparative baseline evaluation and predeclared acceptance thresholds are not yet evidenced.",
     "Human reviewer authentication/authorization and a durable deployment storage policy are not yet provided.",
     "Canonical documentation must remain on v2.4 until every promotion gate passes."
