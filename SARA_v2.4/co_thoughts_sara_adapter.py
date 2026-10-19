@@ -32,6 +32,11 @@ class CoThoughtsSARAAdapter:
             for p in premises
             if p.get("id")
         )
+        available_evidence_ids = {
+            str(item["id"])
+            for item in (payload.get("evidence") or [])
+            if isinstance(item, Mapping) and item.get("id")
+        }
         state = validate_state(
             ClaimEvaluationState(
                 claim_id=str(claim["id"]),
@@ -43,7 +48,8 @@ class CoThoughtsSARAAdapter:
                 attribution_evidence_ids=tuple(
                     claim.get("attribution_evidence_ids") or ()
                 ),
-            )
+            ),
+            available_evidence_ids=available_evidence_ids,
         )
         warnings = assessment_warnings(state)
         return {
