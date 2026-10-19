@@ -78,13 +78,17 @@ def valid_result(request, status="VERIFIED"):
     }
 
 
+_DEFAULT_PRIOR_BINDING = object()
+
+
 def execute(verify, *, selected_plan=None, selected_revision=None,
-            selected_evidence=None, selected_prior=None, selected_digest=None,
+            selected_evidence=None, selected_prior=_DEFAULT_PRIOR_BINDING, selected_digest=None,
             ledger=None):
     selected_plan = selected_plan or plan()
     selected_revision = selected_revision or revision()
     selected_evidence = selected_evidence if selected_evidence is not None else EVIDENCE
-    selected_prior = selected_prior if selected_prior is not None else prior_binding()
+    if selected_prior is _DEFAULT_PRIOR_BINDING:
+        selected_prior = prior_binding()
     selected_digest = selected_digest or compute_evidence_digest(selected_evidence)
     return SelectiveReverificationRunner(
         verify,
