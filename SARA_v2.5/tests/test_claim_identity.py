@@ -155,6 +155,20 @@ def test_unverified_prior_result_is_unresolved_not_reusable():
     assert result["reuse_allowed"] is False
 
 
+def test_verification_contract_revision_is_required():
+    revision = create_claim_revision(
+        claim_id="C1", revision_id="R1", text="Claim A.", scope=SCOPE
+    )
+    with pytest.raises(ValueError, match="VERIFICATION_CONTRACT_REVISION_REQUIRED"):
+        assess_verification_reuse(
+            revision=revision,
+            prior_binding={},
+            current_verifier_revision="verify-1",
+            current_contract_revision="",
+            current_evidence_digest="evidence-1",
+        )
+
+
 def test_claim_and_revision_ids_are_required():
     with pytest.raises(ValueError, match="CLAIM_ID_REQUIRED"):
         create_claim_revision(claim_id="", revision_id="R1", text="x", scope=SCOPE)
