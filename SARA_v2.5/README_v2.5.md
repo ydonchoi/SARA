@@ -264,3 +264,60 @@ Current promotion evidence is maintained in `promotion_evidence_template.json`
 and the decision in `CANONICAL_PROMOTION_STATUS.md`. As long as the benchmark is
 DRAFT, a real provider is unconfigured, or other required evidence is missing,
 v2.4 remains canonical.
+
+
+## SARA-Internal JEV-Style Dialogue Route — Prototype
+
+`sara_runtime.process_dialogue_turn(...)` is the callable entrypoint added for
+the inference-triggered route. Its implementation lives in
+`SARA_v2.5/dialogue_runtime.py`.
+
+```text
+Dialogue turn + explicit claim candidates
+                 |
+                 v
+SARA-owned judgment rubric + injected SARA model callable
+                 |
+                 v
+Input / candidate digest validation + structured judgment
+                 |
+                 v
+Inference activation policy
+   | detected      | ambiguous/error/stale      | high-confidence no inference
+   v               v                            v
+selective verify   precheck / review             no inference-specific route
+   |
+   v
+Existing callable claim-verification facade
+   |
+   v
+Execution output + optional caller-managed event record
+```
+
+### Request contract
+
+Provide `request_id`, `conversation_id`, `turn_id`, `content`, and an
+explicit `claim_candidates` list containing unique `id` and `text` fields.
+Candidate IDs and proposition texts are included in the canonical input digest.
+The judgment model must return `claim_refs` from those candidate IDs to bind the
+detected inference to a verification target. If no candidate is selected or the
+binding is invalid, SARA routes to precheck instead of inventing a target.
+Evidence and provenance may be supplied through the request. The actual host
+must inject both the SARA generation callable and the verification provider.
+
+### Evidence boundary
+
+The CI contract test uses deterministic doubles to test the injected path,
+claim binding, invocation, no-inference handling, timeout/error routing, and
+optional event-sink failure. This is not a live-model performance test, and it
+does not prove that a production dialogue host or provider is configured.
+The current root verification facade is still rooted in the v2.3 execution
+module; v2.4 logical-audit checks are not automatically performed on every
+free-form dialogue turn. Structured logical audit and inference-triggered
+verification therefore remain distinct capabilities.
+
+A high-confidence no-inference judgment disables only this inference-triggered
+route. It does not suppress separate factual, source, safety, or policy-based
+verification. A judgment or verification result is not research evidence and
+does not establish claim truthfulness. The optional event sink is caller-owned;
+without a configured durable store, an event record is not guaranteed to persist.
