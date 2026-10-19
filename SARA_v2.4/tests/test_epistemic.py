@@ -103,3 +103,42 @@ def test_adapter_never_promotes_to_evidence_and_surfaces_state_conflict():
     assert result["review_required"] is True
     assert result["logical_audit_status"] == "NOT_RUN"
     assert result["is_evidence"] is False
+
+
+@pytest.mark.parametrize("evidence_item", [
+    {"id": "E1"},
+    {"id": "E1", "source": ""},
+    {"id": "E1", "source": "   "},
+])
+def test_adapter_rejects_author_explicit_evidence_without_nonempty_source(evidence_item):
+    from co_thoughts_sara_adapter import CoThoughtsSARAAdapter
+
+    with pytest.raises(ValueError, match="AUTHOR_EXPLICIT_EVIDENCE_REFERENCE_UNKNOWN"):
+        CoThoughtsSARAAdapter().evaluate({
+            "claim": {
+                "id": "C1",
+                "text": "The author explicitly stated this.",
+                "attribution_status": "AUTHOR_EXPLICIT",
+                "attribution_evidence_ids": ["E1"],
+            },
+            "evidence": [evidence_item],
+        })
+
+
+def test_adapter_accepts_author_explicit_attribution_with_source_bearing_evidence():
+    from co_thoughts_sara_adapter import CoThoughtsSARAAdapter
+
+    result = CoThoughtsSARAAdapter().evaluate({
+        "claim": {
+            "id": "C1",
+            "text": "The author explicitly stated this.",
+            "attribution_status": "AUTHOR_EXPLICIT",
+            "attribution_evidence_ids": ["E1"],
+        },
+        "evidence": [{
+            "id": "E1",
+            "source": "https://example.org/primary-source",
+        }],
+    })
+    assert result["attribution_status"] == "AUTHOR_EXPLICIT"
+    assert result["attribution_evidence_ids"] == ["E1"]
