@@ -181,3 +181,27 @@ def test_duplicate_commit_event_id_is_rejected_without_mutating_status():
     with pytest.raises(VerificationCommitError, match="LEDGER_COMMIT_REJECTED:DUPLICATE_EVENT_ID"):
         commit(ledger, revision, evidence, digest)
     assert ledger.replay_claim("C1")["committed_verification_status"] == "VERIFIED"
+
+
+def test_public_ledger_api_cannot_bypass_verification_commit_gate():
+    ledger, revision, evidence, evidence_digest = prepared_ledger()
+    with pytest.raises(ProvenanceLedgerError, match="COMMIT_MUST_USE_VERIFICATION_GATE"):
+        ledger.append_event(
+            event_id="DIRECT-COMMIT",
+            event_type="CLAIM_STATUS_COMMITTED",
+            claim_id=revision["claim_id"],
+            revision_id=revision["revision_id"],
+            actor_id="untrusted-caller",
+            occurred_at="2026-10-20T00:00:00Z",
+            input_digest=revision["content_digest"],
+            payload={
+                "verification_status": "VERIFIED",
+                "review_event_id": "REV-1",
+                "proposal_event_id": "PROP-1",
+                "reviewer_id": "reviewer-1",
+                "evidence_digest": evidence_digest,
+                "verifier_revision": "verify-1",
+                "verification_contract_revision": "contract-1",
+            },
+        )
+    assert ledger.replay_claim("C1")["committed_verification_status"] is None
