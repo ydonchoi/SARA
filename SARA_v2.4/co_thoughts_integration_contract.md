@@ -40,7 +40,7 @@ SARA v2.4 may validate argument-graph references and flag directed support/depen
 
 Each finding records its target, category, status, rationale, related nodes, optional evidence references, severity, and assessor. A substantiated finding requires a rationale and at least one basis reference. Logical-audit output is a decision-support signal, never research evidence or an automatic truth judgment.
 
-The deterministic graph checker reports semantic_audit_status = NOT_PERFORMED; absence of structural findings must not be reported as no logical errors found.
+For explicitly structured symbols, the checker recognizes modus ponens/modus tollens as valid forms and affirming the consequent/denying the antecedent as invalid forms. It does not parse free-form prose. Broader semantic review remains separate and `semantic_audit_status = NOT_PERFORMED` until such a review runs; absence of structural findings must not be reported as no logical errors found.
 
 ## Promotion Firewall
 
