@@ -73,7 +73,7 @@ def test_full_evidence_is_approved_but_gate_does_not_modify_canonical_state():
 def test_actual_draft_preflight_fixture_blocks_promotion_even_when_other_gates_pass():
     evidence = complete_evidence()
     fixture = json.loads(
-        (Path(__file__).resolve().parent / "benchmark" / "preflight_cases.json")
+        (Path(__file__).resolve().parents[1] / "benchmark" / "preflight_cases.json")
         .read_text(encoding="utf-8")
     )
     evidence["benchmark"]["dataset_status"] = fixture["status"]
