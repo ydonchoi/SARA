@@ -92,13 +92,35 @@ class SelectiveReverificationRunner:
         if self._ledger is not None:
             for item in result["results"]:
                 succeeded = item["execution_status"] == "SUCCEEDED"
+                claim_id = item["claim_id"]
+                revision_id = item.get("revision_id") or "UNKNOWN_REVISION"
+                digest = item.get("content_digest") or f"UNAVAILABLE:{claim_id}"
+                if item.get("content_digest") and revision_id != "UNKNOWN_REVISION":
+                    existing = any(
+                        event.get("event_type") == "CLAIM_REVISION_REGISTERED"
+                        and event.get("claim_id") == claim_id
+                        and event.get("revision_id") == revision_id
+                        and event.get("payload", {}).get("content_digest") == digest
+                        for event in self._ledger.events
+                    )
+                    if not existing:
+                        self._ledger.append_event(
+                            event_id=f"CLAIM-REVISION:{claim_id}:{revision_id}:{len(self._ledger.events) + 1}",
+                            event_type="CLAIM_REVISION_REGISTERED",
+                            claim_id=claim_id,
+                            revision_id=revision_id,
+                            actor_id=self._actor_id,
+                            occurred_at=datetime.now(timezone.utc).isoformat(),
+                            input_digest=digest,
+                            payload={
+                                "content_digest": digest,
+                                "registration_source": "SARA_SELECTIVE_REVERIFICATION_RUNNER",
+                            },
+                        )
                 event_type = (
                     "VERIFICATION_RESULT_PROPOSED"
                     if succeeded else "REVERIFICATION_ATTEMPT_COMPLETED"
                 )
-                claim_id = item["claim_id"]
-                revision_id = item.get("revision_id") or "UNKNOWN_REVISION"
-                digest = item.get("content_digest") or f"UNAVAILABLE:{claim_id}"
                 ledger_event = self._ledger.append_event(
                     event_id=f"REVERIFICATION:{claim_id}:{revision_id}:{len(self._ledger.events) + 1}",
                     event_type=event_type,
