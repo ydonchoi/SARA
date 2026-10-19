@@ -25,6 +25,7 @@ ci:
     - content_access
     - review_resolution_provenance
     - v24_epistemic_logical_audit
+    - v24_runtime_integration
     - v25_claim_identity_conflict
     - v25_evaluator_boundary
     - v25_evaluator_runner
@@ -56,6 +57,7 @@ benchmark:
   dataset_status: INDEPENDENTLY_ADJUDICATED
   minimum_case_count: 18
   required_suites:
+    - v24_runtime_integration
     - logical_audit
     - claim_identity
     - evidence_conflict
