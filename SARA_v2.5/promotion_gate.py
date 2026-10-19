@@ -9,19 +9,32 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-REQUIRED_CI_JOBS = {
-    "v2.4-epistemic",
-    "v2.4-logical-audit",
-    "v2.5-claim-identity",
-    "v2.5-evidence-conflict",
-    "v2.5-evaluator-boundary",
-    "v2.5-evaluator-runner",
-    "v2.5-selective-planning",
-    "v2.5-reverification-runner",
-    "v2.5-provenance-ledger",
-    "v2.5-verification-commit-gate",
-    "v2.5-preflight",
+REQUIRED_CI_SUITES = {
+    "external_execution_contracts",
+    "content_access",
+    "review_resolution_provenance",
+    "v24_epistemic_logical_audit",
+    "v25_claim_identity_conflict",
+    "v25_evaluator_boundary",
+    "v25_evaluator_runner",
+    "v25_selective_reverification",
+    "v25_reverification_runner",
+    "v25_provenance_ledger",
+    "v25_verification_commit_gate",
+    "v25_promotion_gate",
+    "v25_preflight_coverage",
+    "v25_preflight_json",
 }
+REQUIRED_BENCHMARK_SUITES = {
+    "logical_audit",
+    "claim_identity",
+    "evidence_conflict",
+    "evaluator_boundary",
+    "evaluator_runner",
+    "selective_reverification",
+    "reverification_runner",
+}
+MINIMUM_ADJUDICATED_CASES = 18
 REQUIRED_READINESS_FIELDS = {
     "external_evaluator_integration_status",
     "reverification_runtime_status",
@@ -59,15 +72,15 @@ def evaluate_canonical_promotion(evidence: Mapping[str, Any]) -> dict[str, Any]:
             blockers.append({"code": "CI_HEAD_MISMATCH"})
         if ci.get("conclusion") != "success":
             blockers.append({"code": "CI_NOT_SUCCESSFUL"})
-        jobs = ci.get("jobs")
-        if not isinstance(jobs, Mapping):
-            blockers.append({"code": "CI_JOB_RESULTS_REQUIRED"})
+        suites = ci.get("suites")
+        if not isinstance(suites, Mapping):
+            blockers.append({"code": "CI_SUITE_RESULTS_REQUIRED"})
         else:
-            for job in sorted(REQUIRED_CI_JOBS):
-                if jobs.get(job) != "success":
+            for suite in sorted(REQUIRED_CI_SUITES):
+                if suites.get(suite) != "success":
                     blockers.append({
-                        "code": "REQUIRED_CI_JOB_NOT_SUCCESSFUL",
-                        "detail": f"{job}:{jobs.get(job, 'MISSING')}",
+                        "code": "REQUIRED_CI_SUITE_NOT_SUCCESSFUL",
+                        "detail": f"{suite}:{suites.get(suite, 'MISSING')}",
                     })
 
     readiness = evidence.get("readiness")
@@ -91,12 +104,23 @@ def evaluate_canonical_promotion(evidence: Mapping[str, Any]) -> dict[str, Any]:
         if not isinstance(cases, list) or not cases:
             blockers.append({"code": "ADJUDICATED_BENCHMARK_CASES_REQUIRED"})
         else:
+            if len(cases) < MINIMUM_ADJUDICATED_CASES:
+                blockers.append({
+                    "code": "BENCHMARK_CASE_COUNT_BELOW_MINIMUM",
+                    "detail": f"{len(cases)}<{MINIMUM_ADJUDICATED_CASES}",
+                })
             seen_case_ids = set()
+            covered_suites = set()
             for index, case in enumerate(cases):
                 where = str(case.get("case_id", f"index:{index}")) if isinstance(case, Mapping) else f"index:{index}"
                 if not isinstance(case, Mapping):
                     blockers.append({"code": "BENCHMARK_CASE_MUST_BE_MAPPING", "detail": where})
                     continue
+                suite = case.get("suite")
+                if _is_nonempty_string(suite):
+                    covered_suites.add(suite)
+                else:
+                    blockers.append({"code": "BENCHMARK_CASE_SUITE_REQUIRED", "detail": where})
                 case_id = case.get("case_id")
                 if not _is_nonempty_string(case_id):
                     blockers.append({"code": "BENCHMARK_CASE_ID_REQUIRED", "detail": where})
@@ -144,6 +168,12 @@ def evaluate_canonical_promotion(evidence: Mapping[str, Any]) -> dict[str, Any]:
                             "code": "ADJUDICATOR_DISAGREEMENT_UNRESOLVED",
                             "detail": where,
                         })
+            missing_suites = REQUIRED_BENCHMARK_SUITES - covered_suites
+            if missing_suites:
+                blockers.append({
+                    "code": "BENCHMARK_SUITE_COVERAGE_INCOMPLETE",
+                    "detail": ",".join(sorted(missing_suites)),
+                })
         if benchmark.get("comparison_status") != "PASS":
             blockers.append({"code": "BASELINE_COMPARISON_NOT_PASSED"})
         metric_decisions = benchmark.get("metric_decisions")
