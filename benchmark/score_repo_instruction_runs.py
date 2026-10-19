@@ -43,6 +43,14 @@ def validate_record(record: Any) -> dict[str, Any]:
         raise BenchmarkRecordError("OBSERVED_LABELS_MUST_BE_OBJECT")
     if set(expected) != set(observed):
         raise BenchmarkRecordError("EXPECTED_OBSERVED_CRITERIA_MISMATCH")
+    for label_name, labels in (("expected", expected), ("observed", observed)):
+        for criterion, value in labels.items():
+            if not isinstance(criterion, str) or not criterion.strip():
+                raise BenchmarkRecordError(f"{label_name.upper()}_CRITERION_NAME_REQUIRED")
+            if value is not None and not isinstance(value, (bool, str, int, float)):
+                raise BenchmarkRecordError(f"{label_name.upper()}_LABEL_MUST_BE_SCALAR:{criterion}")
+            if isinstance(value, float) and not math.isfinite(value):
+                raise BenchmarkRecordError(f"{label_name.upper()}_LABEL_MUST_BE_FINITE:{criterion}")
     metrics = record.get("metrics", {})
     if not isinstance(metrics, dict):
         raise BenchmarkRecordError("METRICS_MUST_BE_OBJECT")
