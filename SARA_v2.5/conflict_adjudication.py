@@ -83,19 +83,28 @@ def adjudicate_evidence_conflict(
         status = "UNASSESSED"
         reason = "NO_VERIFIED_OR_PARTIALLY_VERIFIED_POLARITY_EVIDENCE"
     elif support_side and challenge_side:
-        same_context = any(
+        # A conflict may be called unresolved only when a VERIFIED support and
+        # VERIFIED challenge pair itself shares scope and time. Partial records
+        # must not lend their context to an unrelated verified pair.
+        same_context_verified_pair = any(
+            (support.scope_key, support.time_key) == (challenge.scope_key, challenge.time_key)
+            for support in verified_supports for challenge in verified_challenges
+        )
+        same_context_partial_pair = any(
             (support.scope_key, support.time_key) == (challenge.scope_key, challenge.time_key)
             for support in support_side for challenge in challenge_side
+            if support.evidence_status == "PARTIALLY_VERIFIED"
+            or challenge.evidence_status == "PARTIALLY_VERIFIED"
         )
-        if not same_context:
-            status = "CONTEXTUAL_DIVERGENCE_REVIEW"
-            reason = "OPPOSING_EVIDENCE_SPANS_DIFFERENT_SCOPE_OR_TIME"
-        elif verified_supports and verified_challenges:
+        if same_context_verified_pair:
             status = "UNRESOLVED_CONFLICT"
             reason = "MIXED_VERIFIED_SUPPORT_AND_CHALLENGE_REQUIRES_ADJUDICATION"
-        else:
+        elif same_context_partial_pair:
             status = "POTENTIAL_CONFLICT_REVIEW"
             reason = "PARTIALLY_VERIFIED_OPPOSING_EVIDENCE_REQUIRES_REVIEW"
+        else:
+            status = "CONTEXTUAL_DIVERGENCE_REVIEW"
+            reason = "OPPOSING_EVIDENCE_SPANS_DIFFERENT_SCOPE_OR_TIME"
     else:
         status = "NO_CROSS_POLARITY_CONFLICT_OBSERVED"
         reason = "ONLY_ONE_ELIGIBLE_EVIDENCE_POLARITY_OBSERVED"

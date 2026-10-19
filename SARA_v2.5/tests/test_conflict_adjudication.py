@@ -121,3 +121,16 @@ def test_empty_scope_metadata_is_rejected():
                 EvidencePosition("E1", "SUPPORTS", "VERIFIED", "", "T1", "SRC")
             ],
         )
+
+
+def test_partial_same_context_does_not_make_unrelated_verified_pair_unresolved():
+    result = adjudicate_evidence_conflict(
+        claim_id="C1",
+        evidence_positions=[
+            item("E1", "SUPPORTS", scope="adults", status="VERIFIED"),
+            item("E2", "CHALLENGES", scope="children", status="VERIFIED"),
+            item("E3", "CHALLENGES", scope="adults", status="PARTIALLY_VERIFIED"),
+        ],
+    )
+    assert result["conflict_status"] == "POTENTIAL_CONFLICT_REVIEW"
+    assert result["claim_verification_status"] == "UNASSESSED"

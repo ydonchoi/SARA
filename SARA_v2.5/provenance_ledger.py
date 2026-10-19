@@ -25,6 +25,11 @@ COMMITTED_STATUSES = {
     "VERIFIED", "PARTIALLY_VERIFIED", "UNVERIFIED", "CONTRADICTED"
 }
 
+# Internal capability token: only the verification commit gate should append a
+# committed status. This is an API boundary, not a security boundary against
+# arbitrary code executing inside the same Python process.
+_COMMIT_GATE_AUTHORITY = object()
+
 
 class ProvenanceLedgerError(ValueError):
     """Raised when an event violates ledger schema or hash-chain integrity."""
@@ -94,7 +99,10 @@ class ProvenanceEventLedger:
         occurred_at: str,
         input_digest: str,
         payload: Mapping[str, Any],
+        _authorization: object | None = None,
     ) -> dict[str, Any]:
+        if event_type == "CLAIM_STATUS_COMMITTED" and _authorization is not _COMMIT_GATE_AUTHORITY:
+            raise ProvenanceLedgerError("COMMIT_MUST_USE_VERIFICATION_GATE")
         required = (
             (event_id, "EVENT_ID_REQUIRED"),
             (claim_id, "CLAIM_ID_REQUIRED"),

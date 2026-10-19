@@ -8,7 +8,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from provenance_ledger import GENESIS_HASH, ProvenanceEventLedger, ProvenanceLedgerError
+from provenance_ledger import (
+    GENESIS_HASH, ProvenanceEventLedger, ProvenanceLedgerError,
+    _COMMIT_GATE_AUTHORITY,
+)
 
 
 def append(
@@ -59,6 +62,7 @@ def append(
         occurred_at="2026-10-19T00:00:00Z",
         input_digest=input_digest,
         payload=payload,
+        **({"_authorization": _COMMIT_GATE_AUTHORITY} if event_type == "CLAIM_STATUS_COMMITTED" else {}),
     )
 
 

@@ -72,3 +72,6 @@ jobs:
       - id: v25_dialogue_runtime
         name: Test callable dialogue-to-verification runtime integration
         run: python -m pytest SARA_v2.5/tests/test_dialogue_runtime.py -q
+      - id: v25_external_evidence
+        name: Test automatic external-evidence retrieval contract
+        run: python -m pytest SARA_v2.5/tests/test_external_evidence.py -q

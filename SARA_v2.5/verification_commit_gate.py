@@ -13,7 +13,11 @@ from datetime import datetime, timezone
 from typing import Any
 
 from claim_identity import VERIFICATION_STATUSES, compute_content_digest
-from provenance_ledger import ProvenanceEventLedger, ProvenanceLedgerError
+from provenance_ledger import (
+    ProvenanceEventLedger,
+    ProvenanceLedgerError,
+    _COMMIT_GATE_AUTHORITY,
+)
 from reverification_runner import compute_evidence_digest
 
 
@@ -128,6 +132,7 @@ def commit_verification_proposal(
                 "verifier_revision": verifier_revision,
                 "verification_contract_revision": verification_contract_revision,
             },
+            _authorization=_COMMIT_GATE_AUTHORITY,
         )
     except ProvenanceLedgerError as exc:
         raise VerificationCommitError(f"LEDGER_COMMIT_REJECTED:{str(exc)}") from exc

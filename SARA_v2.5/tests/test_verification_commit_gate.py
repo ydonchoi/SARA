@@ -6,7 +6,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from claim_identity import compute_content_digest
-from provenance_ledger import ProvenanceEventLedger
+from provenance_ledger import ProvenanceEventLedger, ProvenanceLedgerError
 from reverification_runner import compute_evidence_digest
 from verification_commit_gate import VerificationCommitError, commit_verification_proposal
 

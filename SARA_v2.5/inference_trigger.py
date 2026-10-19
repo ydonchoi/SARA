@@ -1,6 +1,6 @@
 """SARA activation policy for the internal JEV-style judgment result.
 
-This policy decides whether an inference-triggered SARA review should run. It
+This policy decides whether a dialogue turn needs verification and selects the
 does not verify a claim, mark an inference correct, or replace other verification
 routes for factual claims that contain no inference.
 """
@@ -9,13 +9,15 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-TRIGGER_POLICY_REVISION = "sara-inference-trigger-policy-v0.1"
+TRIGGER_POLICY_REVISION = "sara-verification-need-policy-v0.2"
 JUDGMENT_STATUSES = {
     "INFERENCE_PRESENT",
     "NO_INFERENCE_DETECTED",
     "AMBIGUOUS",
 }
 CONFIDENCE_LEVELS = {"HIGH", "MEDIUM", "LOW"}
+VERIFICATION_NEEDS = {"REQUIRED", "NOT_REQUIRED", "AMBIGUOUS"}
+EXTERNAL_CHECK_NEEDS = {"REQUIRED", "NOT_REQUIRED", "AMBIGUOUS"}
 
 
 def decide_sara_activation(
@@ -36,24 +38,45 @@ def decide_sara_activation(
     status = judgment.get("judgment_status")
     execution = judgment.get("execution_status")
     confidence = judgment.get("confidence")
+    verification_need = judgment.get("verification_need")
+    external_check_need = judgment.get("external_check_need")
     if not digest_matches:
         action = "SARA_PRECHECK_REVIEW"
         reason = "JUDGMENT_INPUT_REVISION_MISMATCH"
-    elif execution != "SUCCEEDED" or status not in JUDGMENT_STATUSES:
+    elif (
+        execution != "SUCCEEDED"
+        or not isinstance(status, str)
+        or status not in JUDGMENT_STATUSES
+    ):
         action = "SARA_PRECHECK_REVIEW"
         reason = "JUDGMENT_UNAVAILABLE_OR_INVALID"
-    elif status == "INFERENCE_PRESENT":
-        action = "SARA_SELECTIVE_VERIFICATION"
-        reason = "INFERENCE_DETECTED"
-    elif status == "AMBIGUOUS" or confidence not in CONFIDENCE_LEVELS:
+    elif (
+        not isinstance(verification_need, str)
+        or verification_need not in VERIFICATION_NEEDS
+        or not isinstance(external_check_need, str)
+        or external_check_need not in EXTERNAL_CHECK_NEEDS
+    ):
+        action = "SARA_PRECHECK_REVIEW"
+        reason = "VERIFICATION_NEED_MISSING_OR_INVALID"
+    elif status == "AMBIGUOUS" or not isinstance(confidence, str) or confidence not in CONFIDENCE_LEVELS:
         action = "SARA_PRECHECK_REVIEW"
         reason = "INFERENCE_JUDGMENT_AMBIGUOUS"
     elif confidence != "HIGH":
         action = "SARA_PRECHECK_REVIEW"
         reason = "JUDGMENT_CONFIDENCE_NOT_HIGH"
+    elif verification_need == "AMBIGUOUS" or external_check_need == "AMBIGUOUS":
+        action = "SARA_PRECHECK_REVIEW"
+        reason = "VERIFICATION_NEED_AMBIGUOUS"
+    elif verification_need == "REQUIRED" or external_check_need == "REQUIRED":
+        action = "SARA_SELECTIVE_VERIFICATION"
+        reason = (
+            "EXTERNAL_CHECK_REQUIRED"
+            if external_check_need == "REQUIRED"
+            else "VERIFICATION_REQUIRED"
+        )
     else:
         action = "NO_INFERENCE_TRIGGER"
-        reason = "NO_INFERENCE_DETECTED_WITH_HIGH_CONFIDENCE"
+        reason = "VERIFICATION_NOT_REQUIRED"
 
     triggered = action != "NO_INFERENCE_TRIGGER"
     return {
@@ -61,11 +84,13 @@ def decide_sara_activation(
         "policy_revision": policy_revision,
         "input_revision_digest": expected_input_revision_digest,
         "judgment_status": status,
+        "verification_need": verification_need,
+        "external_check_need": external_check_need,
         "activation_action": action,
         "activation_triggered": triggered,
         "review_required": action == "SARA_PRECHECK_REVIEW",
         "reason_code": reason,
-        "scope": "INFERENCE_TRIGGER_ONLY",
+        "scope": "DIALOGUE_VERIFICATION_ROUTING",
         "other_verification_routes_untouched": True,
         "claim_truth_assessed": False,
         "is_evidence": False,

@@ -23,19 +23,30 @@ INFERENCE_TYPES = {
     "GENERALIZATION", "INTERPRETIVE", "PREDICTIVE", "NORMATIVE", "OTHER", "NONE",
 }
 CONFIDENCE_LEVELS = {"HIGH", "MEDIUM", "LOW"}
+VERIFICATION_NEEDS = {"REQUIRED", "NOT_REQUIRED", "AMBIGUOUS"}
+EXTERNAL_CHECK_NEEDS = {"REQUIRED", "NOT_REQUIRED", "AMBIGUOUS"}
 EXECUTION_STATUSES = {"SUCCEEDED", "FAILED", "TIMEOUT", "INVALID_OUTPUT"}
 
 SARA_JEV_STYLE_JUDGMENT_RUBRIC = """You are SARA's internal inference-judgment component.
 Judge whether the supplied dialogue turn contains a conclusion, interpretation,
 causal explanation, prediction, generalization, or other claim derived from
 premises or context rather than only a directly stated/quoted fact. When
-claim_candidates are supplied, bind detected inference to the candidate IDs
-whose propositions are actually expressed or entailed by the turn; never invent
-candidate IDs or claim references.
+claim_candidates are supplied, bind every claim requiring verification—whether
+directly asserted or inferred—to candidate IDs whose propositions are actually
+expressed or entailed by the turn; never invent candidate IDs or claim references.
+
+Independently judge whether verification is required and whether an external
+source check is required. Set verification_need=REQUIRED for material factual,
+causal, statistical, attribution, current, disputed, or consequential claims
+whose correctness matters to the dialogue. Set external_check_need=REQUIRED
+when the claim depends on facts, current information, attribution, or sources
+not established by the supplied context. Use AMBIGUOUS rather than silently
+skipping verification when the need cannot be decided safely.
 
 Distinguish:
 - directly stated or attributed content from a conclusion inferred from it;
 - inference presence from inference correctness;
+- verification need from inference presence;
 - an inference candidate from a verified or false claim;
 - missing information from evidence against a claim.
 
@@ -48,9 +59,10 @@ calibrated. Do not decide whether a claim is true; do not perform SARA's
 subsequent evidence verification.
 
 Return a JSON object with exactly these fields:
-request_id, input_revision_digest, judgment_status, inference_types,
-basis_spans, rationale, uncertainty_reason, confidence, premise_refs,
-claim_refs, evidence_ids, provenance_ids.
+request_id, input_revision_digest, judgment_status, verification_need,
+external_check_need, inference_types, basis_spans, rationale,
+uncertainty_reason, confidence, premise_refs, claim_refs, evidence_ids,
+provenance_ids.
 judgment_status must be INFERENCE_PRESENT, NO_INFERENCE_DETECTED, or AMBIGUOUS.
 confidence must be HIGH, MEDIUM, or LOW. For NO_INFERENCE_DETECTED, use
 inference_types=[] and basis_spans=[]. All references must be drawn from the
@@ -136,7 +148,7 @@ class SARAInternalJudgmentModel:
         *,
         model_id: str,
         model_revision: str,
-        rubric_revision: str = "sara-jev-style-judgment-rubric-v0.1",
+        rubric_revision: str = "sara-jev-style-judgment-rubric-v0.2",
     ) -> None:
         if not callable(generate):
             raise InternalJudgmentError("SARA_MODEL_RUNTIME_REQUIRED")
@@ -178,6 +190,8 @@ class SARAInternalJudgmentModel:
             "input_revision_digest": digest,
             "output_contract": {
                 "judgment_status": sorted(JUDGMENT_STATUSES),
+                "verification_need": sorted(VERIFICATION_NEEDS),
+                "external_check_need": sorted(EXTERNAL_CHECK_NEEDS),
                 "inference_types": sorted(INFERENCE_TYPES),
                 "confidence": sorted(CONFIDENCE_LEVELS),
                 "references_must_come_from_input": True,
@@ -232,6 +246,12 @@ class SARAInternalJudgmentModel:
         status = raw.get("judgment_status")
         if not isinstance(status, str) or status not in JUDGMENT_STATUSES:
             raise InternalJudgmentError("JUDGMENT_STATUS_INVALID")
+        verification_need = raw.get("verification_need")
+        external_check_need = raw.get("external_check_need")
+        if not isinstance(verification_need, str) or verification_need not in VERIFICATION_NEEDS:
+            raise InternalJudgmentError("JUDGMENT_VERIFICATION_NEED_INVALID")
+        if not isinstance(external_check_need, str) or external_check_need not in EXTERNAL_CHECK_NEEDS:
+            raise InternalJudgmentError("JUDGMENT_EXTERNAL_CHECK_NEED_INVALID")
         types = _string_list(raw.get("inference_types"), "inference_types")
         spans = _string_list(raw.get("basis_spans"), "basis_spans")
         premise_refs = _string_list(raw.get("premise_refs"), "premise_refs")
@@ -282,6 +302,8 @@ class SARAInternalJudgmentModel:
             "request_id": request_id,
             "input_revision_digest": digest,
             "judgment_status": status,
+            "verification_need": verification_need,
+            "external_check_need": external_check_need,
             "inference_types": types,
             "basis_spans": spans,
             "rationale": rationale.strip(),
@@ -291,7 +313,12 @@ class SARAInternalJudgmentModel:
             "claim_refs": claim_refs,
             "evidence_ids": evidence_ids,
             "provenance_ids": provenance_ids,
-            "review_required": status != "NO_INFERENCE_DETECTED" or confidence != "HIGH",
+            "review_required": (
+                status != "NO_INFERENCE_DETECTED"
+                or confidence != "HIGH"
+                or verification_need != "NOT_REQUIRED"
+                or external_check_need != "NOT_REQUIRED"
+            ),
         }
 
     def _execution_failure(
@@ -301,6 +328,8 @@ class SARAInternalJudgmentModel:
             "request_id": request.get("request_id"),
             "input_revision_digest": digest,
             "judgment_status": "NOT_ASSESSED",
+            "verification_need": "AMBIGUOUS",
+            "external_check_need": "AMBIGUOUS",
             "inference_types": [],
             "basis_spans": [],
             "rationale": "",

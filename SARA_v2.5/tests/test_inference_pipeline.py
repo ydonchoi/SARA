@@ -26,6 +26,8 @@ def generate_for(status="INFERENCE_PRESENT", confidence="HIGH"):
             "request_id": payload["request_id"],
             "input_revision_digest": compute_judgment_input_digest(payload),
             "judgment_status": status,
+            "verification_need": "REQUIRED" if inference else "NOT_REQUIRED",
+            "external_check_need": "NOT_REQUIRED",
             "inference_types": ["CAUSAL"] if inference else [],
             "basis_spans": ["therefore the campaign caused the increase"] if inference else [],
             "rationale": "The conclusion goes beyond temporal sequence.",

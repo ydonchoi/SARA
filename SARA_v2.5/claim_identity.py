@@ -136,7 +136,12 @@ def assess_verification_reuse(
     if prior_binding.get("evidence_digest") != current_evidence_digest:
         reasons.append("RELEVANT_EVIDENCE_CHANGED")
 
-    if reasons:
+    # A revision without provenance may be inspected, but its prior result
+    # cannot be reused as current because the claim's source lineage is absent.
+    if not revision.provenance_ids:
+        review_state = "UNRESOLVED"
+        reasons.append("REVISION_PROVENANCE_MISSING")
+    elif reasons:
         review_state = "REQUIRES_REVERIFICATION"
     elif prior_status == "UNVERIFIED":
         review_state = "UNRESOLVED"

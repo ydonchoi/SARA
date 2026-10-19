@@ -13,6 +13,8 @@ def judgment(status="INFERENCE_PRESENT", confidence="HIGH", execution="SUCCEEDED
     return {
         "execution_status": execution,
         "judgment_status": status,
+        "verification_need": "REQUIRED" if status == "INFERENCE_PRESENT" else "NOT_REQUIRED",
+        "external_check_need": "NOT_REQUIRED",
         "confidence": confidence,
         "input_revision_digest": digest,
         "is_evidence": False,
@@ -24,7 +26,7 @@ def test_detected_inference_triggers_selective_sara_verification():
     result = decide_sara_activation(judgment(), expected_input_revision_digest=DIGEST)
     assert result["activation_action"] == "SARA_SELECTIVE_VERIFICATION"
     assert result["activation_triggered"] is True
-    assert result["scope"] == "INFERENCE_TRIGGER_ONLY"
+    assert result["scope"] == "DIALOGUE_VERIFICATION_ROUTING"
     assert result["other_verification_routes_untouched"] is True
     assert result["claim_truth_assessed"] is False
     assert result["is_evidence"] is False
@@ -83,3 +85,19 @@ def test_missing_expected_digest_is_rejected():
         assert str(exc) == "EXPECTED_JUDGMENT_INPUT_DIGEST_REQUIRED"
     else:
         raise AssertionError("missing digest must be rejected")
+
+
+def test_external_check_triggers_even_without_inference():
+    value = judgment("NO_INFERENCE_DETECTED", "HIGH")
+    value["external_check_need"] = "REQUIRED"
+    result = decide_sara_activation(value, expected_input_revision_digest=DIGEST)
+    assert result["activation_action"] == "SARA_SELECTIVE_VERIFICATION"
+    assert result["reason_code"] == "EXTERNAL_CHECK_REQUIRED"
+
+
+def test_ambiguous_verification_need_routes_to_precheck():
+    value = judgment("NO_INFERENCE_DETECTED", "HIGH")
+    value["verification_need"] = "AMBIGUOUS"
+    result = decide_sara_activation(value, expected_input_revision_digest=DIGEST)
+    assert result["activation_action"] == "SARA_PRECHECK_REVIEW"
+    assert result["reason_code"] == "VERIFICATION_NEED_AMBIGUOUS"

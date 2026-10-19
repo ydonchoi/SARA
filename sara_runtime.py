@@ -253,9 +253,11 @@ def process_dialogue_turn(
     verification_provider: Callable[[Mapping[str, Any]], Mapping[str, Any]],
     model_id: str,
     model_revision: str,
-    adapter_revision: str = "sara-dialogue-runtime-v0.1",
+    adapter_revision: str = "sara-dialogue-runtime-v0.2",
     precheck: Callable[[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]], Mapping[str, Any]] | None = None,
     event_sink: Callable[[Mapping[str, Any]], Any] | None = None,
+    external_search_provider: Callable[[Mapping[str, Any], float], list[Mapping[str, Any]]] | None = None,
+    external_search_timeout_seconds: float = 8.0,
     timeout_seconds: float = 15.0,
 ) -> dict[str, Any]:
     """Run the SARA-internal JEV-style judgment/trigger path from a dialogue turn.
@@ -283,6 +285,8 @@ def process_dialogue_turn(
         adapter_revision=adapter_revision,
         precheck=precheck,
         event_sink=event_sink,
+        search_external_sources=external_search_provider,
+        external_search_timeout_seconds=external_search_timeout_seconds,
     )
     return runtime.process_turn(payload, timeout_seconds=timeout_seconds)
 

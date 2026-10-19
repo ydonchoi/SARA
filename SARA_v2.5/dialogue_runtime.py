@@ -12,10 +12,12 @@ from typing import Any
 
 from inference_pipeline import SARAInferencePipeline
 from internal_judgment_model import SARAInternalJudgmentModel
+from external_evidence import ExternalEvidenceError, collect_external_evidence
 
 VerifyClaimCallable = Callable[[Mapping[str, Any]], Mapping[str, Any]]
 PrecheckCallable = Callable[[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]], Mapping[str, Any]]
 EventSinkCallable = Callable[[Mapping[str, Any]], Any]
+ExternalSearchCallable = Callable[[Mapping[str, Any], float], list[Mapping[str, Any]]]
 
 
 class DialogueRuntimeError(ValueError):
@@ -38,17 +40,25 @@ class SARADialogueRuntime:
         verify_claim: VerifyClaimCallable,
         model_id: str,
         model_revision: str,
-        adapter_revision: str = "sara-dialogue-runtime-v0.1",
+        adapter_revision: str = "sara-dialogue-runtime-v0.2",
         precheck: PrecheckCallable | None = None,
         event_sink: EventSinkCallable | None = None,
+        search_external_sources: ExternalSearchCallable | None = None,
+        external_search_timeout_seconds: float = 8.0,
     ) -> None:
         if not callable(verify_claim):
             raise DialogueRuntimeError("SARA_VERIFY_CLAIM_CALLABLE_REQUIRED")
         if not isinstance(adapter_revision, str) or not adapter_revision.strip():
             raise DialogueRuntimeError("SARA_DIALOGUE_ADAPTER_REVISION_REQUIRED")
+        if isinstance(external_search_timeout_seconds, bool) or not isinstance(external_search_timeout_seconds, (int, float)) or external_search_timeout_seconds <= 0:
+            raise DialogueRuntimeError("SARA_EXTERNAL_SEARCH_TIMEOUT_MUST_BE_POSITIVE")
+        if search_external_sources is not None and not callable(search_external_sources):
+            raise DialogueRuntimeError("SARA_EXTERNAL_SEARCH_CALLABLE_INVALID")
         self._verify_claim = verify_claim
         self._precheck = precheck or self._default_precheck
         self._event_sink = event_sink
+        self._search_external_sources = search_external_sources
+        self._external_search_timeout_seconds = float(external_search_timeout_seconds)
         self.adapter_revision = adapter_revision
         judgment_model = SARAInternalJudgmentModel(
             generate, model_id=model_id, model_revision=model_revision
@@ -57,7 +67,7 @@ class SARADialogueRuntime:
             judgment_model,
             run_selective_verification=self._verify_selected_claims,
             run_precheck=self._run_precheck,
-            pipeline_revision="sara-dialogue-inference-pipeline-v0.1",
+            pipeline_revision="sara-dialogue-inference-pipeline-v0.2",
         )
 
     @staticmethod
@@ -132,7 +142,15 @@ class SARADialogueRuntime:
             "runtime_revision": self.adapter_revision,
             "conversation_id": normalized["conversation_id"],
             "turn_id": normalized["turn_id"],
-            "verification_provider_invoked": bool(verification_results),
+            "verification_provider_invoked": any(
+                isinstance(item, Mapping) and item.get("execution_status") == "SUCCEEDED"
+                for item in verification_results
+            ),
+            "external_search_invoked": any(
+                isinstance(item, Mapping) and item.get("external_search_status") in {"COLLECTED", "NO_RESULTS"}
+                for item in verification_results
+            ),
+            "external_search_provider_configured": self._search_external_sources is not None,
             "verification_status_is_not_truthfulness": True,
             "audit_record_status": "NOT_CONFIGURED",
         })
@@ -185,7 +203,7 @@ class SARADialogueRuntime:
         if not isinstance(selected_ids, list) or not selected_ids:
             return self._run_precheck(
                 request, judgment,
-                {**dict(decision), "reason_code": "INFERENCE_HAS_NO_BOUND_CLAIM_CANDIDATE"},
+                {**dict(decision), "reason_code": "VERIFICATION_HAS_NO_BOUND_CLAIM_CANDIDATE"},
             )
         if any(candidate_id not in candidate_by_id for candidate_id in selected_ids):
             return self._run_precheck(
@@ -203,7 +221,12 @@ class SARADialogueRuntime:
         for claim_id in selected_ids:
             candidate = candidate_by_id[claim_id]
             claim = dict(candidate)
-            claim["inference_level"] = "INFERENCE"
+            claim["inference_level"] = (
+                "INFERENCE" if judgment.get("judgment_status") == "INFERENCE_PRESENT"
+                else "ASSERTED_OR_ATTRIBUTED_CLAIM"
+            )
+            claim["verification_need"] = judgment.get("verification_need")
+            claim["external_check_need"] = judgment.get("external_check_need")
             claim["inference_basis"] = list(judgment.get("basis_spans", []))
             verify_request = {
                 "request_id": f"{request['request_id']}:{claim_id}",
@@ -224,8 +247,62 @@ class SARADialogueRuntime:
                     "trigger_policy_revision": decision.get("policy_revision"),
                     "inference_types": list(judgment.get("inference_types", [])),
                     "inference_basis_spans": list(judgment.get("basis_spans", [])),
+                    "verification_need": judgment.get("verification_need"),
+                    "external_check_need": judgment.get("external_check_need"),
                 },
             }
+            if judgment.get("external_check_need") == "REQUIRED":
+                if self._search_external_sources is None:
+                    results.append({
+                        "claim_id": claim_id,
+                        "execution_status": "BLOCKED",
+                        "external_search_status": "NOT_CONFIGURED",
+                        "verification_status": "UNVERIFIED",
+                        "error_code": "EXTERNAL_SEARCH_PROVIDER_NOT_CONFIGURED",
+                    })
+                    continue
+                try:
+                    external = collect_external_evidence(
+                        self._search_external_sources,
+                        claim=claim,
+                        context={
+                            "conversation_id": request.get("conversation_id"),
+                            "turn_id": request.get("turn_id"),
+                            "input_revision_digest": judgment.get("input_revision_digest"),
+                            "dialogue_context": request.get("context", {}),
+                        },
+                        timeout_seconds=self._external_search_timeout_seconds,
+                        max_results=5,
+                    )
+                except ExternalEvidenceError as exc:
+                    results.append({
+                        "claim_id": claim_id,
+                        "execution_status": "FAILED",
+                        "external_search_status": "FAILED",
+                        "verification_status": "UNVERIFIED",
+                        "error_code": str(exc),
+                    })
+                    continue
+                if external["status"] == "NO_RESULTS":
+                    results.append({
+                        "claim_id": claim_id,
+                        "execution_status": "NO_EVIDENCE",
+                        "external_search_status": "NO_RESULTS",
+                        "verification_status": "UNVERIFIED",
+                        "external_evidence_count": 0,
+                        "error_code": "NO_EXTERNAL_EVIDENCE_FOUND",
+                    })
+                    continue
+                verify_request["evidence"] = [
+                    *verify_request["evidence"],
+                    *external["results"],
+                ]
+                verify_request["review_context"]["external_search"] = {
+                    "status": external["status"],
+                    "result_count": external["result_count"],
+                    "external_evidence_ids": [item["id"] for item in external["results"]],
+                    "source_candidates_are_not_verified": True,
+                }
             try:
                 raw = self._verify_claim(verify_request)
                 if not isinstance(raw, Mapping):
@@ -239,6 +316,11 @@ class SARADialogueRuntime:
                     "claim_id": claim_id,
                     "execution_status": "SUCCEEDED",
                     "output": dict(raw),
+                    "external_search_status": (
+                        "COLLECTED" if judgment.get("external_check_need") == "REQUIRED"
+                        and self._search_external_sources is not None else "NOT_REQUIRED"
+                    ),
+                    "external_evidence_count": len(verify_request.get("evidence", [])) - len(evidence),
                     "output_is_research_evidence": False,
                 })
             except Exception as exc:

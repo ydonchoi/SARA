@@ -32,7 +32,7 @@ def request():
     }
 
 
-def generate_for(status="INFERENCE_PRESENT", confidence="HIGH", claim_refs=None):
+def generate_for(status="INFERENCE_PRESENT", confidence="HIGH", claim_refs=None, verification_need=None, external_check_need="NOT_REQUIRED"):
     def generate(_rubric, payload, timeout_seconds):
         assert timeout_seconds > 0
         detected = status == "INFERENCE_PRESENT"
@@ -40,6 +40,8 @@ def generate_for(status="INFERENCE_PRESENT", confidence="HIGH", claim_refs=None)
             "request_id": payload["request_id"],
             "input_revision_digest": compute_judgment_input_digest(payload),
             "judgment_status": status,
+            "verification_need": verification_need or ("REQUIRED" if detected else "NOT_REQUIRED"),
+            "external_check_need": external_check_need,
             "inference_types": ["CAUSAL"] if detected else [],
             "basis_spans": ["therefore the campaign caused the increase"] if detected else [],
             "rationale": "The stated conclusion goes beyond a temporal association.",
@@ -114,7 +116,7 @@ def test_inference_without_bound_claim_candidate_routes_to_precheck():
     def precheck(_request, judgment, decision):
         calls["precheck"] += 1
         assert judgment["judgment_status"] == "INFERENCE_PRESENT"
-        assert decision["reason_code"] == "INFERENCE_HAS_NO_BOUND_CLAIM_CANDIDATE"
+        assert decision["reason_code"] == "VERIFICATION_HAS_NO_BOUND_CLAIM_CANDIDATE"
         return {"status": "NEEDS_REVIEW"}
 
     result = process_dialogue_turn(
@@ -263,3 +265,99 @@ def test_event_sink_failure_remains_visible_and_does_not_claim_recorded_audit():
     )
     assert result["audit_record_status"] == "FAILED"
     assert result["audit_record_error_type"] == "OSError"
+
+
+def test_external_search_runs_for_direct_claim_without_inference_when_required():
+    verify_calls = []
+    search_calls = []
+
+    def provider(payload):
+        verify_calls.append(payload)
+        return provider_result()
+
+    def search(payload, timeout):
+        search_calls.append((payload, timeout))
+        return [{
+            "url": "https://example.org/official-report",
+            "title": "Official report",
+            "snippet": "The report states the policy was announced yesterday.",
+        }]
+
+    result = process_dialogue_turn(
+        request(),
+        judgment_generate=generate_for(
+            "NO_INFERENCE_DETECTED", "HIGH", claim_refs=["C-1"],
+            verification_need="REQUIRED", external_check_need="REQUIRED",
+        ),
+        verification_provider=provider,
+        external_search_provider=search,
+        model_id="sara-model",
+        model_revision="runtime-test-double",
+    )
+
+    assert len(search_calls) == 1
+    assert search_calls[0][0]["claim_id"] == "C-1"
+    assert search_calls[0][1] > 0
+    assert len(verify_calls) == 1
+    evidence = verify_calls[0]["evidence"]
+    assert len(evidence) == 1
+    assert evidence[0]["evidence_kind"] == "EXTERNAL_SOURCE_CANDIDATE"
+    assert evidence[0]["verification_status"] == "UNASSESSED"
+    assert result["external_search_invoked"] is True
+    assert result["verification_provider_invoked"] is True
+    assert result["judgment"]["judgment_status"] == "NO_INFERENCE_DETECTED"
+    assert verify_calls[0]["claim"]["inference_level"] == "ASSERTED_OR_ATTRIBUTED_CLAIM"
+
+
+def test_required_external_search_without_provider_does_not_call_verifier():
+    verify_calls = []
+
+    def provider(payload):
+        verify_calls.append(payload)
+        return provider_result()
+
+    result = process_dialogue_turn(
+        request(),
+        judgment_generate=generate_for(
+            "NO_INFERENCE_DETECTED", "HIGH", claim_refs=["C-1"],
+            verification_need="REQUIRED", external_check_need="REQUIRED",
+        ),
+        verification_provider=provider,
+        model_id="sara-model",
+        model_revision="runtime-test-double",
+    )
+
+    assert verify_calls == []
+    assert result["external_search_provider_configured"] is False
+    assert result["verification_provider_invoked"] is False
+    item = result["route_execution"]["output"]["verification_results"][0]
+    assert item["execution_status"] == "BLOCKED"
+    assert item["verification_status"] == "UNVERIFIED"
+    assert item["error_code"] == "EXTERNAL_SEARCH_PROVIDER_NOT_CONFIGURED"
+
+
+def test_no_external_results_does_not_call_verifier_or_claim_falsehood():
+    verify_calls = []
+
+    def provider(payload):
+        verify_calls.append(payload)
+        return provider_result()
+
+    result = process_dialogue_turn(
+        request(),
+        judgment_generate=generate_for(
+            "NO_INFERENCE_DETECTED", "HIGH", claim_refs=["C-1"],
+            verification_need="REQUIRED", external_check_need="REQUIRED",
+        ),
+        verification_provider=provider,
+        external_search_provider=lambda *_: [],
+        model_id="sara-model",
+        model_revision="runtime-test-double",
+    )
+
+    assert verify_calls == []
+    item = result["route_execution"]["output"]["verification_results"][0]
+    assert item["execution_status"] == "NO_EVIDENCE"
+    assert item["verification_status"] == "UNVERIFIED"
+    assert item["external_search_status"] == "NO_RESULTS"
+    assert result["claim_truth_assessed"] is False

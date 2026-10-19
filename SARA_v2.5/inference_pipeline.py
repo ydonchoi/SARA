@@ -32,7 +32,7 @@ class SARAInferencePipeline:
         *,
         run_selective_verification: VerificationCallable,
         run_precheck: PrecheckCallable,
-        pipeline_revision: str = "sara-inference-pipeline-v0.1",
+        pipeline_revision: str = "sara-inference-pipeline-v0.2",
     ) -> None:
         if not isinstance(judgment_model, SARAInternalJudgmentModel):
             raise InferencePipelineError("SARA_INTERNAL_JUDGMENT_MODEL_REQUIRED")

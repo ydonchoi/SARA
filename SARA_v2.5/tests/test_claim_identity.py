@@ -43,7 +43,7 @@ def test_revision_text_change_changes_digest():
 
 def test_verification_binding_requires_exact_revision_and_digest():
     revision = create_claim_revision(
-        claim_id="C1", revision_id="R2", text="Claim A.", scope=SCOPE
+        claim_id="C1", revision_id="R2", text="Claim A.", scope=SCOPE, provenance_ids=("SRC-1",)
     )
     result = assess_verification_reuse(
         revision=revision,
@@ -68,7 +68,7 @@ def test_verification_binding_requires_exact_revision_and_digest():
 
 def test_current_binding_can_be_reused_only_for_same_revision_evidence_and_verifier():
     revision = create_claim_revision(
-        claim_id="C1", revision_id="R1", text="Claim A.", scope=SCOPE
+        claim_id="C1", revision_id="R1", text="Claim A.", scope=SCOPE, provenance_ids=("SRC-1",)
     )
     result = assess_verification_reuse(
         revision=revision,
@@ -99,7 +99,7 @@ def test_current_binding_can_be_reused_only_for_same_revision_evidence_and_verif
 )
 def test_verifier_or_evidence_change_invalidates_reuse(changed_field, current_value, expected_reason):
     revision = create_claim_revision(
-        claim_id="C1", revision_id="R1", text="Claim A.", scope=SCOPE
+        claim_id="C1", revision_id="R1", text="Claim A.", scope=SCOPE, provenance_ids=("SRC-1",)
     )
     prior = {
         "claim_id": revision.claim_id,
@@ -134,7 +134,7 @@ def test_verifier_or_evidence_change_invalidates_reuse(changed_field, current_va
 
 def test_unverified_prior_result_is_unresolved_not_reusable():
     revision = create_claim_revision(
-        claim_id="C1", revision_id="R1", text="Claim A.", scope=SCOPE
+        claim_id="C1", revision_id="R1", text="Claim A.", scope=SCOPE, provenance_ids=("SRC-1",)
     )
     result = assess_verification_reuse(
         revision=revision,
@@ -157,7 +157,7 @@ def test_unverified_prior_result_is_unresolved_not_reusable():
 
 def test_verification_contract_revision_is_required():
     revision = create_claim_revision(
-        claim_id="C1", revision_id="R1", text="Claim A.", scope=SCOPE
+        claim_id="C1", revision_id="R1", text="Claim A.", scope=SCOPE, provenance_ids=("SRC-1",)
     )
     with pytest.raises(ValueError, match="VERIFICATION_CONTRACT_REVISION_REQUIRED"):
         assess_verification_reuse(
@@ -171,4 +171,28 @@ def test_verification_contract_revision_is_required():
 
 def test_claim_and_revision_ids_are_required():
     with pytest.raises(ValueError, match="CLAIM_ID_REQUIRED"):
-        create_claim_revision(claim_id="", revision_id="R1", text="x", scope=SCOPE)
+        create_claim_revision(claim_id="", revision_id="R1", text="x", scope=SCOPE, provenance_ids=("SRC-1",))
+
+
+def test_revision_without_provenance_cannot_reuse_prior_verification():
+    revision = create_claim_revision(
+        claim_id="C1", revision_id="R1", text="Claim A.", scope=SCOPE
+    )
+    result = assess_verification_reuse(
+        revision=revision,
+        prior_binding={
+            "claim_id": revision.claim_id,
+            "revision_id": revision.revision_id,
+            "content_digest": revision.content_digest,
+            "verifier_revision": "verify-1",
+            "verification_contract_revision": "contract-1",
+            "evidence_digest": "evidence-1",
+            "verification_status": "VERIFIED",
+        },
+        current_verifier_revision="verify-1",
+        current_contract_revision="contract-1",
+        current_evidence_digest="evidence-1",
+    )
+    assert result["review_state"] == "UNRESOLVED"
+    assert result["reuse_allowed"] is False
+    assert "REVISION_PROVENANCE_MISSING" in result["reasons"]

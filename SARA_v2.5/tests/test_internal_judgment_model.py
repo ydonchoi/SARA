@@ -30,6 +30,8 @@ def output_for(request, **overrides):
         "request_id": request["request_id"],
         "input_revision_digest": compute_judgment_input_digest(request),
         "judgment_status": "INFERENCE_PRESENT",
+        "verification_need": "REQUIRED",
+        "external_check_need": "NOT_REQUIRED",
         "inference_types": ["CAUSAL"],
         "basis_spans": ["so the policy caused the decline"],
         "rationale": "Temporal order alone does not establish causation.",
@@ -78,6 +80,8 @@ def test_no_inference_judgment_is_not_a_truth_verdict():
         return output_for(
             payload,
             judgment_status="NO_INFERENCE_DETECTED",
+            verification_need="NOT_REQUIRED",
+            external_check_need="NOT_REQUIRED",
             inference_types=[],
             basis_spans=[],
             rationale="The turn only restates an attributed sentence.",
