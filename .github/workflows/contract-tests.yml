@@ -23,5 +23,7 @@ jobs:
         run: python -m pytest tests/test_review_resolution_provenance.py -q
       - name: Run SARA v2.4 epistemic and logical-audit tests
         run: python -m pytest SARA_v2.4/tests/test_epistemic.py SARA_v2.4/tests/test_logical_audit.py -q
+      - name: Run SARA v2.5 claim identity and conflict prototypes
+        run: python -m pytest SARA_v2.5/tests/test_claim_identity.py SARA_v2.5/tests/test_conflict_adjudication.py -q
       - name: Validate v2.5 Preflight JSON fixture
         run: python -m json.tool SARA_v2.5/benchmark/preflight_cases.json > /dev/null
