@@ -115,3 +115,21 @@ logical_audit:
     - structural_cycle_is_candidate_only
     - logical_audit_output_is_not_evidence
     - graph_integrity_does_not_establish_semantic_validity
+
+
+runtime_integration:
+  callable_entrypoint: sara_runtime.execute_request
+  epistemic_adapter: co_thoughts_sara_adapter.CoThoughtsSARAAdapter
+  logical_audit_entrypoint: logical_audit.validate_argument_graph
+  argument_graph:
+    required_fields: [nodes, edges]
+    free_form_text_parsing: NOT_SUPPORTED
+    absent_graph_status: NOT_RUN
+    malformed_graph_status: INVALID_INPUT
+  source_attribution:
+    AUTHOR_EXPLICIT_requires_nonempty_evidence_source: true
+  boundaries:
+    - v2.4_assessment_is_decision_support_not_evidence
+    - structural_cycle_is_candidate_only
+    - semantic_audit_remains_NOT_PERFORMED_without_semantic_evaluator
+    - provider_execution_uses_injected_v2_3_contract
