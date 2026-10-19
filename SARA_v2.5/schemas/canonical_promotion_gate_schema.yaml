@@ -11,7 +11,7 @@ required_evidence:
   - head_sha
   - ci.head_sha
   - ci.conclusion
-  - ci.jobs
+  - ci.suites
   - readiness
   - benchmark
   - documentation
@@ -20,18 +20,21 @@ required_evidence:
 ci:
   head_sha_must_equal_candidate_head: true
   conclusion: success
-  required_jobs:
-    - v2.4-epistemic
-    - v2.4-logical-audit
-    - v2.5-claim-identity
-    - v2.5-evidence-conflict
-    - v2.5-evaluator-boundary
-    - v2.5-evaluator-runner
-    - v2.5-selective-planning
-    - v2.5-reverification-runner
-    - v2.5-provenance-ledger
-    - v2.5-verification-commit-gate
-    - v2.5-preflight
+  required_suites:
+    - external_execution_contracts
+    - content_access
+    - review_resolution_provenance
+    - v24_epistemic_logical_audit
+    - v25_claim_identity_conflict
+    - v25_evaluator_boundary
+    - v25_evaluator_runner
+    - v25_selective_reverification
+    - v25_reverification_runner
+    - v25_provenance_ledger
+    - v25_verification_commit_gate
+    - v25_promotion_gate
+    - v25_preflight_coverage
+    - v25_preflight_json
 
 readiness:
   required_status: VERIFIED
@@ -45,6 +48,15 @@ readiness:
 
 benchmark:
   dataset_status: INDEPENDENTLY_ADJUDICATED
+  minimum_case_count: 18
+  required_suites:
+    - logical_audit
+    - claim_identity
+    - evidence_conflict
+    - evaluator_boundary
+    - evaluator_runner
+    - selective_reverification
+    - reverification_runner
   minimum_distinct_reviewers_per_case: 2
   review_record_required:
     - reviewer_id
