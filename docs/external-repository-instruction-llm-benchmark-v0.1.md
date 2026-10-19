@@ -98,6 +98,10 @@ For each run preserve:
 
 Never infer a successful tool call from the model's narrative. The run record must distinguish tool invocation, returned data, interpretation, and final claim.
 
+## Preregistration template
+
+`benchmark/repo_instruction_preregistration_template.json` provides a structured checklist for freezing the protocol, source snapshots, model/runtime revisions, independent reviewers, paired design, exclusions, metrics, thresholds, and approval. It is intentionally incomplete. A null field is a blocker, not an invitation to infer a value. Do not mark the study preregistered until the completed manifest and dataset are reviewed and approved.
+
 ## Current blockers
 
 - No independent reviewers or adjudicated case set are designated in this draft.
