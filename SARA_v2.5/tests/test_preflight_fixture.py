@@ -7,6 +7,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from claim_identity import ClaimRevision, assess_verification_reuse
 from conflict_adjudication import EvidencePosition, adjudicate_evidence_conflict
+from evaluator_boundary import EvaluatorSignal, validate_evaluator_signal
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "benchmark" / "preflight_cases.json"
@@ -32,6 +33,8 @@ def test_preflight_case_ids_are_unique_and_outcomes_are_explicit():
             "expected_action",
             "expected_review_state",
             "expected_conflict_status",
+            "expected_execution_status",
+            "expected_review_required",
         ))
         for case in cases
     )
@@ -40,7 +43,7 @@ def test_preflight_case_ids_are_unique_and_outcomes_are_explicit():
 def test_preflight_covers_logical_audit_identity_and_evidence_conflict():
     data = load_fixture()
     suites = {case["suite"] for case in data["cases"]}
-    assert suites == {"logical_audit", "claim_identity", "evidence_conflict"}
+    assert suites == {"logical_audit", "claim_identity", "evidence_conflict", "evaluator_boundary"}
 
 
 def test_claim_identity_cases_bind_verification_contract_revision():
@@ -118,6 +121,27 @@ def test_supported_preflight_support_cycle_returns_candidate_only():
     assert len(result["candidate_findings"]) == 1
     assert result["candidate_findings"][0]["category"] == "CIRCULAR_REASONING"
     assert result["candidate_findings"][0]["status"] == "CANDIDATE"
+
+
+def test_evaluator_boundary_preflight_cases_execute_against_result_contract():
+    data = load_fixture()
+    cases = [case for case in data["cases"] if case["suite"] == "evaluator_boundary"]
+    assert cases
+    for case in cases:
+        evaluator_signal = EvaluatorSignal(**{
+            **case["signal"],
+            "related_node_ids": tuple(case["signal"].get("related_node_ids", [])),
+            "evidence_ids": tuple(case["signal"].get("evidence_ids", [])),
+            "provenance_ids": tuple(case["signal"].get("provenance_ids", [])),
+        })
+        result = validate_evaluator_signal(
+            evaluator_signal,
+            expected_input_revision_digest=evaluator_signal.input_revision_digest,
+        )
+        assert result["execution_status"] == case["expected_execution_status"]
+        assert result["signal_status"] == case["expected_signal_status"]
+        assert result["review_required"] is case["expected_review_required"]
+        assert result["is_evidence"] is case["expected_is_evidence"]
 
 
 def test_conflict_cases_never_promote_claim_truth_status():
