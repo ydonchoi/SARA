@@ -2,10 +2,10 @@
 
 ## Status
 
-**PROPOSED DESIGN / NOT A RELEASED RUNTIME BASELINE.** SARA v2.4 remains the
-canonical verification baseline. This directory records the next-stage
-requirements and preflight fixtures; it does not claim that the v2.5 runtime
-has been implemented.
+**PROTOTYPE / NOT A RELEASED RUNTIME BASELINE.** SARA v2.4 remains the
+canonical verification baseline. Thin v2.5 prototypes now exist for claim revision
+binding and evidence-conflict state separation; full runtime integration, evaluator
+wiring, and independently adjudicated benchmarks remain incomplete.
 
 ## Goal
 
