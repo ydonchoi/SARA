@@ -3,7 +3,7 @@
 
 SARA (**Senior Academic Research Architect**)는 학술 연구를 단순히 요약하는 것을 넘어, 연구의 **Claim → Evidence → Method → Verification → Inference → Uncertainty** 구조를 추적하고, 필요할 경우 연구 방법의 재현 가능성과 시뮬레이션 가능성을 별도로 검토하도록 설계된 연구 분석 시스템이다.
 
-이 저장소는 SARA의 **v1.0부터 v2.4까지의 발전 과정과 버전별 산출물을 함께 보존**한다. v2.4는 Co-thoughts v2.0과 연결되는 canonical verification baseline이다.
+이 저장소는 SARA의 **v1.0부터 v2.5 프로토타입까지의 발전 과정과 버전별 산출물을 함께 보존**한다. v2.4는 Co-thoughts v2.0과 연결되는 canonical verification baseline이며, v2.5는 아직 승격 조건을 충족하지 않은 프로토타입이다.
 
 ---
 
@@ -480,9 +480,17 @@ SARA/
 
 ### Proposed next version
 
-**v2.5 — PROPOSED DESIGN ONLY**
+**v2.5 — PROTOTYPE / PROMOTION BLOCKED**
 
-Claim Identity & Versioning과 Evidence Conflict Adjudication의 초기 프로토타입을 추가했으며, Argument Dependency, Evaluator Boundary, Selective Reverification, Provenance History, Preflight Benchmark는 추가 개발 대상이다. `SARA_v2.5/`는 아직 출시·통합된 runtime baseline이 아니다.
+`SARA_v2.5/`에는 다음의 초기 구현과 회귀 테스트가 포함된다.
+
+- Claim Identity & Versioning 및 검증 결과 재사용 차단
+- Evidence Conflict 상태 분리와 selective re-verification 계획·실행 adapter
+- Stub provider로 테스트한 evaluator invocation adapter (실제 JEV/provider 연결은 미구성)
+- Hash-chained provenance ledger, explicit human-review commit gate, promotion gate
+- 18개 synthetic Preflight fixture와 독립 판정 프로토콜 초안
+
+현재 GitHub Contract Tests는 최신 확인 커밋에서 통과했지만, 외부 평가기 실연동, 18개 케이스의 독립 판정, v2.3/v2.4 비교 벤치마크, 배포용 저장소와 리뷰어 인증은 아직 확인되지 않았다. 따라서 v2.5는 출시·통합된 runtime baseline이 아니며 v2.4가 계속 canonical이다.
 
 ---
 
@@ -494,6 +502,8 @@ Claim Identity & Versioning과 Evidence Conflict Adjudication의 초기 프로�
 | **v2.1** | Modularization | Master / Core / Router / Agents / Analysis / Output / Schema |
 | **v2.2** | Systemization | Dependency Map / Loading Rules / Module Contracts / Validation |
 | **v2.3** | Verification & Execution | Verification Layer Separation / A6 / Simulation / Contract Mapping |
+| **v2.4** | Epistemic & Logical Audit | Claim-premise state separation / structured argument audit / temporal and attribution boundaries |
+| **v2.5 (prototype)** | Claim Identity & Reverification | Claim revision binding / evidence conflict separation / callable adapters / provenance and promotion gates; not canonical |
 
 ---
 
