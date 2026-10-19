@@ -85,6 +85,7 @@ def test_claim_identity_preflight_cases_execute_against_revision_guard():
                 separators=(",", ":")
             ),
             content_digest=revision_data["content_digest"],
+            provenance_ids=tuple(revision_data.get("provenance_ids", [])),
         )
         result = assess_verification_reuse(
             revision=revision,
