@@ -210,6 +210,10 @@ class SARADialogueRuntime:
                 "capability": "verify_claim",
                 "claim": claim,
                 "evidence": [dict(item) for item in evidence],
+                # A structured graph supplied with a candidate is passed to
+                # v2.4's deterministic checker; free-form text is not parsed
+                # into a graph by assumption.
+                "argument_graph": candidate.get("argument_graph"),
                 "provenance_ids": list(request.get("provenance_ids", [])),
                 "adapter_revision": str(request.get("adapter_revision", self.adapter_revision)),
                 "requested_at": str(request.get("requested_at") or datetime.now(timezone.utc).isoformat()),
