@@ -88,7 +88,9 @@ def test_callable_sara_runtime_automatically_verifies_claim_bound_to_inference()
     assert result["pipeline_status"] == "ROUTE_EXECUTED"
     assert result["verification_provider_invoked"] is True
     assert len(calls) == 1
-    assert calls[0]["capability"] == "verify_claim"
+    # ProductionVerificationBackend receives the normalized provider payload;
+    # the facade-level capability has already been validated and is not forwarded.
+    assert calls[0]["request_id"] == "REQ-RT-1:C-1"
     assert calls[0]["claim"]["id"] == "C-1"
     assert calls[0]["claim"]["inference_level"] == "INFERENCE"
     assert calls[0]["claim"]["inference_basis"] == [
