@@ -32,10 +32,21 @@ class CoThoughtsSARAAdapter:
             for p in premises
             if p.get("id")
         )
+        evidence_items = payload.get("evidence") or []
+        if not isinstance(evidence_items, (list, tuple)):
+            raise ValueError("EVIDENCE_ITEMS_MUST_BE_LIST")
+        # Attribution evidence must carry an actual source; an arbitrary ID is
+        # not enough to support AUTHOR_EXPLICIT attribution.
         available_evidence_ids = {
-            str(item["id"])
-            for item in (payload.get("evidence") or [])
-            if isinstance(item, Mapping) and item.get("id")
+            item["id"]
+            for item in evidence_items
+            if (
+                isinstance(item, Mapping)
+                and isinstance(item.get("id"), str)
+                and item["id"].strip()
+                and isinstance(item.get("source"), str)
+                and item["source"].strip()
+            )
         }
         state = validate_state(
             ClaimEvaluationState(
