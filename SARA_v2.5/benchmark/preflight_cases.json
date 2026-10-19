@@ -692,6 +692,79 @@
       "expected_route_execution_status": "SUCCEEDED",
       "expected_claim_truth_assessed": false,
       "label_status": "DRAFT"
+    },
+    {
+      "case_id": "V24-RT-001",
+      "suite": "v24_runtime_integration",
+      "case_type": "STRUCTURED_GRAPH_CYCLE_REACHES_CANONICAL_RUNTIME",
+      "request": {
+        "request_id": "REQ-V24-RT-001",
+        "capability": "verify_claim",
+        "claim": {
+          "id": "C-V24-RT-001",
+          "text": "A test proposition."
+        },
+        "premises": [],
+        "evidence": [],
+        "provenance_ids": [
+          "INPUT-PROV-V24-RT-001"
+        ],
+        "adapter_revision": "runtime-test-adapter-v1",
+        "requested_at": "2026-10-19T10:30:00Z",
+        "environment": {
+          "test": true
+        },
+        "argument_graph": {
+          "nodes": [
+            {
+              "node_id": "A",
+              "node_type": "CLAIM",
+              "text": "Claim A."
+            },
+            {
+              "node_id": "B",
+              "node_type": "CLAIM",
+              "text": "Claim B."
+            },
+            {
+              "node_id": "C",
+              "node_type": "CLAIM",
+              "text": "Claim C."
+            }
+          ],
+          "edges": [
+            {
+              "edge_id": "AB",
+              "source_id": "A",
+              "target_id": "B",
+              "relation": "SUPPORTS"
+            },
+            {
+              "edge_id": "BC",
+              "source_id": "B",
+              "target_id": "C",
+              "relation": "SUPPORTS"
+            },
+            {
+              "edge_id": "CA",
+              "source_id": "C",
+              "target_id": "A",
+              "relation": "SUPPORTS"
+            },
+            {
+              "edge_id": "AC",
+              "source_id": "A",
+              "target_id": "C",
+              "relation": "SUPPORTS"
+            }
+          ]
+        }
+      },
+      "expected_epistemic_verification_status": "UNVERIFIED",
+      "expected_logical_audit_status": "STRUCTURE_CHECKED",
+      "expected_candidate_findings": 2,
+      "expected_truthfulness_status": "UNASSESSED",
+      "label_status": "DRAFT"
     }
   ]
 }
