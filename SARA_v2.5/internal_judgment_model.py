@@ -81,12 +81,15 @@ def compute_judgment_input_digest(request: Mapping[str, Any]) -> str:
             raise InternalJudgmentError(f"JUDGMENT_{key.upper()}_REQUIRED")
     if not isinstance(request.get("context", ""), (str, list, tuple, Mapping)):
         raise InternalJudgmentError("JUDGMENT_CONTEXT_INVALID")
+    if not isinstance(request.get("reference_catalog", {}), Mapping):
+        raise InternalJudgmentError("JUDGMENT_REFERENCE_CATALOG_INVALID")
     payload = {
         "request_id": request["request_id"],
         "conversation_id": request["conversation_id"],
         "turn_id": request["turn_id"],
         "content": request["content"],
         "context": request.get("context", ""),
+        "reference_catalog": request.get("reference_catalog", {}),
     }
     return sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
 
@@ -152,6 +155,7 @@ class SARAInternalJudgmentModel:
             "turn_id": request["turn_id"],
             "content": request["content"],
             "context": request.get("context", ""),
+            "reference_catalog": request.get("reference_catalog", {}),
             "input_revision_digest": digest,
             "output_contract": {
                 "judgment_status": sorted(JUDGMENT_STATUSES),
@@ -171,7 +175,11 @@ class SARAInternalJudgmentModel:
 
         try:
             result = self._validate_output(
-                raw, request_id=request["request_id"], digest=digest
+                raw,
+                request_id=request["request_id"],
+                digest=digest,
+                content=request["content"],
+                reference_catalog=request.get("reference_catalog", {}),
             )
         except InternalJudgmentError:
             return self._execution_failure(request, digest, "INVALID_OUTPUT")
@@ -188,7 +196,13 @@ class SARAInternalJudgmentModel:
         return result
 
     def _validate_output(
-        self, raw: Any, *, request_id: str, digest: str
+        self,
+        raw: Any,
+        *,
+        request_id: str,
+        digest: str,
+        content: str,
+        reference_catalog: Mapping[str, Any],
     ) -> dict[str, Any]:
         if not isinstance(raw, Mapping):
             raise InternalJudgmentError("JUDGMENT_OUTPUT_MUST_BE_MAPPING")
@@ -197,7 +211,7 @@ class SARAInternalJudgmentModel:
         if raw.get("input_revision_digest") != digest:
             raise InternalJudgmentError("JUDGMENT_OUTPUT_DIGEST_MISMATCH")
         status = raw.get("judgment_status")
-        if status not in JUDGMENT_STATUSES:
+        if not isinstance(status, str) or status not in JUDGMENT_STATUSES:
             raise InternalJudgmentError("JUDGMENT_STATUS_INVALID")
         types = _string_list(raw.get("inference_types"), "inference_types")
         spans = _string_list(raw.get("basis_spans"), "basis_spans")
@@ -208,7 +222,7 @@ class SARAInternalJudgmentModel:
         if any(item not in INFERENCE_TYPES for item in types):
             raise InternalJudgmentError("JUDGMENT_INFERENCE_TYPE_INVALID")
         confidence = raw.get("confidence")
-        if confidence not in CONFIDENCE_LEVELS:
+        if not isinstance(confidence, str) or confidence not in CONFIDENCE_LEVELS:
             raise InternalJudgmentError("JUDGMENT_CONFIDENCE_INVALID")
         rationale = raw.get("rationale")
         uncertainty = raw.get("uncertainty_reason", "")
@@ -216,6 +230,23 @@ class SARAInternalJudgmentModel:
             raise InternalJudgmentError("JUDGMENT_RATIONALE_REQUIRED")
         if not isinstance(uncertainty, str):
             raise InternalJudgmentError("JUDGMENT_UNCERTAINTY_REASON_INVALID")
+        if any(span not in content for span in spans):
+            raise InternalJudgmentError("JUDGMENT_BASIS_SPAN_NOT_IN_INPUT")
+        catalog_fields = (
+            ("premise_refs", premise_refs),
+            ("claim_refs", claim_refs),
+            ("evidence_ids", evidence_ids),
+            ("provenance_ids", provenance_ids),
+        )
+        for field, refs in catalog_fields:
+            known = reference_catalog.get(field, [])
+            if not isinstance(known, list) or any(
+                not isinstance(value, str) or not value.strip() for value in known
+            ):
+                raise InternalJudgmentError("JUDGMENT_REFERENCE_CATALOG_INVALID")
+            if any(value not in known for value in refs):
+                raise InternalJudgmentError(f"JUDGMENT_UNKNOWN_{field.upper()}")
+
         if status == "INFERENCE_PRESENT":
             if not types or "NONE" in types or not spans:
                 raise InternalJudgmentError("INFERENCE_PRESENT_REQUIRES_TYPE_AND_BASIS")
