@@ -34,6 +34,14 @@ Co-thoughts may emit:
 
 SARA evaluates these without treating generation itself as evidence.
 
+## Logical Audit
+
+SARA v2.4 may validate argument-graph references and flag directed support/dependency cycles as candidate findings. A cycle is not, by itself, proof of a semantic fallacy. Semantic issues such as invalid inference, causal overreach, equivocation, overgeneralization, and omitted alternatives require an explicit evaluator or human review.
+
+Each finding records its target, category, status, rationale, related nodes, optional evidence references, severity, and assessor. A substantiated finding requires a rationale and at least one basis reference. Logical-audit output is a decision-support signal, never research evidence or an automatic truth judgment.
+
+The deterministic graph checker reports semantic_audit_status = NOT_PERFORMED; absence of structural findings must not be reported as no logical errors found.
+
 ## Promotion Firewall
 
 The following are prohibited without independent source evidence:
@@ -45,7 +53,7 @@ The following are prohibited without independent source evidence:
 
 ## Temporal Boundary
 
-Historical knowledge and post-publication/current knowledge are separate contexts. Later evidence cannot be silently inserted into Historical Author Mode.
+Historical knowledge and post-publication/current knowledge are separate contexts. Later evidence cannot be silently inserted into Historical Author Mode. Temporal context and attribution status are independent fields: AUTHOR_EXPLICIT requires explicit source-attribution evidence, not a particular temporal label.
 
 ## Revision Loop
 
