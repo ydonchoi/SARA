@@ -272,7 +272,10 @@
           "outcome": "readmission",
           "causal_strength": "causal"
         },
-        "content_digest": "CURRENT_DIGEST"
+        "content_digest": "CURRENT_DIGEST",
+        "provenance_ids": [
+          "FIXTURE-PROVENANCE-CV-001"
+        ]
       },
       "prior_binding": {
         "claim_id": "C1",
@@ -387,7 +390,10 @@
           "outcome": "readmission",
           "causal_strength": "association"
         },
-        "content_digest": "CLAIM-DIGEST-1"
+        "content_digest": "CLAIM-DIGEST-1",
+        "provenance_ids": [
+          "FIXTURE-PROVENANCE-CV-002"
+        ]
       },
       "prior_binding": {
         "claim_id": "C1",
