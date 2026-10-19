@@ -224,7 +224,7 @@ class SARADialogueRuntime:
             claim = dict(candidate)
             claim["inference_level"] = (
                 "INFERENCE" if judgment.get("judgment_status") == "INFERENCE_PRESENT"
-                else "ASSERTED_OR_ATTRIBUTED_CLAIM"
+                else "FACT"
             )
             claim["verification_need"] = judgment.get("verification_need")
             claim["external_check_need"] = judgment.get("external_check_need")
