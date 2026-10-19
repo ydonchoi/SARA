@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 from hashlib import sha256
+from math import isfinite
 from typing import Any
 
 SearchCallable = Callable[[Mapping[str, Any], float], list[Mapping[str, Any]]]
@@ -43,16 +44,20 @@ def collect_external_evidence(
         raise ExternalEvidenceError("EXTERNAL_SEARCH_CLAIM_TEXT_REQUIRED")
     if not isinstance(context, Mapping):
         raise ExternalEvidenceError("EXTERNAL_SEARCH_CONTEXT_MUST_BE_MAPPING")
-    if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)) or timeout_seconds <= 0:
+    if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)) or not isfinite(timeout_seconds) or timeout_seconds <= 0:
         raise ExternalEvidenceError("EXTERNAL_SEARCH_TIMEOUT_MUST_BE_POSITIVE")
     if isinstance(max_results, bool) or not isinstance(max_results, int) or max_results < 1 or max_results > 20:
         raise ExternalEvidenceError("EXTERNAL_SEARCH_MAX_RESULTS_OUT_OF_RANGE")
+
+    scope = claim.get("scope") or {}
+    if not isinstance(scope, Mapping):
+        raise ExternalEvidenceError("EXTERNAL_SEARCH_CLAIM_SCOPE_MUST_BE_MAPPING")
 
     request = {
         "purpose": "VERIFY_EXTERNAL_CLAIM",
         "claim_id": claim["id"],
         "claim_text": claim["text"],
-        "scope": dict(claim.get("scope") or {}),
+        "scope": dict(scope),
         "context": dict(context),
         "max_results": max_results,
         "required_result_fields": ["url", "title_or_source", "text_or_snippet"],
