@@ -104,10 +104,14 @@ def _run_v24_assessment(payload: Mapping[str, Any]) -> dict[str, Any]:
     argument graph is supplied, that component remains NOT_RUN rather than
     implying that semantic reasoning has been evaluated.
     """
-    claim = payload.get("claim") or {}
-    premises = payload.get("premises") or []
-    evidence = payload.get("evidence") or []
-    provenance_ids = payload.get("provenance_ids") or []
+    claim_value = payload.get("claim", {})
+    claim = {} if claim_value is None else claim_value
+    premises_value = payload.get("premises", [])
+    premises = [] if premises_value is None else premises_value
+    evidence_value = payload.get("evidence", [])
+    evidence = [] if evidence_value is None else evidence_value
+    provenance_value = payload.get("provenance_ids", [])
+    provenance_ids = [] if provenance_value is None else provenance_value
     if not isinstance(claim, Mapping):
         raise ValueError("V24_CLAIM_MUST_BE_OBJECT")
     if not isinstance(premises, (list, tuple)) or any(
