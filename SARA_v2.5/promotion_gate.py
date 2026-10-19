@@ -162,8 +162,10 @@ def evaluate_canonical_promotion(evidence: Mapping[str, Any]) -> dict[str, Any]:
         if documentation.get("v2_5_release_status") != "ACTIVE_CANONICAL":
             blockers.append({"code": "V2_5_RELEASE_STATUS_NOT_CANONICAL"})
 
-    unresolved = evidence.get("open_blockers", [])
-    if not isinstance(unresolved, list):
+    unresolved = evidence.get("open_blockers")
+    if unresolved is None:
+        blockers.append({"code": "OPEN_BLOCKERS_REQUIRED"})
+    elif not isinstance(unresolved, list):
         blockers.append({"code": "OPEN_BLOCKERS_MUST_BE_LIST"})
     else:
         for item in unresolved:
