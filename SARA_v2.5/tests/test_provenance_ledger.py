@@ -209,6 +209,9 @@ def test_explicit_status_commit_requires_bound_proposal_and_human_review():
             "verification_status": "UNVERIFIED",
             "review_event_id": "EV-3",
             "proposal_event_id": "EV-2",
+            "evidence_digest": "EVIDENCE-DIGEST-1",
+            "verifier_revision": "verify-1",
+            "verification_contract_revision": "contract-1",
         },
     )
     replay = ledger.replay_claim("C1")
@@ -224,7 +227,7 @@ def test_commit_without_review_event_is_rejected():
     ledger = ProvenanceEventLedger()
     register(ledger, "EV-1", digest="D1")
     append(ledger, "EV-2", "VERIFICATION_RESULT_PROPOSED")
-    with pytest.raises(ProvenanceLedgerError, match="STATUS_COMMIT_REVIEW_EVENT_REQUIRED"):
+    with pytest.raises(ProvenanceLedgerError, match="STATUS_COMMIT_REVIEW_NOT_ACCEPTED"):
         append(
             ledger, "EV-3", "CLAIM_STATUS_COMMITTED",
             payload={
