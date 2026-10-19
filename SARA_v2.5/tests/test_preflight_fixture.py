@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from claim_identity import ClaimRevision, assess_verification_reuse
+from claim_identity import ClaimRevision, assess_verification_reuse, compute_content_digest
 from conflict_adjudication import EvidencePosition, adjudicate_evidence_conflict
 from evaluator_boundary import EvaluatorSignal, validate_evaluator_signal
 from evaluator_runner import EvaluatorRunner
