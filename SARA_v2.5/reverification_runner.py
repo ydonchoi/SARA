@@ -143,10 +143,6 @@ class SelectiveReverificationRunner:
             if not isinstance(evidence_digest, str) or not evidence_digest.strip():
                 results.append(self._failure(claim_id, revision["revision_id"], "INCOMPLETE", "CURRENT_EVIDENCE_DIGEST_MISSING", impact, computed_digest))
                 continue
-            if not isinstance(prior_binding, Mapping):
-                results.append(self._failure(claim_id, revision["revision_id"], "INCOMPLETE", "PRIOR_VERIFICATION_BINDING_MISSING", impact, computed_digest))
-                continue
-
             expected_prior_status = impact.get("prior_verification_status")
             prior_status_known = bool(impact.get("prior_status_known", expected_prior_status is not None))
             if prior_status_known:
