@@ -8,10 +8,12 @@ never research evidence or a claim-verification result.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from datetime import datetime, timezone
 from math import isfinite
 from typing import Any
 
 from evaluator_boundary import EvaluatorSignal, validate_evaluator_signal
+from provenance_ledger import ProvenanceEventLedger
 
 ProviderCallable = Callable[[Mapping[str, Any], float], Mapping[str, Any]]
 
@@ -31,6 +33,8 @@ class EvaluatorRunner:
         evaluator_revision: str,
         rubric_revision: str,
         runner_revision: str = "sara-evaluator-runner-v0.1",
+        ledger: ProvenanceEventLedger | None = None,
+        actor_id: str = "evaluator-runner",
     ) -> None:
         if not callable(invoke):
             raise EvaluatorInvocationError("PROVIDER_CALLABLE_REQUIRED")
@@ -39,6 +43,7 @@ class EvaluatorRunner:
             (evaluator_revision, "EVALUATOR_REVISION_REQUIRED"),
             (rubric_revision, "EVALUATOR_RUBRIC_REVISION_REQUIRED"),
             (runner_revision, "EVALUATOR_RUNNER_REVISION_REQUIRED"),
+            (actor_id, "EVALUATOR_RUNNER_ACTOR_REQUIRED"),
         ):
             if not isinstance(value, str) or not value.strip():
                 raise EvaluatorInvocationError(error)
@@ -47,8 +52,45 @@ class EvaluatorRunner:
         self.evaluator_revision = evaluator_revision
         self.rubric_revision = rubric_revision
         self.runner_revision = runner_revision
+        self._ledger = ledger
+        self._actor_id = actor_id
 
     def run(
+        self,
+        request: Mapping[str, Any],
+        *,
+        timeout_seconds: float,
+        known_node_ids: tuple[str, ...] = (),
+        known_evidence_ids: tuple[str, ...] = (),
+    ) -> dict[str, Any]:
+        result = self._run_unrecorded(
+            request,
+            timeout_seconds=timeout_seconds,
+            known_node_ids=known_node_ids,
+            known_evidence_ids=known_evidence_ids,
+        )
+        if self._ledger is not None:
+            ledger_event = self._ledger.append_event(
+                event_id=f"EVALUATOR-RUN:{request['request_id']}:{len(self._ledger.events) + 1}",
+                event_type="EVALUATOR_RUN_COMPLETED",
+                claim_id=result["claim_id"],
+                revision_id=result["claim_revision_id"],
+                actor_id=self._actor_id,
+                occurred_at=datetime.now(timezone.utc).isoformat(),
+                input_digest=request["input_revision_digest"],
+                payload={
+                    "execution_status": result["execution_status"],
+                    "failure_code": result.get("failure_code"),
+                    "signal_status": result.get("signal", {}).get("signal_status"),
+                    "review_required": result.get("review_required", True),
+                    "commit_status": result.get("commit_status", "NOT_COMMITTED"),
+                },
+            )
+            result["provenance_event_id"] = ledger_event["event_id"]
+            result["provenance_event_hash"] = ledger_event["event_hash"]
+        return result
+
+    def _run_unrecorded(
         self,
         request: Mapping[str, Any],
         *,
