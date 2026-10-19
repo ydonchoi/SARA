@@ -250,7 +250,7 @@ def test_commit_rejects_proposal_or_review_from_another_claim_or_revision():
             "rationale": "Accepted for R1.", "proposal_event_id": "EV-3",
         },
     )
-    with pytest.raises(ProvenanceLedgerError, match="EVENT_INPUT_DIGEST_MISMATCH"):
+    with pytest.raises(ProvenanceLedgerError, match="STATUS_COMMIT_PROPOSAL_BINDING_MISMATCH"):
         append(
             ledger, "EV-5", "CLAIM_STATUS_COMMITTED", revision_id="R2",
             payload={
