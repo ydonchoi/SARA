@@ -136,6 +136,11 @@ class SelectiveReverificationRunner:
                         "proposed_verification_status": item.get("proposed_verification_status"),
                         "commit_status": item.get("commit_status", "NOT_COMMITTED"),
                         "external_result_id": item.get("external_result_id"),
+                        "external_result_provenance_ids": item.get("external_result_provenance_ids", []),
+                        "input_provenance_ids": item.get("input_provenance_ids", []),
+                        "evidence_digest": item.get("evidence_digest"),
+                        "verifier_revision": item.get("verifier_revision"),
+                        "verification_contract_revision": item.get("verification_contract_revision"),
                     },
                 )
                 item["provenance_event_id"] = ledger_event["event_id"]
