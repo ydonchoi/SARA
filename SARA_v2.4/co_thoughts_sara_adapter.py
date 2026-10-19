@@ -14,6 +14,9 @@ class CoThoughtsSARAAdapter:
         premises=payload.get("premises") or []
         if not claim.get("id") or not claim.get("text"): raise ValueError("CLAIM_ID_AND_TEXT_REQUIRED")
         p_eval=tuple(PremiseEvaluation(str(p["id"]), str(p.get("verification_status","UNVERIFIED"))) for p in premises if p.get("id"))
+        evidence_items=payload.get("evidence") or []
+        if not isinstance(evidence_items, (list, tuple)): raise ValueError("EVIDENCE_ITEMS_MUST_BE_LIST")
+        available_evidence_ids={item["id"] for item in evidence_items if isinstance(item, Mapping) and isinstance(item.get("id"), str) and item["id"].strip() and isinstance(item.get("source"), str) and item["source"].strip()}
         state=validate_state(ClaimEvaluationState(
             claim_id=str(claim["id"]),
             verification_status=str(claim.get("verification_status","UNVERIFIED")),
@@ -21,12 +24,14 @@ class CoThoughtsSARAAdapter:
             temporal_status=str(claim.get("temporal_status","CONTEMPORARY")),
             premise_evaluations=p_eval,
             provenance_ids=tuple(payload.get("provenance_ids") or ()),
-        ))
+            attribution_evidence_ids=tuple(claim.get("attribution_evidence_ids") or ()),
+        ), available_evidence_ids=available_evidence_ids)
         return {
             "adapter_revision":self.revision,
             "claim_id":state.claim_id,
             "verification_status":state.verification_status,
             "attribution_status":state.attribution_status,
+            "attribution_evidence_ids":list(state.attribution_evidence_ids),
             "temporal_status":state.temporal_status,
             "premise_evaluations":[{"premise_id":p.premise_id,"status":p.status} for p in state.premise_evaluations],
             "provenance_ids":list(state.provenance_ids),
