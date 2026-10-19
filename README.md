@@ -33,7 +33,7 @@ Unless a file or directory explicitly states otherwise, the license applies to t
 | **v2.2** | 모듈 간 실행 관계와 의존성 관리 도입 | v2.1 + SYSTEM / Dependency & Loading Architecture |
 | **v2.3** | 구조적 결함 수정 + 검증 계층 분리 + 재현/시뮬레이션 에이전트 도입 | v2.2 + A6 Simulator/Reproducer + Verification Layer Separation |\n| **v2.4** | Co-thoughts integration + premise/context/provenance verification | Knowledge Gate + Thought Gate + Premise Evaluation + Temporal/Interpretive Context + Attribution Firewall |
 
-> 버전별 폴더는 서로 다른 설계 단계를 보존하기 위한 **versioned snapshots**이다. 최신 구조만을 사용해야 하는 경우 `SARA_v2.3/`을 기준으로 한다.
+> 버전별 폴더는 서로 다른 설계 단계를 보존하기 위한 **versioned snapshots**이다. 현재 canonical verification baseline은 `SARA_v2.4/`이며, 이전 버전 폴더는 비교·이력 보존용이다.
 
 ---
 
@@ -471,7 +471,7 @@ SARA/
 
 ### Latest
 
-**v2.3**
+**v2.4 (canonical verification baseline)**
 
 `SARA_v2.3/`에는 다음 계층이 포함된다.
 
@@ -536,4 +536,4 @@ https://github.com/ydonchoi/SARA
 
 ## Current Version
 
-**SARA v2.3**
+**SARA v2.4**
