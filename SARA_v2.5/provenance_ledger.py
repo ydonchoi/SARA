@@ -72,6 +72,8 @@ class ProvenanceEventLedger:
             self._events.append(event)
         if self._events and not self.verify_chain()["valid"]:
             raise ProvenanceLedgerError("INVALID_IMPORTED_EVENT_CHAIN")
+        if self._events and not self._verify_event_semantics():
+            raise ProvenanceLedgerError("INVALID_IMPORTED_EVENT_HISTORY")
 
     @property
     def events(self) -> tuple[dict[str, Any], ...]:
@@ -104,7 +106,7 @@ class ProvenanceEventLedger:
         for value, error in required:
             if not isinstance(value, str) or not value.strip():
                 raise ProvenanceLedgerError(error)
-        if event_type not in EVENT_TYPES:
+        if not isinstance(event_type, str) or event_type not in EVENT_TYPES:
             raise ProvenanceLedgerError("INVALID_EVENT_TYPE")
         if not isinstance(payload, Mapping):
             raise ProvenanceLedgerError("EVENT_PAYLOAD_MUST_BE_MAPPING")
@@ -112,24 +114,14 @@ class ProvenanceEventLedger:
             raise ProvenanceLedgerError("DUPLICATE_EVENT_ID")
 
         safe_payload = deepcopy(dict(payload))
-        # Event-specific policy checks prevent proposed output from masquerading
-        # as a committed claim state.
-        if event_type == "VERIFICATION_RESULT_PROPOSED":
-            if "verification_status" in safe_payload:
-                raise ProvenanceLedgerError("PROPOSED_RESULT_MUST_NOT_SET_COMMITTED_STATUS")
-            if safe_payload.get("proposed_verification_status") not in COMMITTED_STATUSES:
-                raise ProvenanceLedgerError("INVALID_PROPOSED_VERIFICATION_STATUS")
-        if event_type == "EVALUATOR_RUN_COMPLETED" and "verification_status" in safe_payload:
-            raise ProvenanceLedgerError("EVALUATOR_EVENT_MUST_NOT_SET_VERIFICATION_STATUS")
-        if event_type == "CLAIM_STATUS_COMMITTED":
-            if safe_payload.get("verification_status") not in COMMITTED_STATUSES:
-                raise ProvenanceLedgerError("INVALID_COMMITTED_VERIFICATION_STATUS")
-            if not _is_registered_revision(self._events, claim_id, revision_id):
-                raise ProvenanceLedgerError("COMMIT_REVISION_NOT_REGISTERED")
-            if not _is_nonempty_string(safe_payload.get("review_event_id")):
-                raise ProvenanceLedgerError("STATUS_COMMIT_REVIEW_EVENT_REQUIRED")
-            if not _is_nonempty_string(safe_payload.get("proposal_event_id")):
-                raise ProvenanceLedgerError("STATUS_COMMIT_PROPOSAL_EVENT_REQUIRED")
+        self._validate_next_event(
+            event_type=event_type,
+            claim_id=claim_id,
+            revision_id=revision_id,
+            input_digest=input_digest,
+            payload=safe_payload,
+            prior_events=self._events,
+        )
         # Pre-validate JSON encoding before mutating the ledger.
         _canonical(safe_payload)
         base = {
@@ -150,6 +142,162 @@ class ProvenanceEventLedger:
         record = {**base, "event_hash": event_hash}
         self._events.append(record)
         return deepcopy(record)
+
+    @staticmethod
+    def _find_event(events: list[dict[str, Any]], event_id: str) -> dict[str, Any] | None:
+        return next((event for event in events if event.get("event_id") == event_id), None)
+
+    @staticmethod
+    def _registered_revision(
+        events: list[dict[str, Any]], claim_id: str, revision_id: str
+    ) -> dict[str, Any] | None:
+        return next((
+            event for event in reversed(events)
+            if event.get("event_type") == "CLAIM_REVISION_REGISTERED"
+            and event.get("claim_id") == claim_id
+            and event.get("revision_id") == revision_id
+        ), None)
+
+    @classmethod
+    def _validate_next_event(
+        cls,
+        *,
+        event_type: str,
+        claim_id: str,
+        revision_id: str,
+        input_digest: str,
+        payload: Mapping[str, Any],
+        prior_events: list[dict[str, Any]],
+    ) -> None:
+        registered = cls._registered_revision(prior_events, claim_id, revision_id)
+
+        if event_type == "CLAIM_REVISION_REGISTERED":
+            digest = payload.get("content_digest")
+            if not _is_nonempty_string(digest) or digest != input_digest:
+                raise ProvenanceLedgerError("CLAIM_REVISION_DIGEST_MISMATCH")
+            return
+
+        if event_type in {
+            "EVALUATOR_RUN_COMPLETED",
+            "VERIFICATION_RESULT_PROPOSED",
+            "HUMAN_REVIEW_RESOLUTION",
+            "CLAIM_STATUS_COMMITTED",
+        }:
+            if registered is None:
+                if event_type == "CLAIM_STATUS_COMMITTED":
+                    raise ProvenanceLedgerError("COMMIT_REVISION_NOT_REGISTERED")
+                raise ProvenanceLedgerError("EVENT_REVISION_NOT_REGISTERED")
+            if input_digest != registered.get("payload", {}).get("content_digest"):
+                raise ProvenanceLedgerError("EVENT_INPUT_DIGEST_MISMATCH")
+
+        if event_type == "EVALUATOR_RUN_COMPLETED":
+            if "verification_status" in payload or "proposed_verification_status" in payload:
+                raise ProvenanceLedgerError("EVALUATOR_EVENT_MUST_NOT_SET_VERIFICATION_STATUS")
+            execution = payload.get("execution_status")
+            if execution not in {"SUCCEEDED", "FAILED", "TIMEOUT", "INVALID_OUTPUT", "INCOMPLETE"}:
+                raise ProvenanceLedgerError("INVALID_EVALUATOR_EXECUTION_STATUS")
+            if execution != "SUCCEEDED" and payload.get("signal_status") != "NOT_AVAILABLE":
+                raise ProvenanceLedgerError("FAILED_EVALUATOR_SIGNAL_MUST_BE_NOT_AVAILABLE")
+
+        elif event_type == "REVERIFICATION_ATTEMPT_COMPLETED":
+            if "verification_status" in payload:
+                raise ProvenanceLedgerError("REVERIFICATION_ATTEMPT_MUST_NOT_COMMIT_STATUS")
+            execution = payload.get("execution_status")
+            if execution not in {"FAILED", "TIMEOUT", "INVALID_OUTPUT", "INCOMPLETE"}:
+                raise ProvenanceLedgerError("INVALID_FAILED_REVERIFICATION_STATUS")
+            if payload.get("commit_status", "NOT_COMMITTED") != "NOT_COMMITTED":
+                raise ProvenanceLedgerError("FAILED_REVERIFICATION_MUST_NOT_COMMIT")
+
+        elif event_type == "VERIFICATION_RESULT_PROPOSED":
+            if "verification_status" in payload:
+                raise ProvenanceLedgerError("PROPOSED_RESULT_MUST_NOT_SET_COMMITTED_STATUS")
+            if payload.get("proposed_verification_status") not in COMMITTED_STATUSES:
+                raise ProvenanceLedgerError("INVALID_PROPOSED_VERIFICATION_STATUS")
+            if not _is_nonempty_string(payload.get("external_result_id")):
+                raise ProvenanceLedgerError("PROPOSED_RESULT_ID_REQUIRED")
+            result_prov = payload.get("external_result_provenance_ids")
+            if (
+                not isinstance(result_prov, (list, tuple))
+                or not result_prov
+                or any(not _is_nonempty_string(item) for item in result_prov)
+                or len(set(result_prov)) != len(result_prov)
+            ):
+                raise ProvenanceLedgerError("PROPOSED_RESULT_PROVENANCE_REQUIRED")
+            input_prov = payload.get("input_provenance_ids", [])
+            if not isinstance(input_prov, (list, tuple)) or any(not _is_nonempty_string(item) for item in input_prov):
+                raise ProvenanceLedgerError("INVALID_INPUT_PROVENANCE")
+            if set(input_prov) & set(result_prov):
+                raise ProvenanceLedgerError("RESULT_PROVENANCE_REUSES_INPUT_PROVENANCE")
+            for field in ("evidence_digest", "verifier_revision", "verification_contract_revision"):
+                if not _is_nonempty_string(payload.get(field)):
+                    raise ProvenanceLedgerError(f"PROPOSED_RESULT_{field.upper()}_REQUIRED")
+            if payload.get("commit_status", "NOT_COMMITTED") != "NOT_COMMITTED":
+                raise ProvenanceLedgerError("PROPOSED_RESULT_MUST_NOT_COMMIT")
+
+        elif event_type == "HUMAN_REVIEW_RESOLUTION":
+            if not _is_nonempty_string(payload.get("reviewer_id")):
+                raise ProvenanceLedgerError("REVIEWER_ID_REQUIRED")
+            if payload.get("decision") not in {"ACCEPT", "REJECT", "REQUEST_REVISION"}:
+                raise ProvenanceLedgerError("INVALID_HUMAN_REVIEW_DECISION")
+            if not _is_nonempty_string(payload.get("rationale")):
+                raise ProvenanceLedgerError("HUMAN_REVIEW_RATIONALE_REQUIRED")
+            proposal_event_id = payload.get("proposal_event_id")
+            if proposal_event_id is not None:
+                proposal = cls._find_event(prior_events, proposal_event_id)
+                if (
+                    proposal is None
+                    or proposal.get("event_type") != "VERIFICATION_RESULT_PROPOSED"
+                    or proposal.get("claim_id") != claim_id
+                    or proposal.get("revision_id") != revision_id
+                ):
+                    raise ProvenanceLedgerError("REVIEW_PROPOSAL_BINDING_MISMATCH")
+
+        elif event_type == "CLAIM_STATUS_COMMITTED":
+            status = payload.get("verification_status")
+            if status not in COMMITTED_STATUSES:
+                raise ProvenanceLedgerError("INVALID_COMMITTED_VERIFICATION_STATUS")
+            review_event_id = payload.get("review_event_id")
+            proposal_event_id = payload.get("proposal_event_id")
+            if not _is_nonempty_string(review_event_id):
+                raise ProvenanceLedgerError("STATUS_COMMIT_REVIEW_EVENT_REQUIRED")
+            if not _is_nonempty_string(proposal_event_id):
+                raise ProvenanceLedgerError("STATUS_COMMIT_PROPOSAL_EVENT_REQUIRED")
+            proposal = cls._find_event(prior_events, proposal_event_id)
+            if (
+                proposal is None
+                or proposal.get("event_type") != "VERIFICATION_RESULT_PROPOSED"
+                or proposal.get("claim_id") != claim_id
+                or proposal.get("revision_id") != revision_id
+                or proposal.get("payload", {}).get("proposed_verification_status") != status
+            ):
+                raise ProvenanceLedgerError("STATUS_COMMIT_PROPOSAL_BINDING_MISMATCH")
+            review = cls._find_event(prior_events, review_event_id)
+            if (
+                review is None
+                or review.get("event_type") != "HUMAN_REVIEW_RESOLUTION"
+                or review.get("claim_id") != claim_id
+                or review.get("revision_id") != revision_id
+                or review.get("payload", {}).get("decision") != "ACCEPT"
+                or review.get("payload", {}).get("proposal_event_id") != proposal_event_id
+            ):
+                raise ProvenanceLedgerError("STATUS_COMMIT_REVIEW_NOT_ACCEPTED")
+
+    def _verify_event_semantics(self) -> bool:
+        prior: list[dict[str, Any]] = []
+        try:
+            for event in self._events:
+                self._validate_next_event(
+                    event_type=event["event_type"],
+                    claim_id=event["claim_id"],
+                    revision_id=event["revision_id"],
+                    input_digest=event["input_digest"],
+                    payload=event["payload"],
+                    prior_events=prior,
+                )
+                prior.append(event)
+        except (KeyError, TypeError, ProvenanceLedgerError):
+            return False
+        return True
 
     def verify_chain(self) -> dict[str, Any]:
         previous_hash = GENESIS_HASH
