@@ -485,7 +485,8 @@
         "claim_id": "C1",
         "claim_revision_id": "R1",
         "claim_text": "The policy caused the outcome.",
-        "input_revision_digest": "ER-DIGEST-1"
+        "input_revision_digest": "8d2ebd0155c57f818c6283de8c41db38eb0a3ef26aa353ecdbb96337a8c2be67",
+        "scope": {}
       },
       "provider_behavior": "TIMEOUT",
       "expected_execution_status": "TIMEOUT",
@@ -504,7 +505,8 @@
         "claim_id": "C2",
         "claim_revision_id": "R1",
         "claim_text": "Claim text.",
-        "input_revision_digest": "ER-DIGEST-2"
+        "input_revision_digest": "cb56d830de6f3b306b449ba72fc908d1e5d03c3e0b268f371eae93688fe4b552",
+        "scope": {}
       },
       "provider_behavior": "NO_ISSUE",
       "expected_execution_status": "SUCCEEDED",
