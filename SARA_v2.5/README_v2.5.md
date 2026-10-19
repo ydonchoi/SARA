@@ -3,9 +3,10 @@
 ## Status
 
 **PROTOTYPE / NOT A RELEASED RUNTIME BASELINE.** SARA v2.4 remains the
-canonical verification baseline. Thin v2.5 prototypes now exist for claim revision
-binding and evidence-conflict state separation; full runtime integration, evaluator
-wiring, and independently adjudicated benchmarks remain incomplete.
+canonical verification baseline. Thin v2.5 prototypes exist for claim revision
+binding, evidence-conflict state separation, and evaluator-result boundary
+validation. External evaluator invocation, selective re-verification integration,
+provenance replay, and independently adjudicated benchmarks remain incomplete.
 
 ## Goal
 
@@ -114,8 +115,17 @@ promotes or downgrades the claim's verification or truthfulness status.
 - Use dependency links to identify which claims need re-verification after a
   premise, evidence item, scope, or method changes.
 
+The new `evaluator_boundary.py` validates an evaluator-result envelope without
+calling the evaluator. It binds output to the expected input-revision digest,
+separates execution status from signal status, rejects a research signal from a
+failed/timed-out/invalid/incomplete execution, requires a basis for issue
+candidates, and always marks its output as non-evidence. `NO_ISSUE_REPORTED`
+does not assert logical validity. The selective re-verification scheduler and
+external evaluator wiring remain unimplemented.
+
 **Gate:** tests verify evaluator failure handling, disagreement retention, stale
-state invalidation, and selective re-verification scope.
+state invalidation, and selective re-verification scope. The current prototype
+tests only the result-envelope boundary; they do not satisfy the full gate.
 
 ### P2 — Provenance History
 
@@ -145,6 +155,11 @@ versioned inputs and events, and can identify missing provenance.
 **Gate:** every change to schemas, status rules, evaluator adapters, or conflict
 resolution runs the same frozen regression set. Draft synthetic labels must be
 independently reviewed before being treated as a gold standard.
+
+The current 13-case draft fixture includes executable checks for implemented
+claim-identity, evidence-conflict, evaluator-failure-boundary, and structural-cycle
+prototypes. Other semantic logical-audit cases remain target cases, not evidence
+that a natural-language fallacy detector exists. All labels remain DRAFT.
 
 ## Core state separation
 
