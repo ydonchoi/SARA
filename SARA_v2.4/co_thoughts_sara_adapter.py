@@ -1,35 +1,66 @@
 """Co-thoughts v2.0 -> SARA v2.4 adapter.
 
-Generation remains unverified; SARA evaluates the supplied epistemic objects.
+Generation remains unverified; SARA validates supplied epistemic objects.
+The adapter does not fetch sources or promote generated text to evidence.
 """
 from __future__ import annotations
+
 from typing import Any, Mapping
-from sara_v24_epistemic import ClaimEvaluationState, PremiseEvaluation, validate_state
+
+from sara_v24_epistemic import (
+    ClaimEvaluationState,
+    PremiseEvaluation,
+    assessment_warnings,
+    validate_state,
+)
+
 
 class CoThoughtsSARAAdapter:
-    revision="co-thoughts-v2.0/sara-v2.4"
+    revision = "co-thoughts-v2.0/sara-v2.4"
 
-    def evaluate(self, payload:Mapping[str,Any])->dict[str,Any]:
-        claim=payload.get("claim") or {}
-        premises=payload.get("premises") or []
-        if not claim.get("id") or not claim.get("text"): raise ValueError("CLAIM_ID_AND_TEXT_REQUIRED")
-        p_eval=tuple(PremiseEvaluation(str(p["id"]), str(p.get("verification_status","UNVERIFIED"))) for p in premises if p.get("id"))
-        state=validate_state(ClaimEvaluationState(
-            claim_id=str(claim["id"]),
-            verification_status=str(claim.get("verification_status","UNVERIFIED")),
-            attribution_status=str(claim.get("attribution_status","UNKNOWN")),
-            temporal_status=str(claim.get("temporal_status","CONTEMPORARY")),
-            premise_evaluations=p_eval,
-            provenance_ids=tuple(payload.get("provenance_ids") or ()),
-        ))
+    def evaluate(self, payload: Mapping[str, Any]) -> dict[str, Any]:
+        claim = payload.get("claim") or {}
+        premises = payload.get("premises") or []
+        if not claim.get("id") or not claim.get("text"):
+            raise ValueError("CLAIM_ID_AND_TEXT_REQUIRED")
+
+        premise_evaluations = tuple(
+            PremiseEvaluation(
+                premise_id=str(p["id"]),
+                status=str(p.get("verification_status", "UNVERIFIED")),
+            )
+            for p in premises
+            if p.get("id")
+        )
+        state = validate_state(
+            ClaimEvaluationState(
+                claim_id=str(claim["id"]),
+                verification_status=str(claim.get("verification_status", "UNVERIFIED")),
+                attribution_status=str(claim.get("attribution_status", "UNKNOWN")),
+                temporal_status=str(claim.get("temporal_status", "CONTEMPORARY")),
+                premise_evaluations=premise_evaluations,
+                provenance_ids=tuple(payload.get("provenance_ids") or ()),
+                attribution_evidence_ids=tuple(
+                    claim.get("attribution_evidence_ids") or ()
+                ),
+            )
+        )
+        warnings = assessment_warnings(state)
         return {
-            "adapter_revision":self.revision,
-            "claim_id":state.claim_id,
-            "verification_status":state.verification_status,
-            "attribution_status":state.attribution_status,
-            "temporal_status":state.temporal_status,
-            "premise_evaluations":[{"premise_id":p.premise_id,"status":p.status} for p in state.premise_evaluations],
-            "provenance_ids":list(state.provenance_ids),
-            "is_evidence":False,
-            "source":"SARA_VERIFICATION",
+            "adapter_revision": self.revision,
+            "claim_id": state.claim_id,
+            "verification_status": state.verification_status,
+            "attribution_status": state.attribution_status,
+            "attribution_evidence_ids": list(state.attribution_evidence_ids),
+            "temporal_status": state.temporal_status,
+            "premise_evaluations": [
+                {"premise_id": p.premise_id, "status": p.status}
+                for p in state.premise_evaluations
+            ],
+            "assessment_warnings": list(warnings),
+            "review_required": bool(warnings),
+            "logical_audit_status": "NOT_RUN",
+            "provenance_ids": list(state.provenance_ids),
+            "is_evidence": False,
+            "source": "SARA_VERIFICATION",
         }
