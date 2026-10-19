@@ -73,7 +73,7 @@ Secondary metrics:
 - abstention/escalation rate and reviewer workload;
 - case completion rate and missing-run rate.
 
-Report numerator, denominator, confidence interval/uncertainty method, missingness, and representative failures by task family and condition. Do not use aggregate accuracy alone.
+Report numerator, denominator, confidence interval/uncertainty method, missingness, and representative failures by task family and condition. Do not use aggregate accuracy alone. The scorer reports paired case coverage by model and condition; inspect missing conditions and unpaired case IDs before interpreting condition differences. A score from incomplete pairing is descriptive, not a complete paired comparison.
 
 ## Analysis plan
 
@@ -87,6 +87,7 @@ Acceptance thresholds must be agreed and versioned before scoring. Choosing thre
 
 For each run preserve:
 - case ID and dataset version;
+- a stable `repetition_id` for repeated executions of the same case-condition-model tuple (omit only when using the default single run);
 - condition and model/provider/version;
 - exact instruction/prompt version;
 - repository URLs, branch/ref, commit SHAs, paths retrieved, and retrieval timestamps;
