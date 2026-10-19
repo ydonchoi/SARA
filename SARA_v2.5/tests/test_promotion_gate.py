@@ -167,7 +167,7 @@ def test_benchmark_must_meet_minimum_case_count_and_required_suite_coverage():
     evidence["benchmark"]["cases"][0]["suite"] = "unregistered_suite"
     result = evaluate_canonical_promotion(evidence)
     assert result["status"] == "PROMOTION_BLOCKED"
-    assert any(item["code"] == "BENCHMARK_SUITE_COVERAGE_INCOMPLETE" for item in result["blockers"])
+    assert any(item["code"] == "BENCHMARK_CASE_SUITE_UNKNOWN" for item in result["blockers"])
 
 
 def test_unpassed_metrics_and_missing_open_blocker_declaration_fail_closed():
