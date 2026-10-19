@@ -33,7 +33,7 @@ Unless a file or directory explicitly states otherwise, the license applies to t
 | **v2.2** | 모듈 간 실행 관계와 의존성 관리 도입 | v2.1 + SYSTEM / Dependency & Loading Architecture |
 | **v2.3** | 구조적 결함 수정 + 검증 계층 분리 + 재현/시뮬레이션 에이전트 도입 | v2.2 + A6 Simulator/Reproducer + Verification Layer Separation |
 | **v2.4** | Co-thoughts integration + premise/context/provenance verification + logical audit boundary | Knowledge Gate + Thought Gate + Premise Evaluation + Logical Audit / Inference Review + Temporal/Interpretive Context + Attribution Firewall |
-| **v2.5 (prototype)** | Claim identity/versioning + logical audit + evidence-conflict separation + SARA-internal JEV-style judgment/trigger prototypes | Internal judgment rubric/model-runtime contract + inference activation policy/orchestration + schemas/tests; live dialogue integration and independent benchmark remain unverified |
+| **v2.5 (prototype)** | Claim identity/versioning + logical audit + evidence-conflict separation + SARA-internal JEV-style judgment/trigger and callable dialogue-route prototype | Internal judgment rubric/model-runtime contract + candidate-claim binding + `process_dialogue_turn` entrypoint + tests; actual host/model/verifier configuration and independent benchmark remain unverified |
 
 > 버전별 폴더는 서로 다른 설계 단계를 보존하기 위한 **versioned snapshots**이다. 현재 canonical verification baseline은 `SARA_v2.4/`이며, 이전 버전 폴더는 비교·이력 보존용이다.
 
@@ -486,11 +486,12 @@ SARA/
 
 - Claim Identity & Versioning 및 검증 결과 재사용 차단
 - Evidence Conflict 상태 분리와 selective re-verification 계획·실행 adapter
-- Stub provider로 테스트한 evaluator invocation adapter (실제 JEV/provider 연결은 미구성)
+- Stub provider로 테스트한 evaluator invocation adapter (외부 JEV 연결은 미구성)
+- `sara_runtime.process_dialogue_turn(...)` → SARA 내부 JEV형 판정 → 추론 활성화 정책 → 명시된 claim candidate에 대한 기존 SARA 검증 facade 호출; 모호하거나 대상 주장이 바인딩되지 않으면 사전 검토 경로로 라우팅
 - Hash-chained provenance ledger, explicit human-review commit gate, promotion gate
 - 18개 synthetic Preflight fixture와 독립 판정 프로토콜 초안
 
-현재 GitHub Contract Tests는 최신 확인 커밋에서 통과했지만, 외부 평가기 실연동, 18개 케이스의 독립 판정, v2.3/v2.4 비교 벤치마크, 배포용 저장소와 리뷰어 인증은 아직 확인되지 않았다. 따라서 v2.5는 출시·통합된 runtime baseline이 아니며 v2.4가 계속 canonical이다.
+새 dialogue-route의 결정론적 contract tests를 CI에 추가했다. 다만 실제 호스트 대화 루프와 모델·검증 provider 설정은 주입 가능한 경계로만 구현되었으며, 배포 환경의 실통합 검증은 완료되지 않았다. 현재 18개 Preflight 사례는 draft이고 dialogue_runtime benchmark suite도 아직 없으며, v2.3/v2.4/v2.5 비교 벤치마크, 배포용 내구성 저장소와 리뷰어 인증도 미확인이다. 따라서 v2.5는 출시·통합된 runtime baseline이 아니며 v2.4가 계속 canonical이다.
 
 ---
 
