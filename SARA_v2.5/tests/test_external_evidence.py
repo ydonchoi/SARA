@@ -67,3 +67,37 @@ def test_search_timeout_is_explicit():
         collect_external_evidence(
             search, claim=CLAIM, context=CONTEXT, timeout_seconds=1
         )
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "javascript:alert(1)",
+        "file:///etc/passwd",
+        "ftp://example.org/file",
+        "https:///missing-host",
+        "https://user:password@example.org/private",
+        "not a URL",
+    ],
+)
+def test_non_http_or_credential_bearing_urls_fail_closed(url):
+    with pytest.raises(ExternalEvidenceError, match="EXTERNAL_SEARCH_RESULT_URL_MUST_BE_HTTP"):
+        collect_external_evidence(
+            lambda *_: [{"url": url, "title": "Source", "snippet": "Candidate text"}],
+            claim=CLAIM,
+            context=CONTEXT,
+            timeout_seconds=1,
+        )
+
+
+@pytest.mark.parametrize("url", ["https://example.org/source", "http://example.org/source"])
+def test_absolute_http_urls_are_accepted_as_unverified_candidates(url):
+    result = collect_external_evidence(
+        lambda *_: [{"url": url, "title": "Source", "snippet": "Candidate text"}],
+        claim=CLAIM,
+        context=CONTEXT,
+        timeout_seconds=1,
+    )
+    assert result["status"] == "COLLECTED"
+    assert result["results"][0]["url"] == url
+    assert result["results"][0]["verification_status"] == "UNASSESSED"
