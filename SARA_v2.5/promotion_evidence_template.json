@@ -1,0 +1,35 @@
+{
+  "candidate_version": "v2.5",
+  "current_canonical_version": "v2.4",
+  "gate_status": "PROMOTION_BLOCKED",
+  "head_sha": null,
+  "ci": {
+    "head_sha": null,
+    "conclusion": "PENDING",
+    "jobs": {}
+  },
+  "readiness": {
+    "external_evaluator_integration_status": "NOT_CONFIGURED",
+    "reverification_runtime_status": "PROTOTYPE_ONLY",
+    "provenance_storage_replay_status": "PROTOTYPE_ONLY",
+    "schema_consistency_status": "PENDING",
+    "documentation_consistency_status": "NOT_CANONICAL"
+  },
+  "benchmark": {
+    "dataset_status": "DRAFT_NOT_INDEPENDENTLY_ADJUDICATED",
+    "cases": [],
+    "comparison_status": "NOT_RUN",
+    "metric_decisions": []
+  },
+  "documentation": {
+    "root_current_version": "v2.4",
+    "v2_5_release_status": "PROTOTYPE"
+  },
+  "open_blockers": [
+    "A real evaluator provider is not configured or independently integration-tested.",
+    "Runtime evaluator and reverification adapters require CI verification on the exact current head.",
+    "The 14-case Preflight fixture has draft labels and is not an independently adjudicated gold benchmark.",
+    "Comparative baseline evaluation and predeclared acceptance thresholds are not yet evidenced.",
+    "Canonical documentation must remain on v2.4 until the gate approves v2.5."
+  ]
+}
