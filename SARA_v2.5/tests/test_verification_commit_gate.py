@@ -134,10 +134,10 @@ def test_proposed_result_without_accept_review_cannot_be_committed():
     assert ledger.replay_claim("C1")["committed_verification_status"] is None
 
 
-def test_review_must_reference_exact_proposal():
-    ledger, revision, evidence, digest = prepared_ledger(review_proposal_id="OTHER-PROP")
-    with pytest.raises(VerificationCommitError, match="REVIEW_PROPOSAL_BINDING_MISMATCH"):
-        commit(ledger, revision, evidence, digest)
+def test_commit_must_reference_exact_proposal():
+    ledger, revision, evidence, digest = prepared_ledger()
+    with pytest.raises(VerificationCommitError, match="VERIFICATION_PROPOSAL_NOT_FOUND"):
+        commit(ledger, revision, evidence, digest, proposal_event_id="OTHER-PROP")
 
 
 def test_claim_revision_and_content_digest_must_be_current():
