@@ -80,10 +80,10 @@ def test_malformed_condition_type_is_rejected():
 @pytest.mark.parametrize(
     "field,value,error",
     [
-        ("expected", {"rule_applied": ["yes"]}, "EXPECTED_LABEL_MUST_BE_SCALAR"),
+        ("expected", {"rule_applied": ["yes"], "evidence_traceable": True}, "EXPECTED_LABEL_MUST_BE_SCALAR"),
         ("observed", {"rule_applied": {"nested": True}, "evidence_traceable": True},
          "OBSERVED_LABEL_MUST_BE_SCALAR"),
-        ("expected", {"rule_applied": float("nan")}, "EXPECTED_LABEL_MUST_BE_FINITE"),
+        ("expected", {"rule_applied": float("nan"), "evidence_traceable": True}, "EXPECTED_LABEL_MUST_BE_FINITE"),
         ("observed", {"rule_applied": float("inf"), "evidence_traceable": True},
          "OBSERVED_LABEL_MUST_BE_FINITE"),
     ],
