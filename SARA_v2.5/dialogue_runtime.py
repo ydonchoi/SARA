@@ -111,7 +111,10 @@ class SARADialogueRuntime:
             raise DialogueRuntimeError("DIALOGUE_TURN_REFERENCE_CATALOG_INVALID")
         catalog = dict(catalog)
         known_claim_refs = catalog.get("claim_refs", [])
-        if not isinstance(known_claim_refs, list):
+        if (
+            not isinstance(known_claim_refs, list)
+            or any(not isinstance(value, str) or not value.strip() for value in known_claim_refs)
+        ):
             raise DialogueRuntimeError("DIALOGUE_TURN_CLAIM_REFERENCE_LIST_INVALID")
         catalog["claim_refs"] = list(dict.fromkeys(
             [*known_claim_refs, *candidate_by_id.keys()]
