@@ -169,6 +169,17 @@ class ProvenanceEventLedger:
         payload: Mapping[str, Any],
         prior_events: list[dict[str, Any]],
     ) -> None:
+        if not isinstance(event_type, str) or event_type not in EVENT_TYPES:
+            raise ProvenanceLedgerError("INVALID_EVENT_TYPE")
+        for value, error in (
+            (claim_id, "CLAIM_ID_REQUIRED"),
+            (revision_id, "REVISION_ID_REQUIRED"),
+            (input_digest, "EVENT_INPUT_DIGEST_REQUIRED"),
+        ):
+            if not _is_nonempty_string(value):
+                raise ProvenanceLedgerError(error)
+        if not isinstance(payload, Mapping):
+            raise ProvenanceLedgerError("EVENT_PAYLOAD_MUST_BE_MAPPING")
         registered = cls._registered_revision(prior_events, claim_id, revision_id)
 
         if event_type == "CLAIM_REVISION_REGISTERED":
@@ -293,6 +304,13 @@ class ProvenanceEventLedger:
         prior: list[dict[str, Any]] = []
         try:
             for event in self._events:
+                if not isinstance(event, Mapping):
+                    return False
+                for key in ("event_id", "event_type", "claim_id", "revision_id", "actor_id", "occurred_at", "input_digest"):
+                    if not _is_nonempty_string(event.get(key)):
+                        return False
+                if not isinstance(event.get("payload"), Mapping):
+                    return False
                 self._validate_next_event(
                     event_type=event["event_type"],
                     claim_id=event["claim_id"],
@@ -305,6 +323,22 @@ class ProvenanceEventLedger:
         except (KeyError, TypeError, ProvenanceLedgerError):
             return False
         return True
+
+    def verify_history(self) -> dict[str, Any]:
+        """Verify both hash-chain integrity and event transition semantics."""
+        chain = self.verify_chain()
+        semantic_valid = self._verify_event_semantics()
+        return {
+            "valid": chain["valid"] and semantic_valid,
+            "chain_valid": chain["valid"],
+            "semantic_history_valid": semantic_valid,
+            "event_count": chain["event_count"],
+            "head_hash": chain["head_hash"],
+            "problems": list(chain["problems"]) + (
+                [] if semantic_valid else [{"error": "EVENT_TRANSITION_POLICY_VIOLATION"}]
+            ),
+            "is_evidence": False,
+        }
 
     def verify_chain(self) -> dict[str, Any]:
         previous_hash = GENESIS_HASH
@@ -341,6 +375,9 @@ class ProvenanceEventLedger:
         """Rebuild review metadata without promoting proposed results to state."""
         if not isinstance(claim_id, str) or not claim_id.strip():
             raise ProvenanceLedgerError("CLAIM_ID_REQUIRED")
+        history = self.verify_history()
+        if not history["valid"]:
+            raise ProvenanceLedgerError("INVALID_PROVENANCE_HISTORY")
         matching = [event for event in self._events if event.get("claim_id") == claim_id]
         current_revision_id = None
         committed_status = None
