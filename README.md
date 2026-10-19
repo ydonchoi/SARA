@@ -487,7 +487,7 @@ SARA/
 - Claim Identity & Versioning 및 검증 결과 재사용 차단
 - Evidence Conflict 상태 분리와 selective re-verification 계획·실행 adapter
 - Stub provider로 테스트한 evaluator invocation adapter (외부 JEV 연결은 미구성)
-- `sara_runtime.process_dialogue_turn(...)` → SARA 내부 JEV형 판정 → 추론 활성화 정책 → 명시된 claim candidate에 대한 기존 SARA 검증 facade 호출; 모호하거나 대상 주장이 바인딩되지 않으면 사전 검토 경로로 라우팅
+- `sara_runtime.process_dialogue_turn(...)` → SARA 내부 JEV형 판정 → 추론 활성화 정책 → 명시된 claim candidate에 대한 검증 호출; `execute_request(...)`는 v2.4 인식론적 경계 검사를 수행하고, 명시적 구조화 그래프가 있을 때 논리 감사기를 호출. provider 실행은 기존 v2.3 계약을 유지하며, 모호하거나 대상 주장이 바인딩되지 않으면 사전 검토 경로로 라우팅
 - Hash-chained provenance ledger, explicit human-review commit gate, promotion gate
 - 23개 synthetic Preflight fixture와 독립 판정 프로토콜 초안 (12개 필수 benchmark suite를 형식상 포괄; 라벨은 아직 모두 draft)
 
