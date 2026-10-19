@@ -47,7 +47,7 @@ def test_preflight_case_ids_are_unique_and_outcomes_are_explicit():
 def test_preflight_covers_logical_audit_identity_and_evidence_conflict():
     data = load_fixture()
     suites = {case["suite"] for case in data["cases"]}
-    assert suites == {"logical_audit", "claim_identity", "evidence_conflict", "evaluator_boundary", "evaluator_runner", "selective_reverification", "reverification_runner"}
+    assert suites == {"logical_audit", "claim_identity", "evidence_conflict", "evaluator_boundary", "evaluator_runner", "selective_reverification", "reverification_runner", "internal_judgment_model", "inference_trigger", "inference_pipeline", "dialogue_runtime"}
 
 
 def test_claim_identity_cases_bind_verification_contract_revision():
@@ -273,3 +273,26 @@ def test_reverification_runner_preflight_cases_execute_through_injected_verifier
         assert item.get("proposed_verification_status") == case["expected_proposed_verification_status"], case["case_id"]
         assert item["commit_status"] == case["expected_commit_status"], case["case_id"]
         assert item["truthfulness_status"] == case["expected_truthfulness_status"], case["case_id"]
+
+
+def test_judgment_and_dialogue_route_seed_cases_are_explicit_but_still_draft():
+    data = load_fixture()
+    by_id = {case["case_id"]: case for case in data["cases"]}
+    judgment = by_id["IJ-001"]
+    assert judgment["suite"] == "internal_judgment_model"
+    assert judgment["request"]["claim_candidates"][0]["id"] in judgment["expected_claim_refs"]
+    assert judgment["expected_judgment_status"] == "INFERENCE_PRESENT"
+    trigger = by_id["IT-001"]
+    assert trigger["suite"] == "inference_trigger"
+    assert trigger["expected_action"] == "SARA_SELECTIVE_VERIFICATION"
+    pipeline = by_id["IP-001"]
+    assert pipeline["suite"] == "inference_pipeline"
+    assert pipeline["expected_action"] == "SARA_PRECHECK_REVIEW"
+    dialogue = by_id["DR-001"]
+    assert dialogue["suite"] == "dialogue_runtime"
+    assert dialogue["expected_verified_claim_ids"] == ["C-DR-001"]
+    assert dialogue["expected_claim_truth_assessed"] is False
+    assert all(
+        by_id[case_id]["label_status"] == "DRAFT"
+        for case_id in ("IJ-001", "IT-001", "IP-001", "DR-001")
+    )
