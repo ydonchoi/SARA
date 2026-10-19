@@ -146,7 +146,7 @@ def test_paired_coverage_reports_shared_and_unpaired_cases():
     assert coverage["missing_conditions"] == ["D"]
     assert coverage["shared_case_count_across_present_conditions"] == 1
     assert coverage["case_union_count"] == 3
-    assert coverage["complete_four_condition_pairing"] is False
+    assert coverage["complete_four_condition_case_pairing"] is False
     assert coverage["unpaired_case_ids_by_condition"] == {
         "A": ["R2"],
         "C": ["R3"],
@@ -164,4 +164,43 @@ def test_paired_coverage_marks_complete_four_condition_case_set():
     assert coverage["missing_conditions"] == []
     assert coverage["shared_case_count_across_present_conditions"] == 2
     assert coverage["case_union_count"] == 2
-    assert coverage["complete_four_condition_pairing"] is True
+    assert coverage["complete_four_condition_case_pairing"] is True
+
+
+def test_paired_coverage_detects_misaligned_repetition_ids():
+    records = []
+    for condition, repetitions in {
+        "A": ("1", "2"),
+        "B": ("1", "3"),
+        "C": ("1", "2"),
+        "D": ("1", "2"),
+    }.items():
+        for repetition in repetitions:
+            record = row("R1", condition=condition)
+            record["repetition_id"] = repetition
+            records.append(record)
+    coverage = score_records(records)["paired_coverage"][0]
+    assert coverage["complete_four_condition_case_pairing"] is True
+    assert coverage["shared_case_repetition_count_across_present_conditions"] == 1
+    assert coverage["case_repetition_union_count"] == 3
+    assert coverage["complete_four_condition_run_pairing"] is False
+    assert coverage["unpaired_case_repetitions_by_condition"] == {
+        "A": [{"case_id": "R1", "repetition_id": "2"}],
+        "B": [{"case_id": "R1", "repetition_id": "3"}],
+        "C": [{"case_id": "R1", "repetition_id": "2"}],
+        "D": [{"case_id": "R1", "repetition_id": "2"}],
+    }
+
+
+def test_paired_coverage_accepts_fully_aligned_repetitions():
+    records = []
+    for condition in ("A", "B", "C", "D"):
+        for repetition in ("1", "2"):
+            record = row("R1", condition=condition)
+            record["repetition_id"] = repetition
+            records.append(record)
+    coverage = score_records(records)["paired_coverage"][0]
+    assert coverage["complete_four_condition_case_pairing"] is True
+    assert coverage["complete_four_condition_run_pairing"] is True
+    assert coverage["shared_case_repetition_count_across_present_conditions"] == 2
+    assert coverage["case_repetition_union_count"] == 2
