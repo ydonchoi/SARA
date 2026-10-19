@@ -32,6 +32,7 @@ def test_score_records_aggregates_criterion_accuracy_and_operational_metrics():
     assert group["criteria"]["rule_applied"] == {"n": 2, "correct": 1, "accuracy": 0.5}
     assert group["criteria"]["evidence_traceable"]["accuracy"] == 1.0
     assert group["operational_metrics"]["latency_ms"]["mean"] == 200
+    assert group["operational_metrics"]["latency_ms"]["median"] == 200
     assert result["record_count"] == 2
     assert "do not establish label independence" in result["interpretation_limit"]
 
