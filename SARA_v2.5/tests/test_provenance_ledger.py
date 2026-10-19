@@ -298,6 +298,9 @@ def test_new_claim_revision_invalidates_replayed_old_commit():
             "verification_status": "VERIFIED",
             "review_event_id": "EV-3",
             "proposal_event_id": "EV-2",
+            "evidence_digest": "EVIDENCE-DIGEST-1",
+            "verifier_revision": "verify-1",
+            "verification_contract_revision": "contract-1",
         },
     )
     register(ledger, "EV-5", revision_id="R2", digest="DIGEST-R2")
