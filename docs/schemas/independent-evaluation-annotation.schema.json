@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SARA Independent Evaluation Annotation Record",
+  "description": "Template only. It does not contain adjudicated labels and must not be used as benchmark evidence until populated by independent reviewers.",
+  "type": "object",
+  "required": [
+    "dataset_id",
+    "dataset_version",
+    "case_id",
+    "rubric_version",
+    "reviewer_id",
+    "reviewer_blinded_to_system_output",
+    "labels",
+    "rationale",
+    "reviewed_at",
+    "case_revision"
+  ],
+  "properties": {
+    "dataset_id": { "type": "string", "minLength": 1 },
+    "dataset_version": { "type": "string", "minLength": 1 },
+    "case_id": { "type": "string", "minLength": 1 },
+    "case_revision": { "type": "string", "minLength": 1 },
+    "rubric_version": { "type": "string", "minLength": 1 },
+    "reviewer_id": { "type": "string", "minLength": 1 },
+    "reviewer_blinded_to_system_output": { "type": "boolean" },
+    "labels": {
+      "type": "object",
+      "required": [
+        "verification_need",
+        "claim_binding",
+        "evidence_status",
+        "required_safe_action",
+        "severity"
+      ],
+      "properties": {
+        "verification_need": {
+          "enum": ["TRIGGER", "NO_TRIGGER", "AMBIGUOUS"]
+        },
+        "claim_binding": {
+          "enum": ["BOUND", "UNBOUND", "AMBIGUOUS"]
+        },
+        "evidence_status": {
+          "enum": ["SUFFICIENT", "INSUFFICIENT", "CONFLICTING", "NOT_AVAILABLE"]
+        },
+        "required_safe_action": {
+          "enum": ["VERIFY", "ABSTAIN_OR_CLARIFY", "REJECT_PROMOTION", "NO_VERIFICATION_NEEDED"]
+        },
+        "severity": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4,
+          "description": "Severity scale requires a separately approved rubric definition before use."
+        }
+      },
+      "additionalProperties": false
+    },
+    "rationale": { "type": "string", "minLength": 1 },
+    "supporting_source_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "reviewed_at": { "type": "string", "format": "date-time" },
+    "status": {
+      "enum": ["DRAFT", "SUBMITTED", "ADJUDICATED"],
+      "default": "DRAFT"
+    }
+  },
+  "additionalProperties": false
+}
