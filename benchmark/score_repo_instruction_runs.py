@@ -91,6 +91,7 @@ def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
 
 def score_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
     groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    cases_by_model_condition: dict[tuple[str, str], set[str]] = defaultdict(set)
     seen = set()
     for raw in records:
         record = validate_record(raw)
@@ -100,6 +101,7 @@ def score_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
             raise BenchmarkRecordError("DUPLICATE_CASE_CONDITION_MODEL_REPETITION")
         seen.add(key)
         groups[(record["condition"], record["model_id"])].append(record)
+        cases_by_model_condition[(record["model_id"], record["condition"])].add(record["case_id"])
 
     summaries = []
     for (condition, model_id), items in sorted(groups.items()):
@@ -141,10 +143,37 @@ def score_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
             "operational_metrics": metric_results,
         })
 
+    pairing = []
+    models = sorted({model_id for model_id, _ in cases_by_model_condition})
+    for model_id in models:
+        conditions = {
+            condition: cases_by_model_condition[(model_id, condition)]
+            for condition in sorted(VALID_CONDITIONS)
+            if (model_id, condition) in cases_by_model_condition
+        }
+        if not conditions:
+            continue
+        shared = set.intersection(*conditions.values())
+        union = set.union(*conditions.values())
+        pairing.append({
+            "model_id": model_id,
+            "conditions_present": list(conditions),
+            "missing_conditions": sorted(VALID_CONDITIONS - set(conditions)),
+            "shared_case_count_across_present_conditions": len(shared),
+            "case_union_count": len(union),
+            "complete_four_condition_pairing": set(conditions) == VALID_CONDITIONS and len(shared) == len(union),
+            "unpaired_case_ids_by_condition": {
+                condition: sorted(case_ids - shared)
+                for condition, case_ids in conditions.items()
+                if case_ids - shared
+            },
+        })
+
     return {
         "schema_version": "repo-instruction-benchmark-score-v0.1",
         "record_count": len(seen),
         "groups": summaries,
+        "paired_coverage": pairing,
         "interpretation_limit": (
             "Scores are label agreement against supplied expected labels. "
             "They do not establish label independence, benchmark validity, "
