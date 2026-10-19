@@ -1,3 +1,8 @@
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from sara_v24_epistemic import ClaimEvaluationState, PremiseEvaluation, validate_state, align_evidence
 import pytest
 
