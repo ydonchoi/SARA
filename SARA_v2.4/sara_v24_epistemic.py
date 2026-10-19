@@ -6,6 +6,7 @@ not fetch sources, establish truth, or perform semantic fallacy detection.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from typing import Iterable
 
 TYPES = {"FACT", "INTERPRETATION", "INFERENCE", "HYPOTHESIS", "SIMULATION"}
 VERIFICATION = {"VERIFIED", "PARTIALLY_VERIFIED", "UNVERIFIED", "CONTRADICTED"}
@@ -47,7 +48,11 @@ class ClaimEvaluationState:
     attribution_evidence_ids: tuple[str, ...] = ()
 
 
-def validate_state(state: ClaimEvaluationState) -> ClaimEvaluationState:
+def validate_state(
+    state: ClaimEvaluationState,
+    *,
+    available_evidence_ids: Iterable[str] | None = None,
+) -> ClaimEvaluationState:
     """Validate invariants and normalize legacy status spelling.
 
     AUTHOR_EXPLICIT depends on attributable source evidence, not on whether
@@ -87,6 +92,12 @@ def validate_state(state: ClaimEvaluationState) -> ClaimEvaluationState:
 
     if state.attribution_status == "AUTHOR_EXPLICIT" and not state.attribution_evidence_ids:
         raise ValueError("AUTHOR_EXPLICIT_REQUIRES_SOURCE_EVIDENCE")
+    if available_evidence_ids is not None:
+        available_ids = set(available_evidence_ids)
+        if state.attribution_status == "AUTHOR_EXPLICIT" and not set(
+            state.attribution_evidence_ids
+        ).issubset(available_ids):
+            raise ValueError("AUTHOR_EXPLICIT_EVIDENCE_REFERENCE_UNKNOWN")
 
     return replace(
         state,
