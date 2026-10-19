@@ -3,11 +3,12 @@
 ## Status
 
 **PROTOTYPE / NOT A RELEASED RUNTIME BASELINE.** SARA v2.4 remains the
-canonical verification baseline. Thin v2.5 prototypes exist for claim revision
-binding, evidence-conflict state separation, evaluator-result boundary validation,
-and dependency-aware re-verification planning. External evaluator invocation,
-verification execution/orchestration, provenance replay, and independently
-adjudicated benchmarks remain incomplete.
+canonical verification baseline. v2.5 now has callable evaluator and selective
+re-verification adapters, a hash-chained provenance ledger with JSONL
+export/import and replay, and a deterministic promotion gate. The adapters are
+tested with injected providers; no live external evaluator provider is configured.
+Durable deployment storage/access control, independently adjudicated benchmarks,
+and evidence for comparative research-quality improvement remain incomplete.
 
 ## Goal
 
@@ -116,42 +117,57 @@ promotes or downgrades the claim's verification or truthfulness status.
 - Use dependency links to identify which claims need re-verification after a
   premise, evidence item, scope, or method changes.
 
-The new `evaluator_boundary.py` validates an evaluator-result envelope without
-calling the evaluator. It binds output to the expected input-revision digest,
-separates execution status from signal status, rejects a research signal from a
-failed/timed-out/invalid/incomplete execution, requires a basis for issue
-candidates, and always marks its output as non-evidence. `NO_ISSUE_REPORTED`
-does not assert logical validity. The selective re-verification scheduler and
-external evaluator wiring remain unimplemented.
+`evaluator_boundary.py` validates the output envelope; `evaluator_runner.py`
+invokes a provider supplied by the caller. The runner passes an explicit timeout
+to the provider, binds output to the exact input digest and claim revision, and
+normalizes timeout, exception, missing fields, identity mismatch, and invalid
+signals into distinct execution outcomes. Python cannot forcibly cancel an
+arbitrary synchronous callable; the injected transport must enforce the timeout.
+A successful call emits a decision-support signal, not research evidence or a
+claim-verification status, and remains `NOT_COMMITTED`. `NO_ISSUE_REPORTED`
+does not assert logical validity.
 
-**Gate:** tests verify evaluator failure handling, disagreement retention, stale
-state invalidation, and selective re-verification scope. The current prototype
-tests only the result-envelope boundary; they do not satisfy the full gate.
+The callable interface is tested with stub providers. A live provider integration,
+credentials/transport setup, and independently measured evaluator reliability
+remain unverified.
+
+**Gate:** runtime integration evidence must verify the actual provider, timeout
+behavior, rubric/version binding, provenance, malformed output handling, and
+disagreement retention on the deployment transport.
 
 ### Selective Reverification Planning — Prototype
 
-`selective_reverification.py` treats edges as explicit upstream-to-dependent
-relations and computes the transitive impact of changed claims, premises,
-evidence, or methods. It returns claim targets with their prior status preserved,
-changed-root IDs, and `PLANNED_NOT_EXECUTED` state. Unrelated claims are omitted;
-missing prior status is surfaced rather than guessed. The planner does not call
-a verifier or rewrite any claim status.
+`selective_reverification.py` computes transitive impact from explicit
+upstream-to-dependent edges. `reverification_runner.py` then executes only the
+claims in that plan through an injected verification provider. It recomputes the
+claim and evidence digests, checks verifier and contract revisions, validates
+result provenance, and distinguishes failed, timed-out, incomplete, and invalid
+outputs. Successful statuses are returned as proposals requiring review; the
+runner leaves current claim status unchanged and records no truthfulness upgrade.
 
-**Gate:** tests cover direct and transitive impact, unaffected claims, missing
-prior state, unknown references, duplicate edges, and cyclic dependency graphs.
-This is an impact planner, not a scheduler or a completed re-verification loop.
+**Gate:** tests cover direct/transitive impact, unaffected claims, missing prior
+state, unknown references, duplicate edges, cyclic dependencies, successful
+proposal handling, provider failure, stale digests, binding mismatch, provenance
+separation, and non-promotion. The transport still needs deployment-level
+verification; the runner does not autonomously commit claim statuses.
 
 
 ### P2 — Provenance History
 
-- Reuse the existing review-event/provenance/lineage primitives where contracts fit.
-- Add claim revision and evidence/evaluator version references; preserve the old
-  state when a new event is appended.
-- Make event history replay/audit possible without treating the ledger itself as evidence.
-- Do not implement a generalized Event Sourcing platform unless testable needs justify it.
+`provenance_ledger.py` provides a small append-only hash chain, unique event IDs,
+monotonic sequence numbers, tamper detection, canonical JSONL export/import, and
+claim replay. The evaluator and re-verification runners can append operational
+events. Replay changes the committed verification state only for an explicit
+`CLAIM_STATUS_COMMITTED` event; proposed results and evaluator signals remain
+separate. Every event states that it is not research evidence.
 
-**Gate:** a reviewer can reconstruct why a claim has its current status from
-versioned inputs and events, and can identify missing provenance.
+The ledger is presently in-memory with caller-managed JSONL export/import. A
+durable storage backend, access control, signatures, deployment backup/recovery,
+and concurrency guarantees are not claimed.
+
+**Gate:** a reviewer can reconstruct why a claim has its current committed
+status from versioned inputs/events, tampering is detected, and missing
+provenance is visible.
 
 ### P0, continuous — Benchmark & Preflight
 
@@ -171,10 +187,11 @@ versioned inputs and events, and can identify missing provenance.
 resolution runs the same frozen regression set. Draft synthetic labels must be
 independently reviewed before being treated as a gold standard.
 
-The current 14-case draft fixture includes executable checks for implemented
-claim-identity, evidence-conflict, evaluator-failure-boundary, selective-reverification,
-and structural-cycle prototypes. Other semantic logical-audit cases remain target cases, not evidence
-that a natural-language fallacy detector exists. All labels remain DRAFT.
+The current 18-case draft fixture includes executable checks for implemented
+claim-identity, evidence-conflict, evaluator-boundary, callable evaluator,
+selective-planning, re-verification execution, and structural-cycle prototypes.
+Other semantic logical-audit cases remain target cases, not evidence that a
+natural-language fallacy detector exists. All labels remain DRAFT.
 
 ## Core state separation
 
@@ -209,3 +226,17 @@ Human research judgment remains explicit.
 4. Evaluator disagreement/failure and revision impact are preserved as explicit state.
 5. A frozen preflight set is runnable in CI and its labels have documented provenance.
 6. Implementation claims are backed by CI results, not documentation alone.
+
+## Canonical Promotion Gate
+
+`promotion_gate.py` evaluates explicit evidence for the exact candidate head:
+current-head CI and required jobs, runtime integration, schema/documentation
+consistency, independent per-case adjudications, disagreement resolution,
+predeclared benchmark metric decisions, and absence of open blockers. The gate
+only reports `PROMOTION_APPROVED` or `PROMOTION_BLOCKED`; it never changes the
+canonical version itself.
+
+Current promotion evidence is maintained in `promotion_evidence_template.json`
+and the decision in `CANONICAL_PROMOTION_STATUS.md`. As long as the benchmark is
+DRAFT, a real provider is unconfigured, or other required evidence is missing,
+v2.4 remains canonical.
