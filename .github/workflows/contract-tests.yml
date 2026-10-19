@@ -35,6 +35,8 @@ jobs:
         run: python -m pytest SARA_v2.5/tests/test_reverification_runner.py -q
       - name: Run SARA v2.5 provenance-ledger tests
         run: python -m pytest SARA_v2.5/tests/test_provenance_ledger.py -q
+      - name: Run SARA v2.5 canonical-promotion gate tests
+        run: python -m pytest SARA_v2.5/tests/test_promotion_gate.py -q
       - name: Validate v2.5 Preflight coverage and label status
         run: python -m pytest SARA_v2.5/tests/test_preflight_fixture.py -q
       - name: Validate v2.5 Preflight JSON fixture
