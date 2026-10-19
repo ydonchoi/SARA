@@ -92,6 +92,7 @@ def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
 def score_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
     groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     cases_by_model_condition: dict[tuple[str, str], set[str]] = defaultdict(set)
+    runs_by_model_condition: dict[tuple[str, str], set[tuple[str, str]]] = defaultdict(set)
     seen = set()
     for raw in records:
         record = validate_record(raw)
@@ -102,6 +103,9 @@ def score_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
         seen.add(key)
         groups[(record["condition"], record["model_id"])].append(record)
         cases_by_model_condition[(record["model_id"], record["condition"])].add(record["case_id"])
+        runs_by_model_condition[(record["model_id"], record["condition"])].add(
+            (record["case_id"], repetition_id)
+        )
 
     summaries = []
     for (condition, model_id), items in sorted(groups.items()):
@@ -155,17 +159,35 @@ def score_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
             continue
         shared = set.intersection(*conditions.values())
         union = set.union(*conditions.values())
+        run_conditions = {
+            condition: runs_by_model_condition[(model_id, condition)]
+            for condition in sorted(VALID_CONDITIONS)
+            if (model_id, condition) in runs_by_model_condition
+        }
+        shared_runs = set.intersection(*run_conditions.values())
+        run_union = set.union(*run_conditions.values())
         pairing.append({
             "model_id": model_id,
             "conditions_present": list(conditions),
             "missing_conditions": sorted(VALID_CONDITIONS - set(conditions)),
             "shared_case_count_across_present_conditions": len(shared),
             "case_union_count": len(union),
-            "complete_four_condition_pairing": set(conditions) == VALID_CONDITIONS and len(shared) == len(union),
+            "complete_four_condition_case_pairing": set(conditions) == VALID_CONDITIONS and len(shared) == len(union),
             "unpaired_case_ids_by_condition": {
                 condition: sorted(case_ids - shared)
                 for condition, case_ids in conditions.items()
                 if case_ids - shared
+            },
+            "shared_case_repetition_count_across_present_conditions": len(shared_runs),
+            "case_repetition_union_count": len(run_union),
+            "complete_four_condition_run_pairing": set(run_conditions) == VALID_CONDITIONS and len(shared_runs) == len(run_union),
+            "unpaired_case_repetitions_by_condition": {
+                condition: [
+                    {"case_id": case_id, "repetition_id": repetition_id}
+                    for case_id, repetition_id in sorted(run_ids - shared_runs)
+                ]
+                for condition, run_ids in run_conditions.items()
+                if run_ids - shared_runs
             },
         })
 
