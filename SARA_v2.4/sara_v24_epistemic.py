@@ -52,10 +52,13 @@ def validate_state(state: ClaimEvaluationState, *, available_evidence_ids: Itera
         normalized.append(replace(p,status=pstatus))
     if any(not isinstance(x,str) or not x.strip() for x in state.provenance_ids): raise ValueError("EMPTY_PROVENANCE_ID")
     if any(not isinstance(x,str) or not x.strip() for x in state.attribution_evidence_ids): raise ValueError("EMPTY_ATTRIBUTION_EVIDENCE_ID")
-    if state.attribution_status=="AUTHOR_EXPLICIT" and not state.attribution_evidence_ids:
-        raise ValueError("AUTHOR_EXPLICIT_REQUIRES_SOURCE_EVIDENCE")
-    if available_evidence_ids is not None and state.attribution_status=="AUTHOR_EXPLICIT" and not set(state.attribution_evidence_ids).issubset(set(available_evidence_ids)):
-        raise ValueError("AUTHOR_EXPLICIT_EVIDENCE_REFERENCE_UNKNOWN")
+    if state.attribution_status=="AUTHOR_EXPLICIT":
+        if not state.attribution_evidence_ids:
+            raise ValueError("AUTHOR_EXPLICIT_REQUIRES_SOURCE_EVIDENCE")
+        if available_evidence_ids is None:
+            raise ValueError("AUTHOR_EXPLICIT_EVIDENCE_RESOLUTION_REQUIRED")
+        if not set(state.attribution_evidence_ids).issubset(set(available_evidence_ids)):
+            raise ValueError("AUTHOR_EXPLICIT_EVIDENCE_REFERENCE_UNKNOWN")
     return replace(state,verification_status=status,premise_evaluations=tuple(normalized))
 
 def align_evidence(*, relation:str, target_id:str, evidence_id:str)->dict:
