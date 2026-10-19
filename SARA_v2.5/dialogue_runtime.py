@@ -120,13 +120,16 @@ class SARADialogueRuntime:
         normalized["claim_candidates"] = list(candidate_by_id.values())
 
         result = self._pipeline.process(normalized, timeout_seconds=timeout_seconds)
+        route_output = result.get("route_execution", {}).get("output")
+        verification_results = (
+            route_output.get("verification_results", [])
+            if isinstance(route_output, Mapping) else []
+        )
         result.update({
             "runtime_revision": self.adapter_revision,
             "conversation_id": normalized["conversation_id"],
             "turn_id": normalized["turn_id"],
-            "verification_provider_invoked": bool(
-                result.get("route_execution", {}).get("output", {}).get("verification_results")
-            ),
+            "verification_provider_invoked": bool(verification_results),
             "verification_status_is_not_truthfulness": True,
             "audit_record_status": "NOT_CONFIGURED",
         })
