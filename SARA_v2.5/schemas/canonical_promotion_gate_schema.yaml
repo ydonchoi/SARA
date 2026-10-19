@@ -66,6 +66,7 @@ benchmark:
     - internal_judgment_model
     - inference_trigger
     - inference_pipeline
+    - dialogue_runtime
   minimum_distinct_reviewers_per_case: 2
   case_record_required:
     - case_id
