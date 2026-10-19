@@ -11,12 +11,15 @@ import argparse
 import importlib
 import json
 import sys
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
 ROOT = Path(__file__).resolve().parent / "SARA_v2.3"
+V24_ROOT = Path(__file__).resolve().parent / "SARA_v2.4"
 sys.path.insert(0, str(ROOT))
+if str(V24_ROOT) not in sys.path:
+    sys.path.insert(0, str(V24_ROOT))
 
 from execution import (  # noqa: E402
     SARAExecutionRequest,
@@ -24,6 +27,12 @@ from execution import (  # noqa: E402
     SARAExecutor,
 )
 from production_verification_backend import ProductionVerificationBackend  # noqa: E402
+from co_thoughts_sara_adapter import CoThoughtsSARAAdapter  # noqa: E402
+from logical_audit import (  # noqa: E402
+    ArgumentEdge,
+    ArgumentNode,
+    validate_argument_graph,
+)
 
 
 class ProductionBackendAdapter:
@@ -79,6 +88,105 @@ class ProductionBackendAdapter:
         )
 
 
+
+@dataclass(frozen=True)
+class SARAIntegratedExecutionResponse(SARAExecutionResponse):
+    """Backward-compatible execution envelope with an additive v2.4 assessment."""
+
+    sara_v24_assessment: dict[str, Any] | None = None
+
+
+def _run_v24_assessment(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """Run v2.4 epistemic checks and, when supplied, structured logical audit.
+
+    The logical-audit checker does not parse free-form prose. If no explicit
+    argument graph is supplied, that component remains NOT_RUN rather than
+    implying that semantic reasoning has been evaluated.
+    """
+    claim = payload.get("claim") or {}
+    premises = payload.get("premises") or []
+    evidence = payload.get("evidence") or []
+    provenance_ids = payload.get("provenance_ids") or []
+    if not isinstance(claim, Mapping):
+        raise ValueError("V24_CLAIM_MUST_BE_OBJECT")
+    if not isinstance(premises, (list, tuple)) or any(
+        not isinstance(item, Mapping) for item in premises
+    ):
+        raise ValueError("V24_PREMISES_MUST_BE_OBJECT_LIST")
+    if not isinstance(evidence, (list, tuple)) or any(
+        not isinstance(item, Mapping) for item in evidence
+    ):
+        raise ValueError("V24_EVIDENCE_MUST_BE_OBJECT_LIST")
+    if not isinstance(provenance_ids, (list, tuple)) or any(
+        not isinstance(item, str) or not item.strip() for item in provenance_ids
+    ):
+        raise ValueError("V24_PROVENANCE_IDS_MUST_BE_STRING_LIST")
+
+    epistemic = CoThoughtsSARAAdapter().evaluate({
+        "claim": dict(claim),
+        "premises": [dict(item) for item in premises],
+        "evidence": [dict(item) for item in evidence],
+        "provenance_ids": list(provenance_ids),
+    })
+    graph = payload.get("argument_graph")
+    if graph is None:
+        logical_audit = {
+            "audit_status": "NOT_RUN",
+            "reason_code": "STRUCTURED_ARGUMENT_GRAPH_NOT_SUPPLIED",
+            "semantic_audit_status": "NOT_PERFORMED",
+            "is_evidence": False,
+            "source": "SARA_LOGICAL_AUDIT",
+        }
+    elif not isinstance(graph, Mapping) or not isinstance(graph.get("nodes"), list) or not isinstance(graph.get("edges"), list):
+        logical_audit = {
+            "audit_status": "INVALID_INPUT",
+            "reason_code": "ARGUMENT_GRAPH_NODES_AND_EDGES_REQUIRED",
+            "semantic_audit_status": "NOT_PERFORMED",
+            "is_evidence": False,
+            "source": "SARA_LOGICAL_AUDIT",
+        }
+    else:
+        try:
+            nodes = []
+            for item in graph["nodes"]:
+                if not isinstance(item, Mapping):
+                    raise ValueError("ARGUMENT_GRAPH_NODE_MUST_BE_OBJECT")
+                nodes.append(ArgumentNode(
+                    node_id=item.get("node_id", ""),
+                    node_type=item.get("node_type", ""),
+                    text=item.get("text", ""),
+                ))
+            edges = []
+            for item in graph["edges"]:
+                if not isinstance(item, Mapping):
+                    raise ValueError("ARGUMENT_GRAPH_EDGE_MUST_BE_OBJECT")
+                edges.append(ArgumentEdge(
+                    edge_id=item.get("edge_id", ""),
+                    source_id=item.get("source_id", ""),
+                    target_id=item.get("target_id", ""),
+                    relation=item.get("relation", ""),
+                    inference_type=item.get("inference_type", "UNKNOWN"),
+                ))
+            logical_audit = validate_argument_graph(nodes=nodes, edges=edges)
+            logical_audit["audit_status"] = "STRUCTURE_CHECKED"
+        except (TypeError, ValueError) as exc:
+            logical_audit = {
+                "audit_status": "INVALID_INPUT",
+                "reason_code": str(exc) or type(exc).__name__,
+                "semantic_audit_status": "NOT_PERFORMED",
+                "is_evidence": False,
+                "source": "SARA_LOGICAL_AUDIT",
+            }
+
+    return {
+        "adapter_revision": CoThoughtsSARAAdapter.revision,
+        "epistemic_assessment": epistemic,
+        "logical_audit": logical_audit,
+        "truthfulness_status": "UNASSESSED",
+        "is_evidence": False,
+    }
+
+
 def load_provider(spec: str) -> Callable[[Mapping[str, Any]], Mapping[str, Any]]:
     """Load a provider callable from MODULE:ATTRIBUTE."""
     if ":" not in spec:
@@ -107,9 +215,17 @@ def execute_request(
         environment=dict(payload.get("environment") or {}),
         review_context=payload.get("review_context"),
     )
+    # Execute the canonical v2.4 epistemic boundary before delegating to the
+    # external verifier. A source-attribution contract violation is rejected
+    # before the provider can return a seemingly supported result.
+    v24_assessment = _run_v24_assessment(payload)
     backend = ProductionVerificationBackend(provider)
     executor = SARAExecutor(ProductionBackendAdapter(backend), request.adapter_revision)
-    return executor.verify_claim(request)
+    response = executor.verify_claim(request)
+    return SARAIntegratedExecutionResponse(
+        **asdict(response),
+        sara_v24_assessment=v24_assessment,
+    )
 
 
 
