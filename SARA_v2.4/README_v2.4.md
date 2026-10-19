@@ -204,7 +204,7 @@ SOURCE_CLAIM
 
 ## 8. Logical Audit & Inference Review
 
-v2.4 includes a deterministic argument-graph boundary checker and a structured finding contract. The checker verifies graph references and flags directed support/dependency cycles as candidates for review; it does not autonomously classify semantic fallacies. Semantic review may consider formal validity, inference strength, causal inference, generalization, equivocation, non sequitur, evidence-scope mismatch, and omitted alternatives.
+v2.4 includes a deterministic argument-graph boundary checker, structured finding contract, and symbolic conditional-inference checker. The graph checker verifies references and flags directed support/dependency cycles as candidates. For explicitly structured symbols, the inference checker recognizes modus ponens/modus tollens as valid forms and affirming the consequent/denying the antecedent as invalid forms. It does not parse free-form prose or establish premise truth. Broader semantic review may consider inference strength, causal inference, generalization, equivocation, non sequitur, evidence-scope mismatch, and omitted alternatives, and still requires an explicit evaluator or human review.
 
 A finding is a decision-support signal, not evidence. The field semantic_audit_status = NOT_PERFORMED must remain visible until a semantic evaluator actually runs. A structurally valid graph does not establish that its reasoning is valid.
 
@@ -342,4 +342,4 @@ v2.4는 Co-thoughts v2.0과 연결되는 verification baseline이다.
 
 Runtime modules: `SARA_v2.4/sara_v24_epistemic.py`, `SARA_v2.4/logical_audit.py`, and `SARA_v2.4/co_thoughts_sara_adapter.py`.
 
-The epistemic module normalizes the legacy PARTIALLY VERIFIED alias to schema spelling PARTIALLY_VERIFIED; reports a review signal when a VERIFIED Claim contains a CONTRADICTED premise without silently rewriting either status; and requires source-attribution evidence for AUTHOR_EXPLICIT. The logical-audit module checks graph integrity and flags support cycles as candidates only. The adapter never promotes generated output to evidence. Regression tests cover these boundaries; CI results determine whether this change is verified.
+The epistemic module normalizes the legacy PARTIALLY VERIFIED alias to schema spelling PARTIALLY_VERIFIED; reports a review signal when a VERIFIED Claim contains a CONTRADICTED premise without silently rewriting either status; and requires resolvable source-attribution evidence for AUTHOR_EXPLICIT. The logical-audit module checks graph integrity, reports support cycles as candidates, and audits four explicitly structured conditional forms; it does not parse natural-language claims. The adapter never promotes generated output to evidence. Regression tests cover these boundaries; CI results determine whether this change is verified.
