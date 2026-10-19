@@ -34,6 +34,9 @@ def validate_record(record: Any) -> dict[str, Any]:
     for field in ("case_id", "model_id"):
         if not isinstance(record[field], str) or not record[field].strip():
             raise BenchmarkRecordError(f"{field.upper()}_REQUIRED")
+    repetition_id = record.get("repetition_id", "1")
+    if not isinstance(repetition_id, str) or not repetition_id.strip():
+        raise BenchmarkRecordError("REPETITION_ID_REQUIRED")
     if not isinstance(record["condition"], str) or record["condition"] not in VALID_CONDITIONS:
         raise BenchmarkRecordError("CONDITION_MUST_BE_A_B_C_OR_D")
     expected, observed = record["expected"], record["observed"]
@@ -91,9 +94,10 @@ def score_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
     seen = set()
     for raw in records:
         record = validate_record(raw)
-        key = (record["case_id"], record["condition"], record["model_id"])
+        repetition_id = record.get("repetition_id", "1")
+        key = (record["case_id"], record["condition"], record["model_id"], repetition_id)
         if key in seen:
-            raise BenchmarkRecordError("DUPLICATE_CASE_CONDITION_MODEL")
+            raise BenchmarkRecordError("DUPLICATE_CASE_CONDITION_MODEL_REPETITION")
         seen.add(key)
         groups[(record["condition"], record["model_id"])].append(record)
 
@@ -130,7 +134,9 @@ def score_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
         summaries.append({
             "condition": condition,
             "model_id": model_id,
-            "cases": len(items),
+            "cases": len({item["case_id"] for item in items}),
+            "run_records": len(items),
+            "repetitions": len({item.get("repetition_id", "1") for item in items}),
             "criteria": criterion_results,
             "operational_metrics": metric_results,
         })
