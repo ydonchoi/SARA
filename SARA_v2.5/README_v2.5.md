@@ -4,9 +4,10 @@
 
 **PROTOTYPE / NOT A RELEASED RUNTIME BASELINE.** SARA v2.4 remains the
 canonical verification baseline. Thin v2.5 prototypes exist for claim revision
-binding, evidence-conflict state separation, and evaluator-result boundary
-validation. External evaluator invocation, selective re-verification integration,
-provenance replay, and independently adjudicated benchmarks remain incomplete.
+binding, evidence-conflict state separation, evaluator-result boundary validation,
+and dependency-aware re-verification planning. External evaluator invocation,
+verification execution/orchestration, provenance replay, and independently
+adjudicated benchmarks remain incomplete.
 
 ## Goal
 
@@ -126,6 +127,20 @@ external evaluator wiring remain unimplemented.
 **Gate:** tests verify evaluator failure handling, disagreement retention, stale
 state invalidation, and selective re-verification scope. The current prototype
 tests only the result-envelope boundary; they do not satisfy the full gate.
+
+### Selective Reverification Planning — Prototype
+
+`selective_reverification.py` treats edges as explicit upstream-to-dependent
+relations and computes the transitive impact of changed claims, premises,
+evidence, or methods. It returns claim targets with their prior status preserved,
+changed-root IDs, and `PLANNED_NOT_EXECUTED` state. Unrelated claims are omitted;
+missing prior status is surfaced rather than guessed. The planner does not call
+a verifier or rewrite any claim status.
+
+**Gate:** tests cover direct and transitive impact, unaffected claims, missing
+prior state, unknown references, duplicate edges, and cyclic dependency graphs.
+This is an impact planner, not a scheduler or a completed re-verification loop.
+
 
 ### P2 — Provenance History
 
