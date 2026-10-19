@@ -37,8 +37,8 @@ def commit_verification_proposal(
     """Commit one matching proposal only after a recorded ACCEPT review."""
     if not isinstance(ledger, ProvenanceEventLedger):
         raise VerificationCommitError("PROVENANCE_LEDGER_REQUIRED")
-    if not ledger.verify_chain()["valid"]:
-        raise VerificationCommitError("PROVENANCE_CHAIN_INVALID")
+    if not ledger.verify_history()["valid"]:
+        raise VerificationCommitError("PROVENANCE_HISTORY_INVALID")
     if not isinstance(claim_revision, Mapping):
         raise VerificationCommitError("CURRENT_CLAIM_REVISION_REQUIRED")
 
