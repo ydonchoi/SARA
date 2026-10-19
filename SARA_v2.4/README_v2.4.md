@@ -332,3 +332,17 @@ v2.4는 Co-thoughts v2.0과 연결되는 verification baseline이다.
 Implemented modules: `SARA_v2.4/sara_v24_epistemic.py`, `SARA_v2.4/co_thoughts_sara_adapter.py`.
 
 The adapter accepts Co-thoughts claims/premises but never promotes generated output to evidence. Premise verification remains independent from Claim verification.
+
+
+## Regression-baseline maintenance (2026-10-20)
+
+v2.4 remains a regression reference, not an assertion that every legacy behavior must remain unchanged. The regression contract now explicitly checks:
+
+- legacy `PARTIALLY VERIFIED` input is accepted and normalized to `PARTIALLY_VERIFIED`;
+- `AUTHOR_EXPLICIT` attribution requires a resolvable evidence reference with a non-empty source;
+- attribution and temporal context are independent dimensions;
+- duplicate premise identifiers are rejected;
+- Claim and Premise verification states remain independent;
+- adapter output is never treated as evidence.
+
+These are compatibility and boundary corrections, not evidence that v2.5 has been promoted. See [v2.4 regression baseline policy](../docs/v2.4-regression-baseline.md). Run the repository's required CI on the exact branch head before treating these changes as verified.
