@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
+from math import isfinite
 from typing import Any
 
 from inference_pipeline import SARAInferencePipeline
@@ -50,7 +51,7 @@ class SARADialogueRuntime:
             raise DialogueRuntimeError("SARA_VERIFY_CLAIM_CALLABLE_REQUIRED")
         if not isinstance(adapter_revision, str) or not adapter_revision.strip():
             raise DialogueRuntimeError("SARA_DIALOGUE_ADAPTER_REVISION_REQUIRED")
-        if isinstance(external_search_timeout_seconds, bool) or not isinstance(external_search_timeout_seconds, (int, float)) or external_search_timeout_seconds <= 0:
+        if isinstance(external_search_timeout_seconds, bool) or not isinstance(external_search_timeout_seconds, (int, float)) or not isfinite(external_search_timeout_seconds) or external_search_timeout_seconds <= 0:
             raise DialogueRuntimeError("SARA_EXTERNAL_SEARCH_TIMEOUT_MUST_BE_POSITIVE")
         if search_external_sources is not None and not callable(search_external_sources):
             raise DialogueRuntimeError("SARA_EXTERNAL_SEARCH_CALLABLE_INVALID")
