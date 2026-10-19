@@ -71,7 +71,7 @@ def complete_evidence():
             "comparison_runs": {
                 "v2.3_baseline": {"run_id": "run-v23", "result_artifact_id": "artifact-v23"},
                 "v2.4_no_evaluator": {"run_id": "run-v24-control", "result_artifact_id": "artifact-v24-control"},
-                "v2.4_selective_evaluator": {"run_id": "run-v24-selective", "result_artifact_id": "artifact-v24-selective"},
+                "v2.5_internal_judgment_trigger": {"run_id": "run-v25-inference-trigger", "result_artifact_id": "artifact-v25-inference-trigger"},
             },
             "metric_decisions": [
                 {"metric": "false_positive_rate", "status": "PASS", "observed_value": 0.05, "threshold": 0.10, "direction": "MAXIMUM", "protocol_revision": "P1", "artifact_ref": "artifact-fp"},
@@ -133,11 +133,11 @@ def test_missing_required_ci_suite_blocks_promotion():
 
 def test_unverified_runtime_readiness_blocks_promotion():
     evidence = complete_evidence()
-    evidence["readiness"]["external_evaluator_integration_status"] = "NOT_CONFIGURED"
+    evidence["readiness"]["internal_judgment_model_status"] = "NOT_INTEGRATED"
     result = evaluate_canonical_promotion(evidence)
     assert result["status"] == "PROMOTION_BLOCKED"
     assert any(
-        item.get("detail", "").startswith("external_evaluator_integration_status:")
+        item.get("detail", "").startswith("internal_judgment_model_status:")
         for item in result["blockers"]
     )
 
@@ -210,11 +210,11 @@ def test_metric_pass_must_be_supported_by_observed_value_and_predeclared_thresho
 
 def test_comparison_claim_requires_run_ids_and_result_artifacts():
     evidence = complete_evidence()
-    del evidence["benchmark"]["comparison_runs"]["v2.4_selective_evaluator"]
+    del evidence["benchmark"]["comparison_runs"]["v2.5_internal_judgment_trigger"]
     result = evaluate_canonical_promotion(evidence)
     assert result["status"] == "PROMOTION_BLOCKED"
     assert any(
-        item.get("detail") == "v2.4_selective_evaluator"
+        item.get("detail") == "v2.5_internal_judgment_trigger"
         and item["code"] == "BASELINE_COMPARISON_RUN_EVIDENCE_REQUIRED"
         for item in result["blockers"]
     )
