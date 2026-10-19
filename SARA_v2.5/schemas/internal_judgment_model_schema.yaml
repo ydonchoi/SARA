@@ -13,6 +13,12 @@ request:
     - context
     - reference_catalog
     - input_revision_digest
+    - claim_candidates
+  claim_candidates:
+    type: list of objects
+    required_fields: [id, text]
+    purpose: bind the judged inference to explicit candidate claims that SARA can verify
+    ids_must_be_unique: true
   reference_catalog:
     type: object
     fields:
@@ -27,6 +33,7 @@ request:
     - content
     - context
     - reference_catalog
+    - claim_candidates
   digest_algorithm: SHA256_CANONICAL_JSON
   supplied_digest_must_match: true
 
