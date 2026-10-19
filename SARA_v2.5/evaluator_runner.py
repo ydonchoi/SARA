@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from math import isfinite
 from typing import Any
 
+from claim_identity import compute_content_digest
 from evaluator_boundary import EvaluatorSignal, validate_evaluator_signal
 from provenance_ledger import ProvenanceEventLedger
 
@@ -147,6 +148,13 @@ class EvaluatorRunner:
         claim_id = request["claim_id"]
         revision_id = request["claim_revision_id"]
         input_digest = request["input_revision_digest"]
+        scope = request.get("scope", {})
+        try:
+            canonical_claim_digest = compute_content_digest(request["claim_text"], scope)
+        except (TypeError, ValueError) as exc:
+            raise EvaluatorInvocationError("EVALUATOR_CLAIM_SCOPE_INVALID") from exc
+        if canonical_claim_digest != input_digest:
+            raise EvaluatorInvocationError("EVALUATOR_INPUT_REVISION_DIGEST_MISMATCH")
         operational_provenance_id = f"EVALUATOR-RUN:{request_id}"
         provider_request = {
             "request_id": request_id,
