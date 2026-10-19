@@ -1,4 +1,6 @@
 from copy import deepcopy
+from hashlib import sha256
+import json
 from pathlib import Path
 import sys
 
@@ -86,6 +88,7 @@ def test_empty_ledger_has_genesis_head_and_valid_chain():
     assert ledger.head_hash == GENESIS_HASH
     assert result["valid"] is True
     assert result["event_count"] == 0
+    assert ledger.verify_history()["valid"] is True
 
 
 def test_append_builds_sequential_hash_chain():
@@ -310,6 +313,34 @@ def test_new_claim_revision_invalidates_replayed_old_commit():
     assert replay["last_committed_verification_status"] == "VERIFIED"
     assert replay["committed_status_current"] is False
     assert replay["reverification_required"] is True
+
+
+def test_import_rejects_semantically_invalid_history_even_if_hashes_are_recomputed():
+    ledger = ProvenanceEventLedger()
+    register(ledger, "EV-1", digest="CLAIM-DIGEST-1")
+    append(ledger, "EV-2", "EVALUATOR_RUN_COMPLETED")
+    events = [deepcopy(event) for event in ledger.events]
+    events[1]["event_type"] = "UNRECOGNIZED_TRANSITION"
+
+    previous_hash = "0" * 64
+    for sequence, event in enumerate(events, start=1):
+        event["sequence"] = sequence
+        event["previous_event_hash"] = previous_hash
+        event.pop("event_hash", None)
+        canonical = json.dumps(
+            event, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+            allow_nan=False,
+        )
+        event_hash = sha256(canonical.encode("utf-8")).hexdigest()
+        event["event_hash"] = event_hash
+        previous_hash = event_hash
+
+    text = "".join(
+        json.dumps(event, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
+        for event in events
+    )
+    with pytest.raises(ProvenanceLedgerError, match="INVALID_IMPORTED_EVENT_HISTORY"):
+        ProvenanceEventLedger.from_jsonl(text)
 
 
 def test_empty_required_event_fields_are_rejected():
