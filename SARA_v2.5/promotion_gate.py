@@ -15,6 +15,7 @@ REQUIRED_CI_SUITES = {
     "content_access",
     "review_resolution_provenance",
     "v24_epistemic_logical_audit",
+    "v24_runtime_integration",
     "v25_claim_identity_conflict",
     "v25_evaluator_boundary",
     "v25_evaluator_runner",
@@ -31,6 +32,7 @@ REQUIRED_CI_SUITES = {
     "v25_dialogue_runtime",
 }
 REQUIRED_BENCHMARK_SUITES = {
+    "v24_runtime_integration",
     "logical_audit",
     "claim_identity",
     "evidence_conflict",
