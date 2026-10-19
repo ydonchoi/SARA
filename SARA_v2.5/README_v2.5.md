@@ -152,6 +152,27 @@ separation, and non-promotion. The transport still needs deployment-level
 verification; the runner does not autonomously commit claim statuses.
 
 
+### Explicit Verification Commit Gate — Prototype
+
+`verification_commit_gate.py` is the only v2.5 path that appends a
+`CLAIM_STATUS_COMMITTED` event. It recomputes the current claim and evidence
+digests and requires a proposal for the exact current revision, matching
+verifier/contract versions, and a linked `ACCEPT` review event with rationale.
+The ledger independently checks the proposal/review binding and keeps the commit
+in the hash chain. Stale revisions, changed evidence, version drift, rejected
+reviews, missing reviews, and mismatched proposal IDs fail closed.
+
+This gate checks the declared reviewer ID and can compare it to an expected ID,
+but **does not authenticate that identity**. Authentication/authorization must
+be enforced by the caller's trusted identity boundary. The gate commits a
+workflow verification status only; it does not set claim truthfulness. There is
+no automatic commit after evaluator or verifier success.
+
+**Gate:** tests prove that accepted reviews can commit only the corresponding
+current proposal, stale or mismatched proposals cannot commit, and the committed
+state stays distinct from truthfulness. Deployment-level review authentication
+and durable persistence are still required.
+
 ### P2 — Provenance History
 
 `provenance_ledger.py` provides a small append-only hash chain, unique event IDs,
@@ -166,8 +187,8 @@ durable storage backend, access control, signatures, deployment backup/recovery,
 and concurrency guarantees are not claimed.
 
 **Gate:** a reviewer can reconstruct why a claim has its current committed
-status from versioned inputs/events, tampering is detected, and missing
-provenance is visible.
+status from versioned inputs/events, tampering and semantically invalid imported
+histories are rejected, and missing provenance is visible.
 
 ### P0, continuous — Benchmark & Preflight
 
@@ -225,7 +246,9 @@ Human research judgment remains explicit.
 3. Mixed evidence conflict is not conflated with claim-level contradiction.
 4. Evaluator disagreement/failure and revision impact are preserved as explicit state.
 5. A frozen preflight set is runnable in CI and its labels have documented provenance.
-6. Implementation claims are backed by CI results, not documentation alone.
+6. The verification commit gate binds status changes to a current proposal and explicit review.
+7. A live evaluator integration and required deployment controls are verified.
+8. Implementation claims are backed by CI results for the exact candidate head, not documentation alone.
 
 ## Canonical Promotion Gate
 
@@ -234,7 +257,8 @@ current-head CI and required jobs, runtime integration, schema/documentation
 consistency, independent per-case adjudications, disagreement resolution,
 predeclared benchmark metric decisions, and absence of open blockers. The gate
 only reports `PROMOTION_APPROVED` or `PROMOTION_BLOCKED`; it never changes the
-canonical version itself.
+canonical version itself. It now also requires the human-review commit gate test
+suite and a verified readiness status for that transition.
 
 Current promotion evidence is maintained in `promotion_evidence_template.json`
 and the decision in `CANONICAL_PROMOTION_STATUS.md`. As long as the benchmark is
