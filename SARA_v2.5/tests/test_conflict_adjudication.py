@@ -56,6 +56,7 @@ def test_unverified_support_does_not_resolve_conflict():
     )
     assert result["conflict_status"] == "NO_CROSS_POLARITY_CONFLICT_OBSERVED"
     assert result["supporting_evidence_ids"] == []
+    assert result["non_eligible_evidence_ids"] == ["E1"]
 
 
 def test_duplicate_evidence_ids_are_rejected():
@@ -73,3 +74,50 @@ def test_no_eligible_evidence_remains_unassessed():
     )
     assert result["conflict_status"] == "UNASSESSED"
     assert result["claim_verification_status"] == "UNASSESSED"
+
+
+
+def test_partially_verified_opposing_evidence_requires_review():
+    result = adjudicate_evidence_conflict(
+        claim_id="C1",
+        evidence_positions=[
+            item("E1", "SUPPORTS", status="VERIFIED"),
+            item("E2", "CHALLENGES", status="PARTIALLY_VERIFIED"),
+        ],
+    )
+    assert result["conflict_status"] == "POTENTIAL_CONFLICT_REVIEW"
+    assert result["partially_verified_challenging_evidence_ids"] == ["E2"]
+    assert result["claim_verification_status"] == "UNASSESSED"
+
+
+def test_partial_evidence_across_scopes_is_contextual_divergence():
+    result = adjudicate_evidence_conflict(
+        claim_id="C1",
+        evidence_positions=[
+            item("E1", "SUPPORTS", scope="adults", status="PARTIALLY_VERIFIED"),
+            item("E2", "CHALLENGES", scope="children", status="VERIFIED"),
+        ],
+    )
+    assert result["conflict_status"] == "CONTEXTUAL_DIVERGENCE_REVIEW"
+    assert result["source_independence_status"] == "NOT_ADJUDICATED"
+
+
+def test_neutral_evidence_does_not_claim_to_resolve_polarity():
+    result = adjudicate_evidence_conflict(
+        claim_id="C1",
+        evidence_positions=[
+            EvidencePosition("E1", "NEUTRAL", "VERIFIED", "S1", "T1", "SRC")
+        ],
+    )
+    assert result["conflict_status"] == "UNASSESSED"
+    assert result["non_eligible_evidence_ids"] == ["E1"]
+
+
+def test_empty_scope_metadata_is_rejected():
+    with pytest.raises(ValueError, match="INVALID_SCOPE_KEY"):
+        adjudicate_evidence_conflict(
+            claim_id="C1",
+            evidence_positions=[
+                EvidencePosition("E1", "SUPPORTS", "VERIFIED", "", "T1", "SRC")
+            ],
+        )
