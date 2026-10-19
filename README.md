@@ -33,7 +33,7 @@ Unless a file or directory explicitly states otherwise, the license applies to t
 | **v2.2** | 모듈 간 실행 관계와 의존성 관리 도입 | v2.1 + SYSTEM / Dependency & Loading Architecture |
 | **v2.3** | 구조적 결함 수정 + 검증 계층 분리 + 재현/시뮬레이션 에이전트 도입 | v2.2 + A6 Simulator/Reproducer + Verification Layer Separation |
 | **v2.4** | Co-thoughts integration + premise/context/provenance verification + logical audit boundary | Knowledge Gate + Thought Gate + Premise Evaluation + Logical Audit / Inference Review + Temporal/Interpretive Context + Attribution Firewall |
-| **v2.5 (proposal)** | Claim identity/versioning + logical argument audit + selective re-verification | Proposed schemas + draft Preflight seed cases; runtime not implemented |
+| **v2.5 (prototype)** | Claim identity/versioning + logical audit + evidence conflict separation | Prototype modules + proposed schemas + draft Preflight seed cases; not a released/integrated baseline |
 
 > 버전별 폴더는 서로 다른 설계 단계를 보존하기 위한 **versioned snapshots**이다. 현재 canonical verification baseline은 `SARA_v2.4/`이며, 이전 버전 폴더는 비교·이력 보존용이다.
 
@@ -465,7 +465,7 @@ SARA의 출력은 다음 원칙을 따른다.
 SARA/
 ├─ SARA_v2.3/                 # 이전 아키텍처와 검증/런타임 구성요소
 ├─ SARA_v2.4/                 # 현재 canonical verification baseline
-└─ SARA_v2.5/                 # 제안 설계·스키마·Preflight 초안; runtime 미구현
+└─ SARA_v2.5/                 # 프로토타입·제안 스키마·Preflight 초안; 미출시
 ```
 
 ### Current canonical baseline
@@ -482,7 +482,7 @@ SARA/
 
 **v2.5 — PROPOSED DESIGN ONLY**
 
-Claim Identity & Versioning, Argument Dependency, Evidence Conflict Adjudication, Evaluator Boundary, Selective Reverification, Provenance History, and Preflight Benchmark를 설계한다. `SARA_v2.5/`의 문서와 fixture는 실행 가능한 v2.5 runtime을 뜻하지 않는다.
+Claim Identity & Versioning과 Evidence Conflict Adjudication의 초기 프로토타입을 추가했으며, Argument Dependency, Evaluator Boundary, Selective Reverification, Provenance History, Preflight Benchmark는 추가 개발 대상이다. `SARA_v2.5/`는 아직 출시·통합된 runtime baseline이 아니다.
 
 ---
 
