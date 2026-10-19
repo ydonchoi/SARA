@@ -6,6 +6,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from evaluator_runner import EvaluatorInvocationError, EvaluatorRunner
+from provenance_ledger import ProvenanceEventLedger
 
 
 REQUEST = {
@@ -195,3 +196,39 @@ def test_provider_cannot_mutate_caller_request():
 
     runner(provider).run(REQUEST, timeout_seconds=1)
     assert REQUEST == original
+
+
+def test_runner_records_execution_and_ledger_does_not_promote_evaluator_signal():
+    ledger = ProvenanceEventLedger()
+    result = EvaluatorRunner(
+        lambda request, _timeout: good_response(request),
+        evaluator_id="JEV", evaluator_revision="jev-1.2",
+        rubric_revision="rubric-3", ledger=ledger,
+    ).run(
+        REQUEST, timeout_seconds=1,
+        known_node_ids=("C1", "P1"), known_evidence_ids=("E1",),
+    )
+    assert result["provenance_event_id"]
+    assert ledger.verify_chain()["valid"] is True
+    replay = ledger.replay_claim("C1")
+    assert replay["committed_verification_status"] is None
+    assert replay["proposed_results"] == []
+    assert ledger.events[0]["event_type"] == "EVALUATOR_RUN_COMPLETED"
+
+
+def test_runner_records_timeout_as_operational_provenance_not_a_claim_finding():
+    ledger = ProvenanceEventLedger()
+
+    def timeout_provider(_request, _timeout):
+        raise TimeoutError("do not persist provider internals")
+
+    result = EvaluatorRunner(
+        timeout_provider,
+        evaluator_id="JEV", evaluator_revision="jev-1.2",
+        rubric_revision="rubric-3", ledger=ledger,
+    ).run(REQUEST, timeout_seconds=1)
+    assert result["execution_status"] == "TIMEOUT"
+    event = ledger.events[0]
+    assert event["payload"]["execution_status"] == "TIMEOUT"
+    assert event["payload"]["signal_status"] == "NOT_AVAILABLE"
+    assert "do not persist provider internals" not in ledger.to_jsonl()
