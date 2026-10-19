@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from claim_identity import ClaimRevision, assess_verification_reuse
 from conflict_adjudication import EvidencePosition, adjudicate_evidence_conflict
 from evaluator_boundary import EvaluatorSignal, validate_evaluator_signal
+from selective_reverification import DependencyEdge, plan_selective_reverification
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "benchmark" / "preflight_cases.json"
@@ -35,6 +36,7 @@ def test_preflight_case_ids_are_unique_and_outcomes_are_explicit():
             "expected_conflict_status",
             "expected_execution_status",
             "expected_review_required",
+            "expected_impacted_claim_ids",
         ))
         for case in cases
     )
@@ -43,7 +45,7 @@ def test_preflight_case_ids_are_unique_and_outcomes_are_explicit():
 def test_preflight_covers_logical_audit_identity_and_evidence_conflict():
     data = load_fixture()
     suites = {case["suite"] for case in data["cases"]}
-    assert suites == {"logical_audit", "claim_identity", "evidence_conflict", "evaluator_boundary"}
+    assert suites == {"logical_audit", "claim_identity", "evidence_conflict", "evaluator_boundary", "selective_reverification"}
 
 
 def test_claim_identity_cases_bind_verification_contract_revision():
@@ -142,6 +144,26 @@ def test_evaluator_boundary_preflight_cases_execute_against_result_contract():
         assert result["signal_status"] == case["expected_signal_status"]
         assert result["review_required"] is case["expected_review_required"]
         assert result["is_evidence"] is case["expected_is_evidence"]
+
+
+def test_selective_reverification_preflight_case_executes_against_planner():
+    data = load_fixture()
+    case = next(
+        item for item in data["cases"]
+        if item["suite"] == "selective_reverification"
+    )
+    result = plan_selective_reverification(
+        nodes=case["nodes"],
+        changed_node_ids=case["changed_node_ids"],
+        dependency_edges=[
+            DependencyEdge(**edge) for edge in case["dependency_edges"]
+        ],
+        prior_verification_statuses=case["prior_verification_statuses"],
+    )
+    assert result["impacted_claim_ids"] == case["expected_impacted_claim_ids"]
+    assert result["unaffected_claim_ids"] == case["expected_unaffected_claim_ids"]
+    assert result["plan_status"] == case["expected_plan_status"]
+    assert result["is_evidence"] is False
 
 
 def test_conflict_cases_never_promote_claim_truth_status():
