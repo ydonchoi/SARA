@@ -149,6 +149,30 @@ def test_prior_status_must_target_claim_and_use_known_status():
         )
 
 
+def test_malformed_type_values_are_rejected_as_contract_errors():
+    with pytest.raises(ValueError, match="INVALID_DEPENDENCY_NODE_TYPE"):
+        plan_selective_reverification(
+            nodes={"C1": []},
+            changed_node_ids=[],
+            dependency_edges=[],
+            prior_verification_statuses={},
+        )
+    with pytest.raises(ValueError, match="INVALID_DEPENDENCY_RELATION"):
+        plan_selective_reverification(
+            nodes=NODES,
+            changed_node_ids=["P1"],
+            dependency_edges=[DependencyEdge("P1", "C1", [])],
+            prior_verification_statuses={},
+        )
+    with pytest.raises(ValueError, match="INVALID_PRIOR_VERIFICATION_STATUS"):
+        plan_selective_reverification(
+            nodes=NODES,
+            changed_node_ids=["P1"],
+            dependency_edges=[],
+            prior_verification_statuses={"C1": []},
+        )
+
+
 def test_invalid_dependency_relation_is_rejected():
     with pytest.raises(ValueError, match="INVALID_DEPENDENCY_RELATION"):
         plan_selective_reverification(
