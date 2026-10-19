@@ -52,10 +52,12 @@ def test_verification_binding_requires_exact_revision_and_digest():
             "revision_id": "R1",
             "content_digest": "old-digest",
             "verifier_revision": "verify-1",
+            "verification_contract_revision": "contract-1",
             "evidence_digest": "evidence-1",
             "verification_status": "VERIFIED",
         },
         current_verifier_revision="verify-1",
+        current_contract_revision="contract-1",
         current_evidence_digest="evidence-1",
     )
     assert result["review_state"] == "REQUIRES_REVERIFICATION"
@@ -75,10 +77,12 @@ def test_current_binding_can_be_reused_only_for_same_revision_evidence_and_verif
             "revision_id": revision.revision_id,
             "content_digest": revision.content_digest,
             "verifier_revision": "verify-1",
+            "verification_contract_revision": "contract-1",
             "evidence_digest": "evidence-1",
             "verification_status": "VERIFIED",
         },
         current_verifier_revision="verify-1",
+        current_contract_revision="contract-1",
         current_evidence_digest="evidence-1",
     )
     assert result["review_state"] == "CURRENT"
@@ -90,6 +94,7 @@ def test_current_binding_can_be_reused_only_for_same_revision_evidence_and_verif
     [
         ("verifier_revision", "verify-2", "VERIFIER_REVISION_CHANGED"),
         ("evidence_digest", "evidence-2", "RELEVANT_EVIDENCE_CHANGED"),
+        ("verification_contract_revision", "contract-2", "VERIFICATION_CONTRACT_CHANGED"),
     ],
 )
 def test_verifier_or_evidence_change_invalidates_reuse(changed_field, current_value, expected_reason):
@@ -101,11 +106,17 @@ def test_verifier_or_evidence_change_invalidates_reuse(changed_field, current_va
         "revision_id": revision.revision_id,
         "content_digest": revision.content_digest,
         "verifier_revision": "verify-1",
+            "verification_contract_revision": "contract-1",
         "evidence_digest": "evidence-1",
         "verification_status": "VERIFIED",
     }
+    current_contract = "contract-1"
     if changed_field == "verifier_revision":
         current_verifier = current_value
+        current_evidence = "evidence-1"
+    elif changed_field == "verification_contract_revision":
+        current_verifier = "verify-1"
+        current_contract = current_value
         current_evidence = "evidence-1"
     else:
         current_verifier = "verify-1"
@@ -114,6 +125,7 @@ def test_verifier_or_evidence_change_invalidates_reuse(changed_field, current_va
         revision=revision,
         prior_binding=prior,
         current_verifier_revision=current_verifier,
+        current_contract_revision=current_contract,
         current_evidence_digest=current_evidence,
     )
     assert result["review_state"] == "REQUIRES_REVERIFICATION"
@@ -131,10 +143,12 @@ def test_unverified_prior_result_is_unresolved_not_reusable():
             "revision_id": revision.revision_id,
             "content_digest": revision.content_digest,
             "verifier_revision": "verify-1",
+            "verification_contract_revision": "contract-1",
             "evidence_digest": "evidence-1",
             "verification_status": "UNVERIFIED",
         },
         current_verifier_revision="verify-1",
+        current_contract_revision="contract-1",
         current_evidence_digest="evidence-1",
     )
     assert result["review_state"] == "UNRESOLVED"
