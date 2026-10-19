@@ -125,6 +125,36 @@ def test_successful_verification_is_a_proposal_not_an_automatic_status_change():
     assert result["executed_claim_ids"] == ["C1"]
 
 
+def test_registered_revision_id_cannot_be_reused_for_changed_claim_text():
+    ledger = ProvenanceEventLedger()
+    old_revision = revision("C1", "R2", "Prior text for the same revision ID.")
+    ledger.append_event(
+        event_id="REV-REGISTERED",
+        event_type="CLAIM_REVISION_REGISTERED",
+        claim_id="C1",
+        revision_id="R2",
+        actor_id="test-fixture",
+        occurred_at="2026-10-19T00:00:00Z",
+        input_digest=old_revision["content_digest"],
+        payload={"content_digest": old_revision["content_digest"]},
+    )
+    invoked = False
+
+    def verify(_request, _timeout):
+        nonlocal invoked
+        invoked = True
+        return {}
+
+    changed = revision("C1", "R2", "New text reuses the old revision ID.")
+    with pytest.raises(
+        ReverificationExecutionError,
+        match="CLAIM_REVISION_ID_REBOUND_TO_DIFFERENT_DIGEST",
+    ):
+        execute(verify, selected_revision=changed, ledger=ledger)
+    assert invoked is False
+    assert ledger.verify_history()["valid"] is True
+
+
 def test_timeout_keeps_old_status_and_does_not_propose_negative_finding():
     def verify(_request, _timeout):
         raise TimeoutError("timeout")
