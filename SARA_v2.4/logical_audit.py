@@ -264,28 +264,36 @@ def validate_argument_graph(
 
 
 def _find_cycles(adjacency: dict[str, set[str]]) -> list[tuple[str, ...]]:
-    """Return deterministic cycle node paths, deduplicated by member set."""
-    visited = set()
-    stack: list[str] = []
-    active_positions: dict[str, int] = {}
+    """Return deterministic simple cycles, deduplicated by member set.
+
+    Each cycle is enumerated from its lexicographically smallest member. There
+    is intentionally no global visited set: a node already explored in one
+    path can participate in another distinct cycle with a different member
+    set (for example A-B-C-A and A-C-A).
+    """
     cycles: dict[tuple[str, ...], tuple[str, ...]] = {}
 
-    def visit(node_id: str) -> None:
-        if node_id in active_positions:
-            cycle = tuple(stack[active_positions[node_id]:] + [node_id])
-            key = tuple(sorted(set(cycle)))
-            cycles.setdefault(key, cycle)
-            return
-        if node_id in visited:
-            return
-        visited.add(node_id)
-        active_positions[node_id] = len(stack)
-        stack.append(node_id)
-        for target_id in sorted(adjacency[node_id]):
-            visit(target_id)
-        stack.pop()
-        active_positions.pop(node_id, None)
+    for start_id in sorted(adjacency):
+        path = [start_id]
+        active = {start_id}
 
-    for node_id in sorted(adjacency):
-        visit(node_id)
+        def visit(node_id: str) -> None:
+            for target_id in sorted(adjacency[node_id]):
+                if target_id == start_id:
+                    cycle = tuple(path + [start_id])
+                    key = tuple(sorted(active))
+                    cycles.setdefault(key, cycle)
+                    continue
+                # Each cycle is rooted at its smallest member, avoiding
+                # rotations of the same directed cycle.
+                if target_id < start_id or target_id in active:
+                    continue
+                path.append(target_id)
+                active.add(target_id)
+                visit(target_id)
+                active.remove(target_id)
+                path.pop()
+
+        visit(start_id)
+
     return [cycles[key] for key in sorted(cycles)]
