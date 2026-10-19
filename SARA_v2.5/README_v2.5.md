@@ -41,6 +41,20 @@ Selective Reverification + Provenance Events
 Preflight Benchmark / Regression Gate
 ```
 
+## Dialogue Verification Routing & External Evidence (v0.2)
+
+The internal JEV-style judgment contract now separates:
+
+- `judgment_status`: inference present / absent / ambiguous;
+- `verification_need`: required / not required / ambiguous;
+- `external_check_need`: external source check required / not required / ambiguous.
+
+This distinction prevents a directly asserted factual claim from being skipped merely because no inference was detected. A high-confidence judgment with either need marked `REQUIRED` routes to selective verification; ambiguous or low-confidence decisions route to precheck. Only an explicit high-confidence `NOT_REQUIRED` decision skips this v2.5 route.
+
+When external checking is required, `dialogue_runtime.py` invokes the host-injected external search provider before the verifier. Source records are validated and deduplicated, but remain `UNASSESSED` candidates. Missing providers, failures, malformed results, and empty results fail closed; retrieval alone never verifies a claim.
+
+The callable boundary and contract tests are implemented, but a live web-search provider, credentials, production transport, and live ChatGPT host integration are not configured or independently verified. See [External Evidence Architecture](../docs/v2.5-external-evidence-architecture-v0.2.md) and [JEV Internal Judgment](JEV_INTERNAL_JUDGMENT.md).
+
 ## Existing work to reuse, not duplicate
 
 The current repository already has v2.3 modules/tests for claim-evidence binding,
