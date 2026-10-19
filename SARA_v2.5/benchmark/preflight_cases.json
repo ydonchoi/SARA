@@ -404,6 +404,31 @@
       "expected_review_state": "REQUIRES_REVERIFICATION",
       "expected_reuse_allowed": false,
       "label_status": "DRAFT"
+    },
+    {
+      "case_id": "EV-001",
+      "suite": "evaluator_boundary",
+      "case_type": "TIMEOUT_WITHOUT_RESEARCH_FINDING",
+      "signal": {
+        "signal_id": "EV-S1",
+        "evaluator_id": "JEV",
+        "evaluator_revision": "jev-1.2",
+        "rubric_revision": "rubric-3",
+        "input_revision_digest": "claim-rev-digest-1",
+        "execution_status": "TIMEOUT",
+        "signal_status": "NOT_AVAILABLE",
+        "rationale": "",
+        "related_node_ids": [],
+        "evidence_ids": [],
+        "provenance_ids": [
+          "EV-PROV-1"
+        ]
+      },
+      "expected_execution_status": "TIMEOUT",
+      "expected_signal_status": "NOT_AVAILABLE",
+      "expected_review_required": true,
+      "expected_is_evidence": false,
+      "label_status": "DRAFT"
     }
   ]
 }
