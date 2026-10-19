@@ -91,8 +91,18 @@ positive findings are measured.
 - Route unresolved material conflict to review; do not silently label it as
   either claim truth or claim falsity.
 
+Prototype `conflict_adjudication.py` separates:
+- fully verified opposing evidence in matching scope/time (`UNRESOLVED_CONFLICT`);
+- partially verified opposing signals (`POTENTIAL_CONFLICT_REVIEW`);
+- opposing evidence from different scope/time (`CONTEXTUAL_DIVERGENCE_REVIEW`).
+
+Evidence that is unverified, contradicted at the item level, or neutral is not
+silently discarded: its ID remains in `non_eligible_evidence_ids`. Source
+independence is surfaced but remains `NOT_ADJUDICATED`.
+
 **Gate:** mixed-support/mixed-challenge cases stay unresolved until a documented
-adjudication rule or human review resolves them.
+adjudication rule or human review resolves them. No conflict state automatically
+promotes or downgrades the claim's verification or truthfulness status.
 
 ### P1 — Evaluator Boundary & Selective Reverification
 
