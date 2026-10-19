@@ -118,12 +118,23 @@ def audit_conditional_inference(
     values = (antecedent, consequent, second_premise_proposition, conclusion_proposition)
     if any(not isinstance(value, str) or not value.strip() for value in values):
         raise ValueError("CONDITIONAL_INFERENCE_PROPOSITIONS_REQUIRED")
+    antecedent, consequent, second_premise_proposition, conclusion_proposition = (
+        value.strip() for value in values
+    )
     if antecedent == consequent:
         raise ValueError("CONDITIONAL_ANTECEDENT_AND_CONSEQUENT_MUST_DIFFER")
-    if not conclusion_id or not conclusion_id.strip():
+    if not isinstance(second_premise_negated, bool) or not isinstance(conclusion_negated, bool):
+        raise ValueError("CONDITIONAL_NEGATION_FLAGS_MUST_BE_BOOLEAN")
+    if not isinstance(conclusion_id, str) or not conclusion_id.strip():
         raise ValueError("CONCLUSION_ID_REQUIRED")
-    if len(premise_ids) < 2 or any(not item or not item.strip() for item in premise_ids):
+    conclusion_id = conclusion_id.strip()
+    if not isinstance(premise_ids, (tuple, list)):
         raise ValueError("CONDITIONAL_PREMISE_IDS_REQUIRED")
+    if len(premise_ids) < 2 or any(
+        not isinstance(item, str) or not item.strip() for item in premise_ids
+    ):
+        raise ValueError("CONDITIONAL_PREMISE_IDS_REQUIRED")
+    premise_ids = tuple(item.strip() for item in premise_ids)
     if len(set(premise_ids)) != len(premise_ids) or conclusion_id in premise_ids:
         raise ValueError("CONDITIONAL_INFERENCE_NODE_IDS_MUST_BE_UNIQUE")
 
