@@ -13,10 +13,12 @@ from promotion_gate import (
 
 
 def case(case_id="C-001", decisions=("PASS", "PASS"), suite="logical_audit"):
+    resolved_label = decisions[0]
     return {
         "case_id": case_id,
         "suite": suite,
         "label_status": "INDEPENDENTLY_ADJUDICATED",
+        "reference_label": resolved_label,
         "adjudications": [
             {
                 "reviewer_id": "reviewer-A",
@@ -35,6 +37,7 @@ def case(case_id="C-001", decisions=("PASS", "PASS"), suite="logical_audit"):
             {
                 "status": "RESOLVED",
                 "resolver_id": "resolver-C",
+                "decision": resolved_label,
                 "rationale": "Recorded resolution after comparing both justifications.",
             }
             if decisions[0] != decisions[1] else None
@@ -65,11 +68,16 @@ def complete_evidence():
             "dataset_status": "INDEPENDENTLY_ADJUDICATED",
             "cases": benchmark_cases,
             "comparison_status": "PASS",
+            "comparison_runs": {
+                "v2.3_baseline": {"run_id": "run-v23", "result_artifact_id": "artifact-v23"},
+                "v2.4_no_evaluator": {"run_id": "run-v24-control", "result_artifact_id": "artifact-v24-control"},
+                "v2.4_selective_evaluator": {"run_id": "run-v24-selective", "result_artifact_id": "artifact-v24-selective"},
+            },
             "metric_decisions": [
-                {"metric": "false_positive_rate", "status": "PASS", "protocol_revision": "P1"},
-                {"metric": "missed_issue_rate", "status": "PASS", "protocol_revision": "P1"},
-                {"metric": "stale_reuse_incidents", "status": "PASS", "protocol_revision": "P1"},
-                {"metric": "provenance_completeness", "status": "PASS", "protocol_revision": "P1"},
+                {"metric": "false_positive_rate", "status": "PASS", "observed_value": 0.05, "threshold": 0.10, "direction": "MAXIMUM", "protocol_revision": "P1", "artifact_ref": "artifact-fp"},
+                {"metric": "missed_issue_rate", "status": "PASS", "observed_value": 0.10, "threshold": 0.15, "direction": "MAXIMUM", "protocol_revision": "P1", "artifact_ref": "artifact-missed"},
+                {"metric": "stale_reuse_incidents", "status": "PASS", "observed_value": 0, "threshold": 0, "direction": "MAXIMUM", "protocol_revision": "P1", "artifact_ref": "artifact-stale"},
+                {"metric": "provenance_completeness", "status": "PASS", "observed_value": 0.99, "threshold": 0.95, "direction": "MINIMUM", "protocol_revision": "P1", "artifact_ref": "artifact-provenance"},
             ],
         },
         "documentation": {
@@ -182,6 +190,34 @@ def test_unpassed_metrics_and_missing_open_blocker_declaration_fail_closed():
     result = evaluate_canonical_promotion(evidence)
     assert result["status"] == "PROMOTION_BLOCKED"
     assert any(item["code"] == "OPEN_BLOCKERS_REQUIRED" for item in result["blockers"])
+
+
+def test_reference_label_must_match_independent_adjudication():
+    evidence = complete_evidence()
+    evidence["benchmark"]["cases"][0]["reference_label"] = "UNVERIFIED"
+    result = evaluate_canonical_promotion(evidence)
+    assert result["status"] == "PROMOTION_BLOCKED"
+    assert any(item["code"] == "BENCHMARK_REFERENCE_LABEL_MISMATCH" for item in result["blockers"])
+
+
+def test_metric_pass_must_be_supported_by_observed_value_and_predeclared_threshold():
+    evidence = complete_evidence()
+    evidence["benchmark"]["metric_decisions"][0]["observed_value"] = 0.25
+    result = evaluate_canonical_promotion(evidence)
+    assert result["status"] == "PROMOTION_BLOCKED"
+    assert any(item["code"] == "BENCHMARK_METRIC_THRESHOLD_NOT_MET" for item in result["blockers"])
+
+
+def test_comparison_claim_requires_run_ids_and_result_artifacts():
+    evidence = complete_evidence()
+    del evidence["benchmark"]["comparison_runs"]["v2.4_selective_evaluator"]
+    result = evaluate_canonical_promotion(evidence)
+    assert result["status"] == "PROMOTION_BLOCKED"
+    assert any(
+        item.get("detail") == "v2.4_selective_evaluator"
+        and item["code"] == "BASELINE_COMPARISON_RUN_EVIDENCE_REQUIRED"
+        for item in result["blockers"]
+    )
 
 
 def test_root_canonical_version_must_not_be_promoted_implicitly():
