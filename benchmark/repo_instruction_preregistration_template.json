@@ -1,0 +1,65 @@
+{
+  "template_version": "repo-instruction-benchmark-preregistration-v0.1",
+  "status": "DRAFT_NOT_PREREGISTERED",
+  "study": {
+    "protocol_path": "docs/external-repository-instruction-llm-benchmark-v0.1.md",
+    "protocol_revision": null,
+    "dataset_revision": null,
+    "scorer_revision": null,
+    "source_snapshot_manifest": null
+  },
+  "review": {
+    "reviewer_1_id": null,
+    "reviewer_2_id": null,
+    "adjudicator_id": null,
+    "independence_attested": false,
+    "adjudication_completed": false
+  },
+  "models": [
+    {
+      "model_id": null,
+      "provider": null,
+      "model_revision": null,
+      "runtime_revision": null,
+      "supported_conditions": [],
+      "access_constraints": null
+    }
+  ],
+  "conditions": {
+    "A": {"instruction_revision": null, "repository_access": "NONE"},
+    "B": {"instruction_revision": null, "repository_access": "SUPPLIED_CONTEXT_ONLY"},
+    "C": {"instruction_revision": null, "repository_access": "REGISTERED_REPOSITORIES_READ_ONLY"},
+    "D": {"instruction_revision": null, "repository_access": "REGISTERED_REPOSITORIES_READ_ONLY", "governance_checks": []}
+  },
+  "design": {
+    "paired_case_set": true,
+    "randomization_plan": null,
+    "repetitions_per_case_condition_model": null,
+    "time_budget_seconds": null,
+    "tool_budget": null,
+    "exclusion_rules": null,
+    "missing_run_policy": null
+  },
+  "primary_metrics": [],
+  "secondary_metrics": [],
+  "acceptance_thresholds": null,
+  "uncertainty_method": null,
+  "analysis_plan_revision": null,
+  "approval": {
+    "approved_by": null,
+    "approved_at_utc": null,
+    "approval_note": null
+  },
+  "execution": {
+    "started": false,
+    "completed": false,
+    "run_record_path": null,
+    "result_report_path": null
+  },
+  "limitations": [
+    "This template is not a preregistration until all required fields are completed and approved.",
+    "Do not fill reviewer identities, model revisions, thresholds, or evidence with guesses.",
+    "Do not execute or score a confirmatory evaluation before the dataset, labels, protocol, and thresholds are frozen.",
+    "A model narrative does not prove a tool call; preserve actual tool logs."
+  ]
+}
