@@ -34,7 +34,7 @@ def validate_record(record: Any) -> dict[str, Any]:
     for field in ("case_id", "model_id"):
         if not isinstance(record[field], str) or not record[field].strip():
             raise BenchmarkRecordError(f"{field.upper()}_REQUIRED")
-    if record["condition"] not in VALID_CONDITIONS:
+    if not isinstance(record["condition"], str) or record["condition"] not in VALID_CONDITIONS:
         raise BenchmarkRecordError("CONDITION_MUST_BE_A_B_C_OR_D")
     expected, observed = record["expected"], record["observed"]
     if not isinstance(expected, dict) or not expected:
