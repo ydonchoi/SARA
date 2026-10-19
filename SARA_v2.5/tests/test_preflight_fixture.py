@@ -36,6 +36,23 @@ def test_preflight_covers_logical_audit_identity_and_evidence_conflict():
     assert suites == {"logical_audit", "claim_identity", "evidence_conflict"}
 
 
+def test_claim_identity_cases_bind_verification_contract_revision():
+    data = load_fixture()
+    cases = [case for case in data["cases"] if case["suite"] == "claim_identity"]
+    assert cases
+    assert all(case.get("current_contract_revision") for case in cases)
+    assert all(
+        case.get("prior_binding", {}).get("verification_contract_revision")
+        for case in cases
+    )
+    contract_drift = next(case for case in cases if case["case_id"] == "CV-002")
+    assert contract_drift["current_contract_revision"] != (
+        contract_drift["prior_binding"]["verification_contract_revision"]
+    )
+    assert contract_drift["expected_review_state"] == "REQUIRES_REVERIFICATION"
+    assert contract_drift["expected_reuse_allowed"] is False
+
+
 def test_conflict_cases_never_promote_claim_truth_status():
     data = load_fixture()
     conflict_cases = [
