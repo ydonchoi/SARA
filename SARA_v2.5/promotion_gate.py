@@ -117,10 +117,15 @@ def evaluate_canonical_promotion(evidence: Mapping[str, Any]) -> dict[str, Any]:
                     blockers.append({"code": "BENCHMARK_CASE_MUST_BE_MAPPING", "detail": where})
                     continue
                 suite = case.get("suite")
-                if _is_nonempty_string(suite):
-                    covered_suites.add(suite)
-                else:
+                if not _is_nonempty_string(suite):
                     blockers.append({"code": "BENCHMARK_CASE_SUITE_REQUIRED", "detail": where})
+                elif suite not in REQUIRED_BENCHMARK_SUITES:
+                    blockers.append({
+                        "code": "BENCHMARK_CASE_SUITE_UNKNOWN",
+                        "detail": f"{where}:{suite}",
+                    })
+                else:
+                    covered_suites.add(suite)
                 case_id = case.get("case_id")
                 if not _is_nonempty_string(case_id):
                     blockers.append({"code": "BENCHMARK_CASE_ID_REQUIRED", "detail": where})
