@@ -16,44 +16,44 @@ jobs:
       - name: Install test dependency
         run: python -m pip install pytest
       - id: external_execution_contracts
-      - name: Run external execution contract tests
+        name: Run external execution contract tests
         run: python -m pytest tests/test_external_execution.py -q
       - id: content_access
-      - name: Run P8 content access tests
+        name: Run P8 content access tests
         run: python -m pytest tests/test_crossref_content_accessor.py -q
       - id: review_resolution_provenance
-      - name: Run P18 review resolution provenance tests
+        name: Run P18 review resolution provenance tests
         run: python -m pytest tests/test_review_resolution_provenance.py -q
       - id: v24_epistemic_logical_audit
-      - name: Run SARA v2.4 epistemic and logical-audit tests
+        name: Run SARA v2.4 epistemic and logical-audit tests
         run: python -m pytest SARA_v2.4/tests/test_epistemic.py SARA_v2.4/tests/test_logical_audit.py -q
       - id: v25_claim_identity_conflict
-      - name: Run SARA v2.5 claim identity and conflict prototypes
+        name: Run SARA v2.5 claim identity and conflict prototypes
         run: python -m pytest SARA_v2.5/tests/test_claim_identity.py SARA_v2.5/tests/test_conflict_adjudication.py -q
       - id: v25_evaluator_boundary
-      - name: Run SARA v2.5 evaluator-boundary tests
+        name: Run SARA v2.5 evaluator-boundary tests
         run: python -m pytest SARA_v2.5/tests/test_evaluator_boundary.py -q
       - id: v25_evaluator_runner
-      - name: Run SARA v2.5 evaluator-runner tests
+        name: Run SARA v2.5 evaluator-runner tests
         run: python -m pytest SARA_v2.5/tests/test_evaluator_runner.py -q
       - id: v25_selective_reverification
-      - name: Run SARA v2.5 selective-reverification tests
+        name: Run SARA v2.5 selective-reverification tests
         run: python -m pytest SARA_v2.5/tests/test_selective_reverification.py -q
       - id: v25_reverification_runner
-      - name: Run SARA v2.5 reverification-runner tests
+        name: Run SARA v2.5 reverification-runner tests
         run: python -m pytest SARA_v2.5/tests/test_reverification_runner.py -q
       - id: v25_provenance_ledger
-      - name: Run SARA v2.5 provenance-ledger tests
+        name: Run SARA v2.5 provenance-ledger tests
         run: python -m pytest SARA_v2.5/tests/test_provenance_ledger.py -q
       - id: v25_verification_commit_gate
-      - name: Run SARA v2.5 verification-commit-gate tests
+        name: Run SARA v2.5 verification-commit-gate tests
         run: python -m pytest SARA_v2.5/tests/test_verification_commit_gate.py -q
       - id: v25_promotion_gate
-      - name: Run SARA v2.5 canonical-promotion gate tests
+        name: Run SARA v2.5 canonical-promotion gate tests
         run: python -m pytest SARA_v2.5/tests/test_promotion_gate.py -q
       - id: v25_preflight_coverage
-      - name: Validate v2.5 Preflight coverage and label status
+        name: Validate v2.5 Preflight coverage and label status
         run: python -m pytest SARA_v2.5/tests/test_preflight_fixture.py -q
       - id: v25_preflight_json
-      - name: Validate v2.5 Preflight JSON fixture
+        name: Validate v2.5 Preflight JSON fixture
         run: python -m json.tool SARA_v2.5/benchmark/preflight_cases.json > /dev/null
