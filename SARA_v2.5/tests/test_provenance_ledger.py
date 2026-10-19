@@ -237,6 +237,9 @@ def test_commit_without_review_event_is_rejected():
                 "verification_status": "VERIFIED",
                 "review_event_id": "MISSING-REVIEW",
                 "proposal_event_id": "EV-2",
+                "evidence_digest": "EVIDENCE-DIGEST-1",
+                "verifier_revision": "verify-1",
+                "verification_contract_revision": "contract-1",
             },
         )
 
