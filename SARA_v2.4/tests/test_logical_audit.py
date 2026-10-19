@@ -172,3 +172,31 @@ def test_conditional_form_rejects_non_string_node_ids():
             conclusion_proposition="Q", conclusion_negated=False,
             premise_ids=("P1", 2), conclusion_id="C1",
         )
+
+
+def test_overlapping_cycles_with_distinct_member_sets_are_both_reported():
+    result = validate_argument_graph(
+        nodes=[
+            ArgumentNode("A", "CLAIM", "Claim A."),
+            ArgumentNode("B", "CLAIM", "Claim B."),
+            ArgumentNode("C", "CLAIM", "Claim C."),
+        ],
+        edges=[
+            ArgumentEdge("AB", "A", "B", "SUPPORTS"),
+            ArgumentEdge("BC", "B", "C", "SUPPORTS"),
+            ArgumentEdge("CA", "C", "A", "SUPPORTS"),
+            ArgumentEdge("AC", "A", "C", "SUPPORTS"),
+        ],
+    )
+    member_sets = {
+        frozenset(finding["related_node_ids"])
+        for finding in result["candidate_findings"]
+    }
+    assert member_sets == {
+        frozenset({"A", "B", "C"}),
+        frozenset({"A", "C"}),
+    }
+    assert all(
+        finding["status"] == "CANDIDATE" and finding["is_evidence"] is False
+        for finding in result["candidate_findings"]
+    )
