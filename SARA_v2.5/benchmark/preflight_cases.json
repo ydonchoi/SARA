@@ -595,6 +595,103 @@
       "expected_commit_status": "NOT_COMMITTED",
       "expected_truthfulness_status": "UNASSESSED",
       "label_status": "DRAFT"
+    },
+    {
+      "case_id": "IJ-001",
+      "suite": "internal_judgment_model",
+      "case_type": "CAUSAL_INFERENCE_CANDIDATE_BINDING",
+      "request": {
+        "request_id": "REQ-IJ-001",
+        "conversation_id": "CONV-IJ-001",
+        "turn_id": "TURN-IJ-001",
+        "content": "Sales rose after the campaign, therefore the campaign caused the increase.",
+        "context": {
+          "role": "assistant"
+        },
+        "claim_candidates": [
+          {
+            "id": "C-IJ-001",
+            "text": "The campaign caused the increase."
+          }
+        ]
+      },
+      "expected_judgment_status": "INFERENCE_PRESENT",
+      "expected_inference_types": [
+        "CAUSAL"
+      ],
+      "expected_claim_refs": [
+        "C-IJ-001"
+      ],
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "IT-001",
+      "suite": "inference_trigger",
+      "case_type": "DETECTED_INFERENCE_ACTIVATES_VERIFICATION",
+      "judgment": {
+        "execution_status": "SUCCEEDED",
+        "judgment_status": "INFERENCE_PRESENT",
+        "confidence": "HIGH",
+        "input_revision_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected_action": "SARA_SELECTIVE_VERIFICATION",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "IP-001",
+      "suite": "inference_pipeline",
+      "case_type": "AMBIGUOUS_JUDGMENT_ROUTES_TO_PRECHECK",
+      "input": {
+        "request_id": "REQ-IP-001",
+        "conversation_id": "CONV-IP-001",
+        "turn_id": "TURN-IP-001",
+        "content": "The result might be due to another cause.",
+        "context": {
+          "role": "assistant"
+        },
+        "claim_candidates": [
+          {
+            "id": "C-IP-001",
+            "text": "Another cause explains the result."
+          }
+        ]
+      },
+      "expected_judgment_status": "AMBIGUOUS",
+      "expected_action": "SARA_PRECHECK_REVIEW",
+      "expected_route": "precheck",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "DR-001",
+      "suite": "dialogue_runtime",
+      "case_type": "BOUND_CAUSAL_INFERENCE_REACHES_SARA_VERIFIER",
+      "request": {
+        "request_id": "REQ-DR-001",
+        "conversation_id": "CONV-DR-001",
+        "turn_id": "TURN-DR-001",
+        "content": "Sales rose after the campaign, therefore the campaign caused the increase.",
+        "context": {
+          "role": "assistant"
+        },
+        "claim_candidates": [
+          {
+            "id": "C-DR-001",
+            "text": "The campaign caused the increase."
+          }
+        ],
+        "evidence": [],
+        "provenance_ids": [
+          "PROV-DR-001"
+        ]
+      },
+      "expected_judgment_status": "INFERENCE_PRESENT",
+      "expected_action": "SARA_SELECTIVE_VERIFICATION",
+      "expected_verified_claim_ids": [
+        "C-DR-001"
+      ],
+      "expected_route_execution_status": "SUCCEEDED",
+      "expected_claim_truth_assessed": false,
+      "label_status": "DRAFT"
     }
   ]
 }
