@@ -315,10 +315,15 @@ The CI contract test uses deterministic doubles to test the injected path,
 claim binding, invocation, no-inference handling, timeout/error routing, and
 optional event-sink failure. This is not a live-model performance test, and it
 does not prove that a production dialogue host or provider is configured.
-The current root verification facade is still rooted in the v2.3 execution
-module; v2.4 logical-audit checks are not automatically performed on every
-free-form dialogue turn. Structured logical audit and inference-triggered
-verification therefore remain distinct capabilities.
+The root callable `sara_runtime.execute_request(...)` now invokes the v2.4
+Co-thoughts epistemic adapter before the injected provider and attaches a
+separate `sara_v24_assessment` response field. If an explicit structured
+`argument_graph` is supplied, it also runs the v2.4 graph-integrity/cycle checker;
+without a graph the logical-audit status remains `NOT_RUN` rather than parsing
+free-form prose. Provider execution still uses the existing v2.3 execution
+contract, and the host's actual dialogue loop/provider are not configured here.
+Structured logical audit and inference-triggered verification therefore remain
+distinct capabilities.
 
 A high-confidence no-inference judgment disables only this inference-triggered
 route. It does not suppress separate factual, source, safety, or policy-based
