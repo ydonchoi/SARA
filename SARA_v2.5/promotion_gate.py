@@ -41,6 +41,7 @@ REQUIRED_BENCHMARK_SUITES = {
     "internal_judgment_model",
     "inference_trigger",
     "inference_pipeline",
+    "dialogue_runtime",
 }
 MINIMUM_ADJUDICATED_CASES = 18
 REQUIRED_COMPARISON_CONDITIONS = {
