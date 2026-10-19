@@ -280,13 +280,15 @@
         "content_digest": "OLD_DIGEST",
         "verifier_revision": "verify-1",
         "evidence_digest": "EVIDENCE-1",
-        "verification_status": "VERIFIED"
+        "verification_status": "VERIFIED",
+        "verification_contract_revision": "contract-1"
       },
       "current_verifier_revision": "verify-1",
       "current_evidence_digest": "EVIDENCE-1",
       "expected_review_state": "REQUIRES_REVERIFICATION",
       "expected_reuse_allowed": false,
-      "label_status": "DRAFT"
+      "label_status": "DRAFT",
+      "current_contract_revision": "contract-1"
     },
     {
       "case_id": "EC-001",
@@ -367,6 +369,40 @@
       ],
       "expected_conflict_status": "CONTEXTUAL_DIVERGENCE_REVIEW",
       "expected_claim_verification_status": "UNASSESSED",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "CV-002",
+      "suite": "claim_identity",
+      "case_type": "VERIFICATION_CONTRACT_CHANGED",
+      "current_revision": {
+        "claim_id": "C1",
+        "revision_id": "R1",
+        "text": "Outcome was associated.",
+        "scope": {
+          "population": "adults",
+          "setting": "one hospital",
+          "time_range": "2020-2024",
+          "modality": "observational",
+          "outcome": "readmission",
+          "causal_strength": "association"
+        },
+        "content_digest": "CLAIM-DIGEST-1"
+      },
+      "prior_binding": {
+        "claim_id": "C1",
+        "revision_id": "R1",
+        "content_digest": "CLAIM-DIGEST-1",
+        "verifier_revision": "verify-1",
+        "verification_contract_revision": "contract-1",
+        "evidence_digest": "EVIDENCE-1",
+        "verification_status": "VERIFIED"
+      },
+      "current_verifier_revision": "verify-1",
+      "current_contract_revision": "contract-2",
+      "current_evidence_digest": "EVIDENCE-1",
+      "expected_review_state": "REQUIRES_REVERIFICATION",
+      "expected_reuse_allowed": false,
       "label_status": "DRAFT"
     }
   ]
