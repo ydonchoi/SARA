@@ -306,7 +306,7 @@ def test_external_search_runs_for_direct_claim_without_inference_when_required()
     assert result["external_search_invoked"] is True
     assert result["verification_provider_invoked"] is True
     assert result["judgment"]["judgment_status"] == "NO_INFERENCE_DETECTED"
-    assert verify_calls[0]["claim"]["inference_level"] == "ASSERTED_OR_ATTRIBUTED_CLAIM"
+    assert verify_calls[0]["claim"]["inference_level"] == "FACT"
 
 
 def test_required_external_search_without_provider_does_not_call_verifier():
