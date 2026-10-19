@@ -292,9 +292,10 @@ def test_successful_reverification_proposal_is_logged_but_not_committed():
         ledger=ledger,
     )
     assert ledger.verify_chain()["valid"] is True
-    assert len(ledger.events) == 1
-    event = ledger.events[0]
-    assert event["event_type"] == "VERIFICATION_RESULT_PROPOSED"
+    assert [event["event_type"] for event in ledger.events] == [
+        "CLAIM_REVISION_REGISTERED", "VERIFICATION_RESULT_PROPOSED"
+    ]
+    event = ledger.events[-1]
     replay = ledger.replay_claim("C1")
     assert replay["committed_verification_status"] is None
     assert replay["proposed_results"] == [{
@@ -303,7 +304,9 @@ def test_successful_reverification_proposal_is_logged_but_not_committed():
         "payload": event["payload"],
     }]
     assert result["results"][0]["commit_status"] == "NOT_COMMITTED"
-    assert result["provenance_event_ids"] == [event["event_id"]]
+    assert result["provenance_event_ids"] == [
+        ledger.events[0]["event_id"], event["event_id"]
+    ]
 
 
 def test_failed_reverification_attempt_is_logged_separately_from_proposal():
@@ -313,7 +316,7 @@ def test_failed_reverification_attempt_is_logged_separately_from_proposal():
         raise TimeoutError("do not persist provider details")
 
     result = execute(timeout, ledger=ledger)
-    event = ledger.events[0]
+    event = ledger.events[-1]
     assert event["event_type"] == "REVERIFICATION_ATTEMPT_COMPLETED"
     assert event["payload"]["execution_status"] == "TIMEOUT"
     assert "do not persist provider details" not in ledger.to_jsonl()
