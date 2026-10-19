@@ -144,11 +144,11 @@ class SARADialogueRuntime:
             "conversation_id": normalized["conversation_id"],
             "turn_id": normalized["turn_id"],
             "verification_provider_invoked": any(
-                isinstance(item, Mapping) and item.get("execution_status") == "SUCCEEDED"
+                isinstance(item, Mapping) and item.get("verification_provider_invoked") is True
                 for item in verification_results
             ),
             "external_search_invoked": any(
-                isinstance(item, Mapping) and item.get("external_search_status") in {"COLLECTED", "NO_RESULTS"}
+                isinstance(item, Mapping) and item.get("external_search_invoked") is True
                 for item in verification_results
             ),
             "external_search_provider_configured": self._search_external_sources is not None,
@@ -258,6 +258,8 @@ class SARADialogueRuntime:
                         "claim_id": claim_id,
                         "execution_status": "BLOCKED",
                         "external_search_status": "NOT_CONFIGURED",
+                        "external_search_invoked": False,
+                        "verification_provider_invoked": False,
                         "verification_status": "UNVERIFIED",
                         "error_code": "EXTERNAL_SEARCH_PROVIDER_NOT_CONFIGURED",
                     })
@@ -280,6 +282,8 @@ class SARADialogueRuntime:
                         "claim_id": claim_id,
                         "execution_status": "FAILED",
                         "external_search_status": "FAILED",
+                        "external_search_invoked": True,
+                        "verification_provider_invoked": False,
                         "verification_status": "UNVERIFIED",
                         "error_code": str(exc),
                     })
@@ -289,6 +293,8 @@ class SARADialogueRuntime:
                         "claim_id": claim_id,
                         "execution_status": "NO_EVIDENCE",
                         "external_search_status": "NO_RESULTS",
+                        "external_search_invoked": True,
+                        "verification_provider_invoked": False,
                         "verification_status": "UNVERIFIED",
                         "external_evidence_count": 0,
                         "error_code": "NO_EXTERNAL_EVIDENCE_FOUND",
@@ -310,6 +316,8 @@ class SARADialogueRuntime:
                     results.append({
                         "claim_id": claim_id,
                         "execution_status": "INVALID_OUTPUT",
+                        "external_search_invoked": judgment.get("external_check_need") == "REQUIRED",
+                        "verification_provider_invoked": True,
                         "error_code": "SARA_VERIFY_CLAIM_OUTPUT_MUST_BE_MAPPING",
                     })
                     continue
@@ -317,6 +325,8 @@ class SARADialogueRuntime:
                     "claim_id": claim_id,
                     "execution_status": "SUCCEEDED",
                     "output": dict(raw),
+                    "external_search_invoked": judgment.get("external_check_need") == "REQUIRED",
+                    "verification_provider_invoked": True,
                     "external_search_status": (
                         "COLLECTED" if judgment.get("external_check_need") == "REQUIRED"
                         and self._search_external_sources is not None else "NOT_REQUIRED"
@@ -328,6 +338,8 @@ class SARADialogueRuntime:
                 results.append({
                     "claim_id": claim_id,
                     "execution_status": "FAILED",
+                    "external_search_invoked": judgment.get("external_check_need") == "REQUIRED",
+                    "verification_provider_invoked": True,
                     "error_code": type(exc).__name__,
                 })
         failed = any(item["execution_status"] != "SUCCEEDED" for item in results)
