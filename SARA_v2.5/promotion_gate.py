@@ -7,6 +7,7 @@ pass. Promotion is approved only when every explicit criterion is satisfied.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from math import isfinite
 from typing import Any
 
 REQUIRED_CI_SUITES = {
@@ -35,6 +36,11 @@ REQUIRED_BENCHMARK_SUITES = {
     "reverification_runner",
 }
 MINIMUM_ADJUDICATED_CASES = 18
+REQUIRED_COMPARISON_CONDITIONS = {
+    "v2.3_baseline",
+    "v2.4_no_evaluator",
+    "v2.4_selective_evaluator",
+}
 REQUIRED_READINESS_FIELDS = {
     "external_evaluator_integration_status",
     "reverification_runtime_status",
@@ -135,6 +141,9 @@ def evaluate_canonical_promotion(evidence: Mapping[str, Any]) -> dict[str, Any]:
                     seen_case_ids.add(case_id)
                 if case.get("label_status") != "INDEPENDENTLY_ADJUDICATED":
                     blockers.append({"code": "BENCHMARK_CASE_LABEL_NOT_ADJUDICATED", "detail": where})
+                reference_label = case.get("reference_label")
+                if not _is_nonempty_string(reference_label):
+                    blockers.append({"code": "BENCHMARK_REFERENCE_LABEL_REQUIRED", "detail": where})
                 adjudications = case.get("adjudications")
                 if not isinstance(adjudications, list):
                     blockers.append({"code": "CASE_ADJUDICATION_RECORDS_REQUIRED", "detail": where})
@@ -168,11 +177,22 @@ def evaluate_canonical_promotion(evidence: Mapping[str, Any]) -> dict[str, Any]:
                         resolution.get("status") != "RESOLVED"
                         or not _is_nonempty_string(resolution.get("resolver_id"))
                         or not _is_nonempty_string(resolution.get("rationale"))
+                        or not _is_nonempty_string(resolution.get("decision"))
                     ):
                         blockers.append({
                             "code": "ADJUDICATOR_DISAGREEMENT_UNRESOLVED",
                             "detail": where,
                         })
+                    elif reference_label != resolution.get("decision"):
+                        blockers.append({
+                            "code": "BENCHMARK_REFERENCE_LABEL_MISMATCH",
+                            "detail": where,
+                        })
+                elif len(decisions) == 1 and reference_label != next(iter(decisions)):
+                    blockers.append({
+                        "code": "BENCHMARK_REFERENCE_LABEL_MISMATCH",
+                        "detail": where,
+                    })
             missing_suites = REQUIRED_BENCHMARK_SUITES - covered_suites
             if missing_suites:
                 blockers.append({
@@ -181,14 +201,64 @@ def evaluate_canonical_promotion(evidence: Mapping[str, Any]) -> dict[str, Any]:
                 })
         if benchmark.get("comparison_status") != "PASS":
             blockers.append({"code": "BASELINE_COMPARISON_NOT_PASSED"})
+        comparison_runs = benchmark.get("comparison_runs")
+        if not isinstance(comparison_runs, Mapping):
+            blockers.append({"code": "BASELINE_COMPARISON_RUNS_REQUIRED"})
+        else:
+            for condition in sorted(REQUIRED_COMPARISON_CONDITIONS):
+                record = comparison_runs.get(condition)
+                if not isinstance(record, Mapping) or (
+                    not _is_nonempty_string(record.get("run_id"))
+                    or not _is_nonempty_string(record.get("result_artifact_id"))
+                ):
+                    blockers.append({
+                        "code": "BASELINE_COMPARISON_RUN_EVIDENCE_REQUIRED",
+                        "detail": condition,
+                    })
+
         metric_decisions = benchmark.get("metric_decisions")
         if not isinstance(metric_decisions, list) or not metric_decisions:
             blockers.append({"code": "BENCHMARK_METRIC_DECISIONS_REQUIRED"})
-        elif any(
-            not isinstance(item, Mapping) or item.get("status") != "PASS"
-            for item in metric_decisions
-        ):
-            blockers.append({"code": "BENCHMARK_METRIC_ACCEPTANCE_NOT_PASSED"})
+        else:
+            for index, item in enumerate(metric_decisions):
+                where = (
+                    str(item.get("metric", f"index:{index}"))
+                    if isinstance(item, Mapping) else f"index:{index}"
+                )
+                if not isinstance(item, Mapping):
+                    blockers.append({"code": "BENCHMARK_METRIC_DECISION_MUST_BE_MAPPING", "detail": where})
+                    continue
+                if item.get("status") != "PASS":
+                    blockers.append({"code": "BENCHMARK_METRIC_ACCEPTANCE_NOT_PASSED", "detail": where})
+                if not _is_nonempty_string(item.get("metric")):
+                    blockers.append({"code": "BENCHMARK_METRIC_NAME_REQUIRED", "detail": where})
+                if not _is_nonempty_string(item.get("protocol_revision")):
+                    blockers.append({"code": "BENCHMARK_METRIC_PROTOCOL_REQUIRED", "detail": where})
+                if not _is_nonempty_string(item.get("artifact_ref")):
+                    blockers.append({"code": "BENCHMARK_METRIC_ARTIFACT_REQUIRED", "detail": where})
+                observed = item.get("observed_value")
+                threshold = item.get("threshold")
+                direction = item.get("direction")
+                numeric_observed = (
+                    isinstance(observed, (int, float))
+                    and not isinstance(observed, bool)
+                    and isfinite(observed)
+                )
+                numeric_threshold = (
+                    isinstance(threshold, (int, float))
+                    and not isinstance(threshold, bool)
+                    and isfinite(threshold)
+                )
+                if not numeric_observed or not numeric_threshold:
+                    blockers.append({"code": "BENCHMARK_METRIC_VALUES_REQUIRED", "detail": where})
+                elif direction not in {"MAXIMUM", "MINIMUM"}:
+                    blockers.append({"code": "BENCHMARK_METRIC_DIRECTION_REQUIRED", "detail": where})
+                elif (
+                    direction == "MAXIMUM" and observed > threshold
+                ) or (
+                    direction == "MINIMUM" and observed < threshold
+                ):
+                    blockers.append({"code": "BENCHMARK_METRIC_THRESHOLD_NOT_MET", "detail": where})
 
     documentation = evidence.get("documentation")
     if not isinstance(documentation, Mapping):
