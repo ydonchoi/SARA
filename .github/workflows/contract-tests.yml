@@ -27,6 +27,9 @@ jobs:
       - id: v24_epistemic_logical_audit
         name: Run SARA v2.4 epistemic and logical-audit tests
         run: python -m pytest SARA_v2.4/tests/test_epistemic.py SARA_v2.4/tests/test_logical_audit.py -q
+      - id: v24_runtime_integration
+        name: Test v2.4 epistemic and logical-audit integration in callable runtime
+        run: python -m pytest tests/test_sara_runtime_v24.py -q
       - id: v25_claim_identity_conflict
         name: Run SARA v2.5 claim identity and conflict prototypes
         run: python -m pytest SARA_v2.5/tests/test_claim_identity.py SARA_v2.5/tests/test_conflict_adjudication.py -q
