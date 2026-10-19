@@ -97,6 +97,10 @@ def validate_evaluator_signal(
                 raise ValueError("EVALUATOR_CANDIDATE_REQUIRES_BASIS_REFERENCE")
 
     result = asdict(signal)
+    # Boundary output is JSON-facing: normalize Python tuple containers to arrays.
+    result["related_node_ids"] = list(signal.related_node_ids)
+    result["evidence_ids"] = list(signal.evidence_ids)
+    result["provenance_ids"] = list(signal.provenance_ids)
     result["review_required"] = (
         signal.execution_status != "SUCCEEDED"
         or signal.signal_status in REVIEW_SIGNAL_STATUSES
