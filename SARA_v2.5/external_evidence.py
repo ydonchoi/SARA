@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from hashlib import sha256
 from math import isfinite
 from typing import Any
+from urllib.parse import urlsplit
 
 SearchCallable = Callable[[Mapping[str, Any], float], list[Mapping[str, Any]]]
 
@@ -21,6 +22,20 @@ class ExternalEvidenceError(ValueError):
 
 def _digest(value: str) -> str:
     return sha256(value.encode("utf-8")).hexdigest()
+
+
+def _is_http_url(value: str) -> bool:
+    """Accept absolute HTTP(S) URLs with a host; reject credential-bearing URLs."""
+    try:
+        parsed = urlsplit(value)
+        return (
+            parsed.scheme.lower() in {"http", "https"}
+            and bool(parsed.hostname)
+            and parsed.username is None
+            and parsed.password is None
+        )
+    except ValueError:
+        return False
 
 
 def collect_external_evidence(
@@ -76,7 +91,7 @@ def collect_external_evidence(
 
     normalized = []
     seen = set()
-    for index, item in enumerate(raw[:max_results]):
+    for item in raw[:max_results]:
         if not isinstance(item, Mapping):
             raise ExternalEvidenceError("EXTERNAL_SEARCH_RESULT_MUST_BE_MAPPING")
         url = item.get("url") or item.get("source_url")
@@ -84,11 +99,14 @@ def collect_external_evidence(
         text = item.get("text") or item.get("snippet") or item.get("content")
         if not isinstance(url, str) or not url.strip():
             raise ExternalEvidenceError("EXTERNAL_SEARCH_RESULT_URL_REQUIRED")
+        url = url.strip()
+        if not _is_http_url(url):
+            raise ExternalEvidenceError("EXTERNAL_SEARCH_RESULT_URL_MUST_BE_HTTP")
         if not isinstance(source, str) or not source.strip():
             raise ExternalEvidenceError("EXTERNAL_SEARCH_RESULT_SOURCE_REQUIRED")
         if not isinstance(text, str) or not text.strip():
             raise ExternalEvidenceError("EXTERNAL_SEARCH_RESULT_TEXT_REQUIRED")
-        canonical = f"{url.strip()}\n{text.strip()}"
+        canonical = f"{url}\n{text.strip()}"
         fingerprint = _digest(canonical)
         if fingerprint in seen:
             continue
@@ -96,7 +114,7 @@ def collect_external_evidence(
         normalized.append({
             "id": str(item.get("id") or f"EXT-EVIDENCE-{fingerprint[:16]}"),
             "source": source.strip(),
-            "url": url.strip(),
+            "url": url,
             "text": text.strip(),
             "retrieved_at": str(item.get("retrieved_at") or datetime.now(timezone.utc).isoformat()),
             "provenance_id": str(item.get("provenance_id") or f"EXT-SOURCE-{fingerprint[:16]}"),
