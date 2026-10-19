@@ -8,6 +8,7 @@ never research evidence or a claim-verification result.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from copy import deepcopy
 from datetime import datetime, timezone
 from math import isfinite
 from typing import Any
@@ -104,6 +105,10 @@ class EvaluatorRunner:
                 occurred_at=datetime.now(timezone.utc).isoformat(),
                 input_digest=request["input_revision_digest"],
                 payload={
+                    "evaluator_id": self.evaluator_id,
+                    "evaluator_revision": self.evaluator_revision,
+                    "rubric_revision": self.rubric_revision,
+                    "runner_revision": self.runner_revision,
                     "execution_status": result["execution_status"],
                     "failure_code": result.get("failure_code"),
                     "signal_status": result.get("signal", {}).get("signal_status"),
@@ -161,9 +166,9 @@ class EvaluatorRunner:
             "claim_id": claim_id,
             "claim_revision_id": revision_id,
             "claim_text": request["claim_text"],
-            "scope": request.get("scope", {}),
-            "premises": request.get("premises", []),
-            "evidence": request.get("evidence", []),
+            "scope": deepcopy(request.get("scope", {})),
+            "premises": deepcopy(request.get("premises", [])),
+            "evidence": deepcopy(request.get("evidence", [])),
             "input_revision_digest": input_digest,
             "rubric_revision": self.rubric_revision,
             "timeout_seconds": float(timeout_seconds),
