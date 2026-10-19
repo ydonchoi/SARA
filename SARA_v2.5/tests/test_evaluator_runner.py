@@ -209,6 +209,9 @@ def test_provider_cannot_mutate_caller_request():
 
     def provider(payload, _timeout):
         payload["claim_id"] = "MUTATED"
+        payload["scope"]["population"] = "MUTATED"
+        payload["evidence"][0]["text"] = "MUTATED"
+        payload["premises"][0]["text"] = "MUTATED"
         return good_response(REQUEST)
 
     runner(provider).run(REQUEST, timeout_seconds=1)
@@ -233,6 +236,10 @@ def test_runner_records_execution_and_ledger_does_not_promote_evaluator_signal()
     assert [event["event_type"] for event in ledger.events] == [
         "CLAIM_REVISION_REGISTERED", "EVALUATOR_RUN_COMPLETED"
     ]
+    evaluator_event = ledger.events[-1]
+    assert evaluator_event["payload"]["evaluator_id"] == "JEV"
+    assert evaluator_event["payload"]["evaluator_revision"] == "jev-1.2"
+    assert evaluator_event["payload"]["rubric_revision"] == "rubric-3"
 
 
 def test_runner_records_timeout_as_operational_provenance_not_a_claim_finding():
