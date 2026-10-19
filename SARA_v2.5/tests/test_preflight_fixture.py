@@ -39,6 +39,9 @@ def test_preflight_case_ids_are_unique_and_outcomes_are_explicit():
             "expected_execution_status",
             "expected_review_required",
             "expected_impacted_claim_ids",
+            "expected_judgment_status",
+            "expected_inference_types",
+            "expected_claim_refs",
         ))
         for case in cases
     )
