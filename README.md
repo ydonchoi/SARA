@@ -32,6 +32,7 @@ Unless a file or directory explicitly states otherwise, the license applies to t
 | **v2.1** | 단일 Master Prompt를 계층형 모듈 구조로 분해 | MASTER · CORE · ROUTER · AGENTS · ANALYSIS · OUTPUT · SCHEMA |
 | **v2.2** | 모듈 간 실행 관계와 의존성 관리 도입 | v2.1 + SYSTEM / Dependency & Loading Architecture |
 | **v2.3** | 구조적 결함 수정 + 검증 계층 분리 + 재현/시뮬레이션 에이전트 도입 | v2.2 + A6 Simulator/Reproducer + Verification Layer Separation |\n| **v2.4** | Co-thoughts integration + premise/context/provenance verification | Knowledge Gate + Thought Gate + Premise Evaluation + Temporal/Interpretive Context + Attribution Firewall |
+| **v2.5 (proposal)** | Claim identity/versioning + logical argument audit + selective re-verification | Proposed schemas + draft Preflight seed cases; runtime not implemented |
 
 > 버전별 폴더는 서로 다른 설계 단계를 보존하기 위한 **versioned snapshots**이다. 현재 canonical verification baseline은 `SARA_v2.4/`이며, 이전 버전 폴더는 비교·이력 보존용이다.
 
@@ -457,38 +458,30 @@ SARA의 출력은 다음 원칙을 따른다.
 
 # 14. Versioned Directory
 
-현재 저장소의 주요 버전 보존 구조:
+현재 저장소의 버전별 산출물은 다음과 같이 구분한다.
 
 ```text
 SARA/
-├─ legacy/
-├     ├─ SARA_v1.0/
-├     ├─ SARA_v2.1/
-├     └─ SARA_v2.2
-└─ SARA_v2.3
-
+├─ SARA_v2.3/                 # 이전 아키텍처와 검증/런타임 구성요소
+├─ SARA_v2.4/                 # 현재 canonical verification baseline
+└─ SARA_v2.5/                 # 제안 설계·스키마·Preflight 초안; runtime 미구현
 ```
 
-### Latest
+### Current canonical baseline
 
-**v2.4 (canonical verification baseline)**
+**v2.4 — ACTIVE / INTEGRATION BASELINE**
 
-`SARA_v2.3/`에는 다음 계층이 포함된다.
+- `SARA_v2.4/sara_v24_epistemic.py`
+- `SARA_v2.4/logical_audit.py`
+- `SARA_v2.4/co_thoughts_sara_adapter.py`
 
-```text
-00_MASTER
-01_CORE
-02_ROUTER
-03_AGENTS
-04_ANALYSIS
-05_OUTPUT
-06_SCHEMA
-07_SYSTEM
+이 계층은 상태/참조의 구조적 검증을 제공한다. 논리적 오류의 의미론적 판정은 별도 evaluator 또는 사람의 검토를 요구한다.
 
-SARA_v2.3_Master.md
-SARA_v2.3_Restructure.md
-README_v2.3.md
-```
+### Proposed next version
+
+**v2.5 — PROPOSED DESIGN ONLY**
+
+Claim Identity & Versioning, Argument Dependency, Evidence Conflict Adjudication, Evaluator Boundary, Selective Reverification, Provenance History, and Preflight Benchmark를 설계한다. `SARA_v2.5/`의 문서와 fixture는 실행 가능한 v2.5 runtime을 뜻하지 않는다.
 
 ---
 
