@@ -489,9 +489,9 @@ SARA/
 - Stub provider로 테스트한 evaluator invocation adapter (외부 JEV 연결은 미구성)
 - `sara_runtime.process_dialogue_turn(...)` → SARA 내부 JEV형 판정 → 추론 활성화 정책 → 명시된 claim candidate에 대한 기존 SARA 검증 facade 호출; 모호하거나 대상 주장이 바인딩되지 않으면 사전 검토 경로로 라우팅
 - Hash-chained provenance ledger, explicit human-review commit gate, promotion gate
-- 18개 synthetic Preflight fixture와 독립 판정 프로토콜 초안
+- 22개 synthetic Preflight fixture와 독립 판정 프로토콜 초안 (11개 필수 benchmark suite를 형식상 포괄; 라벨은 아직 모두 draft)
 
-새 dialogue-route의 결정론적 contract tests를 CI에 추가했다. 다만 실제 호스트 대화 루프와 모델·검증 provider 설정은 주입 가능한 경계로만 구현되었으며, 배포 환경의 실통합 검증은 완료되지 않았다. 현재 18개 Preflight 사례는 draft이고 dialogue_runtime benchmark suite도 아직 없으며, v2.3/v2.4/v2.5 비교 벤치마크, 배포용 내구성 저장소와 리뷰어 인증도 미확인이다. 따라서 v2.5는 출시·통합된 runtime baseline이 아니며 v2.4가 계속 canonical이다.
+새 dialogue-route의 결정론적 contract tests를 CI에 추가했다. 다만 실제 호스트 대화 루프와 모델·검증 provider 설정은 주입 가능한 경계로만 구현되었으며, 배포 환경의 실통합 검증은 완료되지 않았다. 현재 22개 Preflight 사례는 11개 필수 suite를 형식상 포괄하지만 라벨은 아직 모두 draft이며 독립 판정을 거치지 않았다. v2.3/v2.4/v2.5 비교 벤치마크, 실제 dialogue host/model/verifier 연동, 배포용 내구성 저장소와 리뷰어 인증도 미확인이다. 따라서 v2.5는 출시·통합된 runtime baseline이 아니며 v2.4가 계속 canonical이다.
 
 ---
 
