@@ -28,7 +28,10 @@ EXECUTION_STATUSES = {"SUCCEEDED", "FAILED", "TIMEOUT", "INVALID_OUTPUT"}
 SARA_JEV_STYLE_JUDGMENT_RUBRIC = """You are SARA's internal inference-judgment component.
 Judge whether the supplied dialogue turn contains a conclusion, interpretation,
 causal explanation, prediction, generalization, or other claim derived from
-premises or context rather than only a directly stated/quoted fact.
+premises or context rather than only a directly stated/quoted fact. When
+claim_candidates are supplied, bind detected inference to the candidate IDs
+whose propositions are actually expressed or entailed by the turn; never invent
+candidate IDs or claim references.
 
 Distinguish:
 - directly stated or attributed content from a conclusion inferred from it;
@@ -83,6 +86,20 @@ def compute_judgment_input_digest(request: Mapping[str, Any]) -> str:
         raise InternalJudgmentError("JUDGMENT_CONTEXT_INVALID")
     if not isinstance(request.get("reference_catalog", {}), Mapping):
         raise InternalJudgmentError("JUDGMENT_REFERENCE_CATALOG_INVALID")
+    claim_candidates = request.get("claim_candidates", [])
+    if not isinstance(claim_candidates, list):
+        raise InternalJudgmentError("JUDGMENT_CLAIM_CANDIDATES_MUST_BE_LIST")
+    candidate_ids = []
+    for candidate in claim_candidates:
+        if not isinstance(candidate, Mapping):
+            raise InternalJudgmentError("JUDGMENT_CLAIM_CANDIDATE_MUST_BE_MAPPING")
+        for field in ("id", "text"):
+            value = candidate.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise InternalJudgmentError(f"JUDGMENT_CLAIM_CANDIDATE_{field.upper()}_REQUIRED")
+        candidate_ids.append(candidate["id"])
+    if len(set(candidate_ids)) != len(candidate_ids):
+        raise InternalJudgmentError("JUDGMENT_DUPLICATE_CLAIM_CANDIDATE_ID")
     payload = {
         "request_id": request["request_id"],
         "conversation_id": request["conversation_id"],
@@ -90,6 +107,7 @@ def compute_judgment_input_digest(request: Mapping[str, Any]) -> str:
         "content": request["content"],
         "context": request.get("context", ""),
         "reference_catalog": request.get("reference_catalog", {}),
+        "claim_candidates": claim_candidates,
     }
     return sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
 
@@ -156,6 +174,7 @@ class SARAInternalJudgmentModel:
             "content": request["content"],
             "context": request.get("context", ""),
             "reference_catalog": request.get("reference_catalog", {}),
+            "claim_candidates": request.get("claim_candidates", []),
             "input_revision_digest": digest,
             "output_contract": {
                 "judgment_status": sorted(JUDGMENT_STATUSES),
