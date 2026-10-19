@@ -186,6 +186,12 @@ class ProvenanceEventLedger:
             digest = payload.get("content_digest")
             if not _is_nonempty_string(digest) or digest != input_digest:
                 raise ProvenanceLedgerError("CLAIM_REVISION_DIGEST_MISMATCH")
+            existing_revision = cls._registered_revision(prior_events, claim_id, revision_id)
+            if existing_revision is not None:
+                existing_digest = existing_revision.get("payload", {}).get("content_digest")
+                if existing_digest != digest:
+                    raise ProvenanceLedgerError("CLAIM_REVISION_ID_REBOUND_TO_DIFFERENT_DIGEST")
+                raise ProvenanceLedgerError("CLAIM_REVISION_ALREADY_REGISTERED")
             return
 
         if event_type in {
