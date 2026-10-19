@@ -112,6 +112,48 @@ def execute_request(
     return executor.verify_claim(request)
 
 
+
+def process_dialogue_turn(
+    payload: Mapping[str, Any],
+    *,
+    judgment_generate: Callable[[str, Mapping[str, Any], float], Mapping[str, Any]],
+    verification_provider: Callable[[Mapping[str, Any]], Mapping[str, Any]],
+    model_id: str,
+    model_revision: str,
+    adapter_revision: str = "sara-dialogue-runtime-v0.1",
+    precheck: Callable[[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]], Mapping[str, Any]] | None = None,
+    event_sink: Callable[[Mapping[str, Any]], Any] | None = None,
+    timeout_seconds: float = 15.0,
+) -> dict[str, Any]:
+    """Run the SARA-internal JEV-style judgment/trigger path from a dialogue turn.
+
+    This is the callable integration point for a host dialogue runtime. It
+    requires explicit SARA model-generation and verification-provider callables;
+    it does not silently configure an external JEV service or model SDK.
+    """
+    if not callable(verification_provider):
+        raise ValueError("SARA_VERIFICATION_PROVIDER_REQUIRED")
+    v25_root = Path(__file__).resolve().parent / "SARA_v2.5"
+    if str(v25_root) not in sys.path:
+        sys.path.insert(0, str(v25_root))
+    from dialogue_runtime import SARADialogueRuntime
+
+    def verify_claim_via_sara(request: Mapping[str, Any]) -> Mapping[str, Any]:
+        response = execute_request(request, verification_provider)
+        return asdict(response)
+
+    runtime = SARADialogueRuntime(
+        generate=judgment_generate,
+        verify_claim=verify_claim_via_sara,
+        model_id=model_id,
+        model_revision=model_revision,
+        adapter_revision=adapter_revision,
+        precheck=precheck,
+        event_sink=event_sink,
+    )
+    return runtime.process_turn(payload, timeout_seconds=timeout_seconds)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run one SARA v2.3 verification request.")
     parser.add_argument("--provider", required=True, help="Provider callable as MODULE:ATTRIBUTE")
