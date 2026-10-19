@@ -8,12 +8,14 @@ current claim state or establish truthfulness.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from datetime import datetime, timezone
 from hashlib import sha256
 import json
 from math import isfinite
 from typing import Any
 
 from claim_identity import VERIFICATION_STATUSES, compute_content_digest
+from provenance_ledger import ProvenanceEventLedger
 
 VerificationCallable = Callable[[Mapping[str, Any], float], Mapping[str, Any]]
 
@@ -48,6 +50,8 @@ class SelectiveReverificationRunner:
         verifier_revision: str,
         verification_contract_revision: str,
         runner_revision: str = "sara-selective-reverification-runner-v0.1",
+        ledger: ProvenanceEventLedger | None = None,
+        actor_id: str = "reverification-runner",
     ) -> None:
         if not callable(verify):
             raise ReverificationExecutionError("VERIFICATION_CALLABLE_REQUIRED")
@@ -55,6 +59,7 @@ class SelectiveReverificationRunner:
             (verifier_revision, "VERIFIER_REVISION_REQUIRED"),
             (verification_contract_revision, "VERIFICATION_CONTRACT_REVISION_REQUIRED"),
             (runner_revision, "REVERIFICATION_RUNNER_REVISION_REQUIRED"),
+            (actor_id, "REVERIFICATION_RUNNER_ACTOR_REQUIRED"),
         ):
             if not isinstance(value, str) or not value.strip():
                 raise ReverificationExecutionError(code)
@@ -62,8 +67,62 @@ class SelectiveReverificationRunner:
         self.verifier_revision = verifier_revision
         self.verification_contract_revision = verification_contract_revision
         self.runner_revision = runner_revision
+        self._ledger = ledger
+        self._actor_id = actor_id
 
     def execute(
+        self,
+        *,
+        plan: Mapping[str, Any],
+        claim_revisions: Mapping[str, Mapping[str, Any]],
+        evidence_by_claim: Mapping[str, list[Mapping[str, Any]]],
+        prior_bindings: Mapping[str, Mapping[str, Any]],
+        current_evidence_digests: Mapping[str, str],
+        timeout_seconds: float,
+    ) -> dict[str, Any]:
+        result = self._execute_unrecorded(
+            plan=plan,
+            claim_revisions=claim_revisions,
+            evidence_by_claim=evidence_by_claim,
+            prior_bindings=prior_bindings,
+            current_evidence_digests=current_evidence_digests,
+            timeout_seconds=timeout_seconds,
+        )
+        event_ids = []
+        if self._ledger is not None:
+            for item in result["results"]:
+                succeeded = item["execution_status"] == "SUCCEEDED"
+                event_type = (
+                    "VERIFICATION_RESULT_PROPOSED"
+                    if succeeded else "REVERIFICATION_ATTEMPT_COMPLETED"
+                )
+                claim_id = item["claim_id"]
+                revision_id = item.get("revision_id") or "UNKNOWN_REVISION"
+                digest = item.get("content_digest") or f"UNAVAILABLE:{claim_id}"
+                ledger_event = self._ledger.append_event(
+                    event_id=f"REVERIFICATION:{claim_id}:{revision_id}:{len(self._ledger.events) + 1}",
+                    event_type=event_type,
+                    claim_id=claim_id,
+                    revision_id=revision_id,
+                    actor_id=self._actor_id,
+                    occurred_at=datetime.now(timezone.utc).isoformat(),
+                    input_digest=digest,
+                    payload={
+                        "execution_status": item["execution_status"],
+                        "failure_code": item.get("failure_code"),
+                        "prior_verification_status": item.get("prior_verification_status"),
+                        "proposed_verification_status": item.get("proposed_verification_status"),
+                        "commit_status": item.get("commit_status", "NOT_COMMITTED"),
+                        "external_result_id": item.get("external_result_id"),
+                    },
+                )
+                item["provenance_event_id"] = ledger_event["event_id"]
+                item["provenance_event_hash"] = ledger_event["event_hash"]
+                event_ids.append(ledger_event["event_id"])
+        result["provenance_event_ids"] = event_ids
+        return result
+
+    def _execute_unrecorded(
         self,
         *,
         plan: Mapping[str, Any],
