@@ -28,6 +28,7 @@ REQUIRED_CI_SUITES = {
     "v25_internal_judgment_model",
     "v25_inference_trigger",
     "v25_inference_pipeline",
+    "v25_dialogue_runtime",
 }
 REQUIRED_BENCHMARK_SUITES = {
     "logical_audit",
