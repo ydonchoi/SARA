@@ -96,15 +96,15 @@ class SelectiveReverificationRunner:
                 revision_id = item.get("revision_id") or "UNKNOWN_REVISION"
                 digest = item.get("content_digest") or f"UNAVAILABLE:{claim_id}"
                 if item.get("content_digest") and revision_id != "UNKNOWN_REVISION":
-                    existing = any(
-                        event.get("event_type") == "CLAIM_REVISION_REGISTERED"
+                    revision_event = next((
+                        event for event in self._ledger.events
+                        if event.get("event_type") == "CLAIM_REVISION_REGISTERED"
                         and event.get("claim_id") == claim_id
                         and event.get("revision_id") == revision_id
                         and event.get("payload", {}).get("content_digest") == digest
-                        for event in self._ledger.events
-                    )
-                    if not existing:
-                        self._ledger.append_event(
+                    ), None)
+                    if revision_event is None:
+                        revision_event = self._ledger.append_event(
                             event_id=f"CLAIM-REVISION:{claim_id}:{revision_id}:{len(self._ledger.events) + 1}",
                             event_type="CLAIM_REVISION_REGISTERED",
                             claim_id=claim_id,
@@ -117,6 +117,8 @@ class SelectiveReverificationRunner:
                                 "registration_source": "SARA_SELECTIVE_REVERIFICATION_RUNNER",
                             },
                         )
+                    if revision_event["event_id"] not in event_ids:
+                        event_ids.append(revision_event["event_id"])
                 event_type = (
                     "VERIFICATION_RESULT_PROPOSED"
                     if succeeded else "REVERIFICATION_ATTEMPT_COMPLETED"
@@ -336,7 +338,8 @@ class SelectiveReverificationRunner:
                 "revision_id": revision["revision_id"],
                 "content_digest": computed_digest,
                 "evidence_digest": evidence_digest,
-                "prior_verification_status": expected_prior_status,
+                "prior_verification_status": expected_prior_status if prior_status_known else None,
+                "prior_status_known": prior_status_known,
                 "proposed_verification_status": status,
                 "verifier_revision": self.verifier_revision,
                 "verification_contract_revision": self.verification_contract_revision,
