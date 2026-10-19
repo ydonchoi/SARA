@@ -25,6 +25,9 @@ REQUIRED_CI_SUITES = {
     "v25_promotion_gate",
     "v25_preflight_coverage",
     "v25_preflight_json",
+    "v25_internal_judgment_model",
+    "v25_inference_trigger",
+    "v25_inference_pipeline",
 }
 REQUIRED_BENCHMARK_SUITES = {
     "logical_audit",
@@ -34,15 +37,20 @@ REQUIRED_BENCHMARK_SUITES = {
     "evaluator_runner",
     "selective_reverification",
     "reverification_runner",
+    "internal_judgment_model",
+    "inference_trigger",
+    "inference_pipeline",
 }
 MINIMUM_ADJUDICATED_CASES = 18
 REQUIRED_COMPARISON_CONDITIONS = {
     "v2.3_baseline",
     "v2.4_no_evaluator",
-    "v2.4_selective_evaluator",
+    "v2.5_internal_judgment_trigger",
 }
 REQUIRED_READINESS_FIELDS = {
-    "external_evaluator_integration_status",
+    "internal_judgment_model_status",
+    "live_dialogue_integration_status",
+    "inference_trigger_runtime_status",
     "reverification_runtime_status",
     "provenance_storage_replay_status",
     "human_review_commit_gate_status",
