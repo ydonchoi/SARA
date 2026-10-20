@@ -133,6 +133,10 @@ class SARADialogueRuntime:
             "conversation_id": normalized["conversation_id"],
             "turn_id": normalized["turn_id"],
             "verification_provider_invoked": bool(verification_results),
+            "verification_route_status": (
+                route_output.get("status")
+                if isinstance(route_output, Mapping) else "NO_VERIFICATION_OUTPUT"
+            ),
             "verification_status_is_not_truthfulness": True,
             "audit_record_status": "NOT_CONFIGURED",
         })
