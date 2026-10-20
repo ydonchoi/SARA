@@ -320,6 +320,21 @@ v2.4 adds:
 
 기존 v2.3 snapshot은 보존한다.
 
+## Engineering Policy: Correctness-First, Scope-Controlled Changes
+
+현재 canonical v2.4를 포함한 SARA 개발은 **정확성 우선, 범위 통제, 증거 기반 변경**을 따른다.
+
+- 가장 작은 diff가 아니라 문제를 해결하는 최소 충분 범위를 선택한다.
+- 근본 원인을 조사하고, 증상을 숨기거나 검증을 우회하지 않는다.
+- 필요한 리팩터링은 수정량이 늘어난다는 이유만으로 거부하지 않는다.
+- Minimal Loading은 유지하되, 이를 Minimal Modify 의무로 해석하지 않는다.
+- v2.4 canonical verification baseline과 기존 검증된 동작을 보호한다.
+- v2.5 프로토타입은 독립 평가 및 통합 증거 없이 canonical 버전으로 취급하지 않는다.
+- 테스트 실행, 통합 실행, 검증 완료를 구분하고 실행하지 않은 테스트를 통과로 보고하지 않는다.
+- 변경은 요구사항·위험에 비례해 검증하며, 미확인 사항과 차단 요인을 명시한다.
+
+상세 절차와 리뷰 체크리스트: [Engineering Principles](../docs/engineering-principles.md).
+
 ## 15. Current Status
 
 **Version: v2.4**
