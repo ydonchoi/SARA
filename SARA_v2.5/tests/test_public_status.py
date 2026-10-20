@@ -93,6 +93,37 @@ def test_failed_verifier_maps_to_safe_failure():
     assert "sensitive detail" not in repr(projected)
 
 
+def test_partially_failed_route_never_maps_to_verification_completed():
+    result = base_result()
+    result["route_execution"]["output"] = {
+        "status": "PARTIALLY_FAILED",
+        "verification_results": [
+            {"claim_id": "PRIVATE-CLAIM-ID", "execution_status": "SUCCEEDED"},
+            {"claim_id": "PRIVATE-CLAIM-ID-2", "execution_status": "FAILED",
+             "error_code": "PRIVATE_ERROR"},
+        ],
+    }
+
+    projected = project_public_status(result)
+    assert projected["status"] == "FAILED"
+    assert projected["reason_code"] == "VERIFICATION_FAILED"
+    assert "PRIVATE-CLAIM-ID" not in repr(projected)
+    assert "PRIVATE_ERROR" not in repr(projected)
+
+
+def test_malformed_verification_result_fails_safe():
+    result = base_result()
+    result["route_execution"]["output"] = {
+        "status": "SUCCEEDED",
+        "verification_results": [{"unexpected": "PRIVATE"}],
+    }
+
+    projected = project_public_status(result)
+    assert projected["status"] == "FAILED"
+    assert projected["reason_code"] == "VERIFICATION_FAILED"
+    assert "PRIVATE" not in repr(projected)
+
+
 def test_no_trigger_does_not_claim_verification_was_performed():
     result = base_result()
     result["pipeline_status"] = "NO_ROUTE_REQUIRED"
