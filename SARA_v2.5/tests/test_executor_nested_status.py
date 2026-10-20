@@ -103,6 +103,31 @@ def test_contradicted_or_unknown_nested_status_does_not_look_successful():
         assert result["claim_truth_assessed"] is False
 
 
+def test_noncanonical_verified_labels_do_not_become_success():
+    for verifier_status in ("verified", " VERIFIED ", "Verified"):
+        result = _result([verifier_status])
+        assert result["verification_status"] == verifier_status
+        assert result["status"] == "COMPLETED_UNVERIFIED"
+        assert result["claim_truth_assessed"] is False
+
+
+def test_failed_claim_execution_cannot_be_overridden_by_nested_verified_label():
+    runtime = RuntimeStub({
+        "status": "PARTIALLY_FAILED",
+        "verification_results": [
+            {
+                "claim_id": "C-1",
+                "execution_status": "FAILED",
+                "output": {"status": "SUCCEEDED", "verification_status": "VERIFIED"},
+            }
+        ],
+    })
+    result = executor.execute_request(runtime, {"request_id": "failed-claim-execution"}, 1.0)
+    assert result["verification_status"] == "UNVERIFIED"
+    assert result["status"] == "PARTIAL_OR_FAILED"
+    assert result["claim_truth_assessed"] is False
+
+
 def test_missing_nested_verification_status_fails_closed():
     runtime = RuntimeStub({
         "status": "ROUTE_EXECUTED",
