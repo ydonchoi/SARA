@@ -79,12 +79,12 @@ def build_runtime(provider_module: str) -> SARADialogueRuntime:
         model_revision=model_revision,
         precheck=precheck,
         event_sink=event_sink,
-        adapter_revision="sara-v25-executor-cli-v0.1",
+        adapter_revision="sara-v25-executor-cli-v0.2",
     )
 
 
 def execute_request(runtime: SARADialogueRuntime, request: Any, timeout_seconds: float) -> dict[str, Any]:
-    """Execute one JSON request without converting exceptions into a success."""
+    """Execute one JSON request without conflating route completion with verification."""
     if not isinstance(request, Mapping):
         return {
             "status": "FAILED",
@@ -99,21 +99,48 @@ def execute_request(runtime: SARADialogueRuntime, request: Any, timeout_seconds:
         route_output_status = (
             route_output.get("status") if isinstance(route_output, Mapping) else None
         )
-        # A successful callback invocation is not necessarily a successful
-        # verification: dialogue_runtime may report PARTIALLY_FAILED inside its
-        # returned mapping. Preserve that distinction at the CLI boundary.
+        verification_status = (
+            route_output.get("verification_status")
+            if isinstance(route_output, Mapping) else None
+        )
+
+        # "ROUTE_EXECUTED" only means a callback returned. In particular,
+        # PROPOSED, NEEDS_REVIEW, and UNVERIFIED must not be surfaced as success.
         if pipeline_status == "NO_ROUTE_REQUIRED":
-            status = "SUCCEEDED"
-        elif pipeline_status == "ROUTE_EXECUTED" and route_execution.get("execution_status") == "SUCCEEDED":
-            status = (
-                "PARTIAL_OR_FAILED"
-                if route_output_status in {"PARTIALLY_FAILED", "FAILED", "INVALID_OUTPUT"}
-                else "SUCCEEDED"
-            )
+            status = "NO_ROUTE_REQUIRED"
+        elif route_execution.get("execution_status") != "SUCCEEDED":
+            status = "FAILED"
+        elif route_output_status in {
+            "PARTIALLY_FAILED", "FAILED", "INVALID_OUTPUT",
+        }:
+            status = "PARTIAL_OR_FAILED"
+        elif route_output_status in {
+            "PROPOSED", "NEEDS_REVIEW", "REVIEW_QUEUED",
+        } or verification_status in {
+            "UNVERIFIED", "NOT_VERIFIED", "PENDING",
+        }:
+            status = "COMPLETED_UNVERIFIED"
+        elif pipeline_status == "ROUTE_EXECUTED":
+            status = "ROUTE_COMPLETED"
         else:
             status = "PARTIAL_OR_FAILED"
+
         result["status"] = status
-        result["execution_completed"] = True
+        result["execution_completed"] = pipeline_status in {
+            "NO_ROUTE_REQUIRED", "ROUTE_EXECUTED",
+        } and route_execution.get("execution_status") in {
+            "NOT_REQUIRED", "SUCCEEDED",
+        }
+        # These fields are explicit so consumers cannot mistake route completion
+        # for a truth verdict or evidence-grade verification.
+        result["route_callback_completed"] = (
+            pipeline_status == "ROUTE_EXECUTED"
+            and route_execution.get("execution_status") == "SUCCEEDED"
+        )
+        result["verification_status"] = verification_status or (
+            "NOT_RUN" if pipeline_status == "NO_ROUTE_REQUIRED" else "UNSPECIFIED"
+        )
+        result["claim_truth_assessed"] = False
         return result
     except (DialogueRuntimeError, ValueError, TypeError) as exc:
         return {
@@ -123,6 +150,9 @@ def execute_request(runtime: SARADialogueRuntime, request: Any, timeout_seconds:
             "status": "FAILED",
             "error_code": str(exc) if str(exc).isupper() and len(str(exc)) < 160 else type(exc).__name__,
             "execution_completed": False,
+            "route_callback_completed": False,
+            "verification_status": "NOT_RUN",
+            "claim_truth_assessed": False,
         }
     except Exception as exc:
         # Do not echo provider exception messages, which may contain sensitive data.
@@ -133,6 +163,9 @@ def execute_request(runtime: SARADialogueRuntime, request: Any, timeout_seconds:
             "status": "FAILED",
             "error_code": f"SARA_UNEXPECTED_{type(exc).__name__}",
             "execution_completed": False,
+            "route_callback_completed": False,
+            "verification_status": "NOT_RUN",
+            "claim_truth_assessed": False,
         }
 
 
