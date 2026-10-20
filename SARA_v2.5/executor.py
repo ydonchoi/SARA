@@ -15,7 +15,7 @@ Optional:
     event_sink(event) -> Any
 
 Run:
-    python -m SARA_v2.5.executor --provider package.module
+    python SARA_v2.5/executor.py --provider package.module
 Input is one JSON request per line on stdin; output is one JSON result per line.
 """
 from __future__ import annotations
