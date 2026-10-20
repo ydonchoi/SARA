@@ -81,3 +81,15 @@ def test_conflicting_top_level_and_nested_statuses_fail_closed():
     assert result["verification_status"] == "MIXED"
     assert result["status"] == "COMPLETED_UNVERIFIED"
     assert result["claim_truth_assessed"] is False
+
+
+def test_malformed_nested_result_cannot_preserve_top_level_verified_status():
+    runtime = RuntimeStub({
+        "status": "ROUTE_EXECUTED",
+        "verification_status": "VERIFIED",
+        "verification_results": [None],
+    })
+    result = executor.execute_request(runtime, {"request_id": "malformed-nested-status"}, 1.0)
+    assert result["verification_status"] == "MIXED"
+    assert result["status"] == "COMPLETED_UNVERIFIED"
+    assert result["claim_truth_assessed"] is False
