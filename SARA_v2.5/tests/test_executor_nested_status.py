@@ -63,3 +63,21 @@ def test_mixed_nested_verification_statuses_are_explicitly_unverified():
     assert result["verification_status"] == "MIXED"
     assert result["status"] == "COMPLETED_UNVERIFIED"
     assert result["claim_truth_assessed"] is False
+
+
+def test_conflicting_top_level_and_nested_statuses_fail_closed():
+    runtime = RuntimeStub({
+        "status": "ROUTE_EXECUTED",
+        "verification_status": "VERIFIED",
+        "verification_results": [
+            {
+                "claim_id": "C-1",
+                "execution_status": "SUCCEEDED",
+                "output": {"status": "SUCCEEDED", "verification_status": "UNVERIFIED"},
+            }
+        ],
+    })
+    result = executor.execute_request(runtime, {"request_id": "conflicting-status"}, 1.0)
+    assert result["verification_status"] == "MIXED"
+    assert result["status"] == "COMPLETED_UNVERIFIED"
+    assert result["claim_truth_assessed"] is False
