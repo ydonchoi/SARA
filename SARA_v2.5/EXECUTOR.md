@@ -56,7 +56,7 @@ binding or judgment is ambiguous.
 ## Run
 
 ```sh
-python -m SARA_v2.5.executor --provider your_package.sara_provider
+python SARA_v2.5/executor.py --provider your_package.sara_provider
 ```
 
 Send one JSON object per line to standard input. The executor emits one JSON
