@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import math
 import sys
 from collections.abc import Mapping
 from pathlib import Path
@@ -149,8 +150,8 @@ def main(argv: list[str] | None = None) -> int:
         help="Positive timeout passed to the judgment model (default: 15)",
     )
     args = parser.parse_args(argv)
-    if args.timeout_seconds <= 0:
-        parser.error("--timeout-seconds must be positive")
+    if not math.isfinite(args.timeout_seconds) or args.timeout_seconds <= 0:
+        parser.error("--timeout-seconds must be a finite positive number")
 
     try:
         runtime = build_runtime(args.provider)
