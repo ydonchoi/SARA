@@ -12,8 +12,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install test dependency
-        run: python -m pip install pytest
+      - name: Install pinned test dependencies
+        run: python -m pip install -r requirements-test.txt
       - id: external_execution_contracts
         name: Run external execution contract tests
         run: python -m pytest tests/test_external_execution.py -q
