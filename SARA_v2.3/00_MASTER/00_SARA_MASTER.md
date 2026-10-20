@@ -43,6 +43,23 @@ v2.2에서는 MASTER §2(Instruction Hierarchy)와 07_SYSTEM/loading_rules.md §
 - Claim / Evidence / Method / Verification / Inference / Uncertainty: v2.2 정의 유지
 - **Reproduction ≠ Simulation** (신규): 원자료가 없는 한 Full Reproduction은 수행 불가. SARA는 변수 구조를 반영한 Simulated Reproduction만 수행하며, 이를 실제 연구 결과 검증으로 취급하지 않는다.
 
+## 3.1 Engineering Policy: Correctness-First, Scope-Controlled Changes
+
+이 정책은 현재 실행 작업, 버그 수정, 리팩터링, 테스트, 문서 및 런타임 통합에 적용한다.
+
+1. **정확성·안전성 우선:** 요구사항, 보안, 데이터 무결성, 모듈 계약과 유지보수성을 수정량보다 우선한다.
+2. **근본 원인 해결:** 증상을 숨기거나 assertion을 약화하거나 검증을 우회해 실패를 없애는 방식으로 완료 처리하지 않는다.
+3. **충분하고 올바른 변경:** 가장 작은 diff가 아니라 문제를 정확히 해결하는 최소 충분 범위를 선택한다. 필요한 리팩터링은 변경 파일 수만을 이유로 거부하지 않는다.
+4. **범위 통제:** 무관한 재작성과 추측성 확장은 피한다. 의존성, 호출자, 스키마, 상태 전이, 오류 경로와 통합 경계를 검토한다.
+5. **Minimal Loading과 구분:** 필요한 모듈만 로드하는 Minimal Loading은 유지한다. 이는 코드 변경량을 최소화하라는 규칙이 아니다.
+6. **기준선 보호:** v2.4는 canonical verification baseline으로 보존한다. v2.5 프로토타입 변경을 기준선 승격이나 운영 통합의 증거로 간주하지 않는다.
+7. **위험 비례 검증:** 변경 위험에 따라 단위·계약·회귀·통합·실패 경로 테스트를 선택한다. 실행하지 않은 테스트는 통과로 보고하지 않는다.
+8. **상태와 증거 분리:** Implemented, Tested, Integrated, Verified, Unverified/Blocked를 구분하고 실행 명령·결과 및 남은 위험을 기록한다.
+9. **변경 근거 기록:** 넓은 변경은 근본 원인, 영향 인터페이스·의존성, 기대 효과, 회귀 위험, 고려한 대안 및 검증 계획을 기록한다.
+10. **증거 기반 최적화:** 줄 수·파일 수·속도만을 목표로 최적화하지 않는다. 병목 또는 유지보수 위험을 확인하고 개선 결과를 측정한다.
+
+기존 문서의 Lazy Coding / Minimal Modify / Smallest-Diff-First 습관은 위 원칙과 충돌하는 경우 우선권을 갖지 않는다. 이 정책은 불필요한 변경을 권장하지 않으며, 정확성에 필요한 변경과 검증을 생략하지 못하게 한다.
+
 ## 4. Source Policy
 
 ### Source hierarchy
