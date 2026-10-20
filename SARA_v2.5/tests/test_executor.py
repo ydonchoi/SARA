@@ -54,3 +54,35 @@ def test_runtime_exception_does_not_become_success():
     assert result["status"] == "FAILED"
     assert result["execution_completed"] is False
     assert result["error_code"] == "DIALOGUE_TURN_CONTENT_REQUIRED"
+
+
+
+def test_partial_verifier_failure_is_not_reported_as_success():
+    class RuntimeStub:
+        def process_turn(self, request, *, timeout_seconds):
+            return {
+                "pipeline_status": "ROUTE_EXECUTED",
+                "route_execution": {
+                    "execution_status": "SUCCEEDED",
+                    "output": {"status": "PARTIALLY_FAILED"},
+                },
+            }
+
+    result = executor.execute_request(RuntimeStub(), {"request_id": "r2"}, 1.0)
+    assert result["status"] == "PARTIAL_OR_FAILED"
+    assert result["execution_completed"] is True
+
+
+def test_no_route_required_is_a_completed_execution_not_a_verification():
+    class RuntimeStub:
+        def process_turn(self, request, *, timeout_seconds):
+            return {
+                "pipeline_status": "NO_ROUTE_REQUIRED",
+                "route_execution": {"execution_status": "NOT_REQUIRED", "output": None},
+                "claim_truth_assessed": False,
+            }
+
+    result = executor.execute_request(RuntimeStub(), {"request_id": "r3"}, 1.0)
+    assert result["status"] == "SUCCEEDED"
+    assert result["execution_completed"] is True
+    assert result["claim_truth_assessed"] is False
