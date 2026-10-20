@@ -41,7 +41,7 @@ def evaluate_change(changed_paths: Sequence[str], diff_text: str) -> list[dict[s
         findings.append({
             "severity": "BLOCK",
             "code": "SOURCE_CHANGE_WITHOUT_TEST_CHANGE",
-            "message": "Executable Python changes require relevant tests or an explicit reviewed exception.",
+            "message": "Executable Python changes must include relevant test changes; exceptions require a separate policy-gate enhancement.",
         })
 
     removed_assertions = [
