@@ -92,11 +92,26 @@ def execute_request(runtime: SARADialogueRuntime, request: Any, timeout_seconds:
         }
     try:
         result = runtime.process_turn(request, timeout_seconds=timeout_seconds)
-        result["status"] = (
-            "SUCCEEDED"
-            if result.get("pipeline_status") in {"ROUTE_EXECUTED", "NO_ROUTE_REQUIRED"}
-            else "PARTIAL_OR_FAILED"
+        pipeline_status = result.get("pipeline_status")
+        route_execution = result.get("route_execution", {})
+        route_output = route_execution.get("output")
+        route_output_status = (
+            route_output.get("status") if isinstance(route_output, Mapping) else None
         )
+        # A successful callback invocation is not necessarily a successful
+        # verification: dialogue_runtime may report PARTIALLY_FAILED inside its
+        # returned mapping. Preserve that distinction at the CLI boundary.
+        if pipeline_status == "NO_ROUTE_REQUIRED":
+            status = "SUCCEEDED"
+        elif pipeline_status == "ROUTE_EXECUTED" and route_execution.get("execution_status") == "SUCCEEDED":
+            status = (
+                "PARTIAL_OR_FAILED"
+                if route_output_status in {"PARTIALLY_FAILED", "FAILED", "INVALID_OUTPUT"}
+                else "SUCCEEDED"
+            )
+        else:
+            status = "PARTIAL_OR_FAILED"
+        result["status"] = status
         result["execution_completed"] = True
         return result
     except (DialogueRuntimeError, ValueError, TypeError) as exc:
