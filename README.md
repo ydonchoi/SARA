@@ -457,16 +457,16 @@ SARA의 출력은 다음 원칙을 따른다.
 
 # 14. Versioned Directory
 
-현재 저장소의 주요 버전 보존 구조:
+현재 저장소의 버전별 산출물은 다음과 같이 구분한다.
 
 ```text
 SARA/
-├─ legacy/
-├     ├─ SARA_v1.0/
-├     ├─ SARA_v2.1/
-├     └─ SARA_v2.2
-└─ SARA_v2.3
-
+├─ SARA_v1.0/                 # 초기 연구 분석 프레임워크
+├─ SARA_v2.1/                 # 모듈형 아키텍처
+├─ SARA_v2.2/                 # 의존성·로딩·계약 계층
+├─ SARA_v2.3/                 # 검증 분리·재현/시뮬레이션
+├─ SARA_v2.4/                 # canonical verification baseline
+└─ SARA_v2.5/                 # prototype; promotion blocked
 ```
 
 ### Canonical baseline and development status
@@ -524,6 +524,13 @@ v2.2
 v2.3
 시스템 검증과 연구 검증을 분리하고
 방법론의 실행 가능성까지 다룬다
+        ↓
+v2.4
+인식론적 상태·출처·구조화된 논증의 검증 경계를 명시한다
+        ↓
+v2.5 (prototype)
+추론 감지와 검증 라우팅을 실험하되,
+독립 평가·실환경 통합 전에는 승격하지 않는다
 ```
 
 즉, SARA는
