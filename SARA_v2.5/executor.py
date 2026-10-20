@@ -103,6 +103,7 @@ def _aggregate_verification_status(route_output: Any) -> str | None:
         statuses.append(top_level)
     for item in results:
         if not isinstance(item, Mapping):
+            statuses.append("UNSPECIFIED")
             continue
         if item.get("execution_status") != "SUCCEEDED":
             statuses.append("UNVERIFIED")
