@@ -83,6 +83,44 @@ def build_runtime(provider_module: str) -> SARADialogueRuntime:
     )
 
 
+def _aggregate_verification_status(route_output: Any) -> str | None:
+    """Read provider statuses from either the route envelope or per-claim results.
+
+    The dialogue runtime nests actual verifier responses under
+    verification_results[*].output. Ignoring that structure can make an
+    UNVERIFIED result look like an ordinary completed route.
+    """
+    if not isinstance(route_output, Mapping):
+        return None
+
+    top_level = route_output.get("verification_status")
+    if isinstance(top_level, str) and top_level.strip():
+        return top_level
+
+    results = route_output.get("verification_results")
+    if not isinstance(results, list) or not results:
+        return None
+
+    statuses: list[str] = []
+    for item in results:
+        if not isinstance(item, Mapping):
+            continue
+        if item.get("execution_status") != "SUCCEEDED":
+            statuses.append("UNVERIFIED")
+            continue
+        output = item.get("output")
+        status = output.get("verification_status") if isinstance(output, Mapping) else None
+        if not isinstance(status, str) or not status.strip():
+            statuses.append("UNSPECIFIED")
+        else:
+            statuses.append(status)
+
+    if not statuses:
+        return None
+    unique = set(statuses)
+    return statuses[0] if len(unique) == 1 else "MIXED"
+
+
 def execute_request(runtime: SARADialogueRuntime, request: Any, timeout_seconds: float) -> dict[str, Any]:
     """Execute one JSON request without conflating route completion with verification."""
     if not isinstance(request, Mapping):
@@ -99,10 +137,7 @@ def execute_request(runtime: SARADialogueRuntime, request: Any, timeout_seconds:
         route_output_status = (
             route_output.get("status") if isinstance(route_output, Mapping) else None
         )
-        verification_status = (
-            route_output.get("verification_status")
-            if isinstance(route_output, Mapping) else None
-        )
+        verification_status = _aggregate_verification_status(route_output)
 
         # "ROUTE_EXECUTED" only means a callback returned. In particular,
         # PROPOSED, NEEDS_REVIEW, and UNVERIFIED must not be surfaced as success.
@@ -117,7 +152,8 @@ def execute_request(runtime: SARADialogueRuntime, request: Any, timeout_seconds:
         elif route_output_status in {
             "PROPOSED", "NEEDS_REVIEW", "REVIEW_QUEUED",
         } or verification_status in {
-            "UNVERIFIED", "NOT_VERIFIED", "PENDING",
+            "UNVERIFIED", "NOT_VERIFIED", "PENDING", "UNSPECIFIED",
+            "MIXED", "PARTIALLY_VERIFIED", "INFERRED", "UNASSESSED",
         }:
             status = "COMPLETED_UNVERIFIED"
         elif pipeline_status == "ROUTE_EXECUTED":
