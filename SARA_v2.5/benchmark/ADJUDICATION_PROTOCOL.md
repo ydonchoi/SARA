@@ -38,6 +38,12 @@ When reviewers disagree, preserve both decisions and route the case to a designa
 
 Run the same adjudicated cases against the v2.3 baseline, v2.4 without semantic evaluator, and v2.4 with selective evaluator; an unconditional evaluator can be included as a cost/latency comparator. Report false positives, missed issues, unnecessary review/abstention, stale-state reuse, provenance completeness, latency, and cost. Acceptance thresholds must be written down before comparing outcomes; they must not be adjusted after observing results.
 
+## Operational reviewer materials
+
+- `REVIEWER_PACKET.md` defines the freeze, independent-submission, reconciliation, and promotion-boundary procedure.
+- `adjudication_record_template.json` provides a per-case record. Make a separate copy for each reviewer and case; never overwrite the initial review with the reconciled result.
+- Record the exact fixture commit and SHA-256 before review. If any case changes, increment the dataset version and freeze the revised fixture before evaluation.
+
 ## Current blocker
 
 The repository fixture currently declares DRAFT_NOT_INDEPENDENTLY_ADJUDICATED. No performance claim or canonical promotion may treat the fixture as a gold benchmark until independent records and disagreement resolutions are present and verified.
