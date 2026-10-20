@@ -507,6 +507,14 @@ README_v2.3.md
 
 ---
 
+## Engineering Policy: Correctness First
+
+Current engineering work follows **Correctness-First, Scope-Controlled Changes**. The former “lazy coding” / minimal-diff-first priority is withdrawn wherever it conflicts with correctness, root-cause resolution, architecture, or evidence-based verification. Scope discipline remains, but necessary refactors must not be rejected merely because they are larger.
+
+See [Engineering Principles](docs/engineering-principles.md) for the governing policy, workflow, verification requirements, and review checklist. This policy is distinct from **Minimal Loading**, which controls which modules are loaded—not how little code may be changed.
+
+---
+
 ## 16. Design Philosophy
 
 SARA의 발전은 단순한 기능 추가의 연속이라기보다 다음과 같은 **구조적 이동**으로 볼 수 있다.
