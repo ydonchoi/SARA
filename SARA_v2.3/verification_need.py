@@ -54,7 +54,21 @@ def assess_verification_need(
         reasons.append("EXPLICIT_VERIFICATION_REQUEST")
     if context.get("high_stakes") is True or _HIGH_STAKES.search(text):
         reasons.append("HIGH_STAKES_DOMAIN")
-    if context.get("time_sensitive") is True or _TIME_SENSITIVE.search(text):
+    factual_query = bool(re.search(
+        r"(얼마|몇\s*(?:원|명|개|퍼센트|%|년|월|일)?|누구|언제|어디|무엇|어떤|왜|"
+        r"how much|how many|what|who|when|where|rate|price|날씨|환율|기준금리|시세)",
+        text,
+        re.IGNORECASE,
+    ))
+    temporal_cue = bool(_TIME_SENSITIVE.search(text))
+    if context.get("time_sensitive") is True or (
+        temporal_cue and (
+            factual_query
+            or context.get("factual_query") is True
+            or context.get("high_stakes") is True
+            or context.get("quantitative_claim") is True
+        )
+    ):
         reasons.append("TIME_SENSITIVE_CLAIM")
     if context.get("contains_citation") is True or _CITATION_OR_URL.search(text):
         reasons.append("SOURCE_OR_CITATION_CHECK")
