@@ -1,0 +1,23 @@
+{
+  "record_schema_version": "1.0.0",
+  "dataset_id": "SARA-V25-PREFLIGHT-SEED",
+  "dataset_version": "0.3.0-draft",
+  "fixture_sha256": "FILL_BEFORE_REVIEW",
+  "case_id": "FILL_CASE_ID",
+  "review_stage": "INDEPENDENT_INITIAL_REVIEW",
+  "reviewer": {
+    "reviewer_id": "FILL_REVIEWER_ID",
+    "independence_declaration": "I reviewed this case independently and did not consult another reviewer's label or rationale before submitting this record.",
+    "conflict_of_interest": "DECLARE_OR_NONE"
+  },
+  "decision": {
+    "primary_label": "UNASSESSED",
+    "issue_categories": [],
+    "confidence": "MEDIUM",
+    "rationale": "Explain which case facts and scope constraints support this label.",
+    "missing_context": [],
+    "proposed_fixture_correction": null
+  },
+  "reviewed_at_utc": "FILL_ISO8601_TIMESTAMP",
+  "record_status": "DRAFT"
+}
