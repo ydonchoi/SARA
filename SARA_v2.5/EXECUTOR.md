@@ -64,13 +64,31 @@ result per nonblank input line. Configuration errors are written to standard
 error and exit with code 2. Malformed JSON and per-request errors produce
 explicit failure objects rather than being reported as successful execution.
 
+## Result status semantics
+
+The top-level `status` describes execution state, not claim truth:
+
+- `NO_ROUTE_REQUIRED`: judgment pipeline completed and selected no route;
+  verification was not run.
+- `ROUTE_COMPLETED`: the route callback returned and did not report a known
+  failure/review state. Inspect `verification_status` and the full route output
+  before interpreting the result.
+- `COMPLETED_UNVERIFIED`: callback returned, but output indicates a proposal,
+  review queue, or an explicitly unverified/pending result.
+- `PARTIAL_OR_FAILED`: route output reported partial/failure/invalid state.
+- `FAILED`: request processing or route execution failed.
+- `BLOCKED`: provider configuration failed before processing input.
+
+The result also carries `execution_completed`, `route_callback_completed`,
+`verification_status`, and `claim_truth_assessed: false`. A callback
+completion is not a truth verdict; even a provider's `VERIFIED` label is a
+provider-reported status, not independent evidence that the claim is true.
+
 ## Security and status boundaries
 
 - Do not put API keys or secrets in the repository or input payloads.
 - Configure providers through the deployment's secret/configuration mechanism.
 - A judgment signal is not evidence and does not establish claim truth.
-- A callable return is not proof of successful verification; the SARA status
-  contract must be checked.
 - The default precheck reports `NEEDS_REVIEW`; it is not a durable queue.
 - Event recording is only reported as recorded when a configured event sink
   returns successfully; this alone does not prove durable persistence.
@@ -81,6 +99,7 @@ explicit failure objects rather than being reported as successful execution.
 
 ## Current validation scope
 
-Unit tests cover provider-contract enforcement and fail-closed request handling.
-They do not establish that a production model/provider is configured, that
-external verification runs, or that the current ChatGPT app invokes this code.
+Unit tests cover provider-contract enforcement, fail-closed request handling,
+and separation of route completion from verification outcome. They do not
+establish that a production model/provider is configured, that external
+verification runs, or that the current ChatGPT app invokes this code.
