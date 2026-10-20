@@ -13,7 +13,11 @@ from datetime import datetime, timezone
 from typing import Any
 
 from claim_identity import VERIFICATION_STATUSES, compute_content_digest
-from provenance_ledger import ProvenanceEventLedger, ProvenanceLedgerError
+from provenance_ledger import (
+    ProvenanceEventLedger,
+    ProvenanceLedgerError,
+    _STATUS_COMMIT_GATE_TOKEN,
+)
 from reverification_runner import compute_evidence_digest
 
 
@@ -119,6 +123,7 @@ def commit_verification_proposal(
             actor_id=commit_actor_id,
             occurred_at=datetime.now(timezone.utc).isoformat(),
             input_digest=current_content_digest,
+            _status_commit_gate_token=_STATUS_COMMIT_GATE_TOKEN,
             payload={
                 "verification_status": status,
                 "review_event_id": review_event_id,
