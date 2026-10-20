@@ -1,0 +1,31 @@
+name: Engineering Policy Gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  policy-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run correctness-first policy preflight
+        env:
+          BASE_REF: \${{ github.base_ref }}
+        run: |
+          if [ -n "$BASE_REF" ]; then
+            BASE="origin/$BASE_REF"
+          else
+            BASE="origin/main"
+          fi
+          python tools/engineering_policy_gate.py --base "$BASE"
