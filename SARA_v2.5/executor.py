@@ -94,14 +94,13 @@ def _aggregate_verification_status(route_output: Any) -> str | None:
         return None
 
     top_level = route_output.get("verification_status")
-    if isinstance(top_level, str) and top_level.strip():
-        return top_level
-
     results = route_output.get("verification_results")
     if not isinstance(results, list) or not results:
-        return None
+        return top_level if isinstance(top_level, str) and top_level.strip() else None
 
     statuses: list[str] = []
+    if isinstance(top_level, str) and top_level.strip():
+        statuses.append(top_level)
     for item in results:
         if not isinstance(item, Mapping):
             continue
