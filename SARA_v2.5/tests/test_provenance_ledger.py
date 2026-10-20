@@ -8,7 +8,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from provenance_ledger import GENESIS_HASH, ProvenanceEventLedger, ProvenanceLedgerError
+from provenance_ledger import (
+    GENESIS_HASH, ProvenanceEventLedger, ProvenanceLedgerError,
+    _STATUS_COMMIT_GATE_TOKEN,
+)
 
 
 def append(
@@ -51,6 +54,9 @@ def append(
             if registered is not None else "UNBOUND-DIGEST"
         )
     return ledger.append_event(
+        _status_commit_gate_token=(
+            _STATUS_COMMIT_GATE_TOKEN if event_type == "CLAIM_STATUS_COMMITTED" else None
+        ),
         event_id=event_id,
         event_type=event_type,
         claim_id=claim_id,
@@ -381,3 +387,42 @@ def test_empty_required_event_fields_are_rejected():
             payload={},
         )
     assert ledger.events == ()
+
+
+def test_direct_status_commit_is_rejected_without_verification_gate_capability():
+    ledger = ProvenanceEventLedger()
+    register(ledger, "EV-1", digest="CLAIM-DIGEST-1")
+    append(
+        ledger, "EV-2", "VERIFICATION_RESULT_PROPOSED",
+        payload=proposal_payload("VERIFIED", "EV-2"),
+    )
+    append(
+        ledger, "EV-3", "HUMAN_REVIEW_RESOLUTION",
+        payload={
+            "reviewer_id": "reviewer-1",
+            "decision": "ACCEPT",
+            "rationale": "Reviewed the evidence alignment.",
+            "proposal_event_id": "EV-2",
+        },
+    )
+    with pytest.raises(
+        ProvenanceLedgerError, match="STATUS_COMMIT_MUST_USE_VERIFICATION_GATE"
+    ):
+        ledger.append_event(
+            event_id="EV-4",
+            event_type="CLAIM_STATUS_COMMITTED",
+            claim_id="C1",
+            revision_id="R1",
+            actor_id="untrusted-caller",
+            occurred_at="2026-10-20T00:00:00Z",
+            input_digest="CLAIM-DIGEST-1",
+            payload={
+                "verification_status": "VERIFIED",
+                "review_event_id": "EV-3",
+                "proposal_event_id": "EV-2",
+                "evidence_digest": "EVIDENCE-DIGEST-1",
+                "verifier_revision": "verify-1",
+                "verification_contract_revision": "contract-1",
+            },
+        )
+    assert ledger.replay_claim("C1")["committed_verification_status"] is None
