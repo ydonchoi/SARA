@@ -5,8 +5,9 @@ on:
     branches:
       - feat/v25-executable-runtime-cli
   pull_request:
+    # PR #59 is stacked on this base branch; the pull_request filter matches the base ref.
     branches:
-      - feat/v25-executable-runtime-cli
+      - feat/v24-logical-audit-v25-roadmap
 
 permissions:
   contents: read
