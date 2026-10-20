@@ -41,10 +41,7 @@ def project_public_status(runtime_result: Any) -> dict[str, Any]:
     judgment = runtime_result.get("judgment")
     decision = runtime_result.get("activation_decision")
     route = runtime_result.get("route_execution")
-    if not isinstance(judgment, Mapping):
-        safe.update(status="FAILED", reason_code="INVALID_RUNTIME_STATE")
-        return safe
-    if not isinstance(decision, Mapping):
+    if not isinstance(judgment, Mapping) or not isinstance(decision, Mapping):
         safe.update(status="FAILED", reason_code="INVALID_RUNTIME_STATE")
         return safe
     if not isinstance(route, Mapping):
@@ -69,7 +66,21 @@ def project_public_status(runtime_result: Any) -> dict[str, Any]:
         safe.update(status="NOT_ASSESSED", reason_code="ASSESSMENT_UNAVAILABLE")
         return safe
 
-    if execution_status == "FAILED" or route_status == "FAILED" or pipeline_status == "ROUTE_FAILED":
+    verification_results = route_output.get("verification_results")
+    results_are_invalid_or_failed = (
+        isinstance(verification_results, list)
+        and any(
+            not isinstance(item, Mapping)
+            or item.get("execution_status") != "SUCCEEDED"
+            for item in verification_results
+        )
+    )
+    if (
+        execution_status == "FAILED"
+        or route_status in {"FAILED", "PARTIALLY_FAILED"}
+        or pipeline_status == "ROUTE_FAILED"
+        or results_are_invalid_or_failed
+    ):
         safe.update(status="FAILED", reason_code="VERIFICATION_FAILED")
         return safe
 
