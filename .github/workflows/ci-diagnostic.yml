@@ -33,7 +33,7 @@ jobs:
       - name: Install pytest
         run: python -m pip install pytest
       - name: Run executor tests only
-        run: python -m pytest SARA_v2.5/tests/test_executor.py -q
+        run: python -m pytest SARA_v2.5/tests/test_executor.py SARA_v2.5/tests/test_executor_nested_status.py -q
       - name: Confirm diagnostic reached end
         if: always()
         run: echo "diagnostic_finished=true"
