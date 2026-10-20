@@ -73,4 +73,4 @@ jobs:
         run: python -m pytest SARA_v2.5/tests/test_dialogue_runtime.py -q
       - id: v25_executor_cli
         name: Test SARA v2.5 executable JSONL runtime adapter
-        run: python -m pytest SARA_v2.5/tests/test_executor.py -q
+        run: python -m pytest SARA_v2.5/tests/test_executor.py SARA_v2.5/tests/test_executor_nested_status.py -q
