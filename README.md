@@ -3,7 +3,7 @@
 
 SARA (**Senior Academic Research Architect**)는 학술 연구를 단순히 요약하는 것을 넘어, 연구의 **Claim → Evidence → Method → Verification → Inference → Uncertainty** 구조를 추적하고, 필요할 경우 연구 방법의 재현 가능성과 시뮬레이션 가능성을 별도로 검토하도록 설계된 연구 분석 시스템이다.
 
-이 저장소는 SARA의 **v1.0부터 v2.4까지의 발전 과정과 버전별 산출물을 함께 보존**한다. v2.4는 Co-thoughts v2.0과 연결되는 canonical verification baseline이다.
+이 저장소는 SARA의 **v1.0부터 v2.5 프로토타입까지의 발전 과정과 버전별 산출물을 함께 보존**한다. v2.4는 Co-thoughts v2.0과 연결되는 canonical verification baseline이다.
 
 ---
 
