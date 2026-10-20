@@ -293,3 +293,31 @@ def test_low_and_medium_confidence_inference_routes_to_precheck_before_provider(
         assert result["verification_provider_invoked"] is False
         assert result["activation_decision"]["activation_action"] == "SARA_PRECHECK_REVIEW"
         assert result["route_execution"]["output"]["status"] == "REVIEW_QUEUED"
+
+def test_failed_sara_verifier_response_is_not_reported_as_successful_route():
+    def provider(_payload):
+        return provider_result(
+            status="FAILED",
+            failure={"code": "UPSTREAM_UNAVAILABLE"},
+            verification_status="UNVERIFIED",
+        )
+
+    result = process_dialogue_turn(
+        request(),
+        judgment_generate=generate_for(),
+        verification_provider=provider,
+        model_id="sara-model",
+        model_revision="runtime-test-double",
+    )
+
+    route_output = result["route_execution"]["output"]
+    assert result["verification_provider_invoked"] is True
+    assert result["pipeline_status"] == "PARTIALLY_FAILED"
+    assert route_output["status"] == "PARTIALLY_FAILED"
+    assert route_output["verification_results"][0]["execution_status"] == "FAILED"
+    assert route_output["verification_results"][0]["error_code"] == (
+        "SARA_VERIFY_CLAIM_STATUS_NOT_SUCCEEDED"
+    )
+    assert route_output["claim_truth_assessed"] is False
+    assert route_output["is_evidence"] is False
+
