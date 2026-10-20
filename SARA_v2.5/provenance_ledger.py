@@ -25,6 +25,10 @@ COMMITTED_STATUSES = {
     "VERIFIED", "PARTIALLY_VERIFIED", "UNVERIFIED", "CONTRADICTED"
 }
 
+# Capability token shared only by the verification commit gate and ledger.
+# Generic event append callers cannot commit status by supplying a payload alone.
+_STATUS_COMMIT_GATE_TOKEN = object()
+
 
 class ProvenanceLedgerError(ValueError):
     """Raised when an event violates ledger schema or hash-chain integrity."""
@@ -94,6 +98,7 @@ class ProvenanceEventLedger:
         occurred_at: str,
         input_digest: str,
         payload: Mapping[str, Any],
+        _status_commit_gate_token: object | None = None,
     ) -> dict[str, Any]:
         required = (
             (event_id, "EVENT_ID_REQUIRED"),
@@ -110,6 +115,8 @@ class ProvenanceEventLedger:
             raise ProvenanceLedgerError("INVALID_EVENT_TYPE")
         if not isinstance(payload, Mapping):
             raise ProvenanceLedgerError("EVENT_PAYLOAD_MUST_BE_MAPPING")
+        if event_type == "CLAIM_STATUS_COMMITTED" and _status_commit_gate_token is not _STATUS_COMMIT_GATE_TOKEN:
+            raise ProvenanceLedgerError("STATUS_COMMIT_MUST_USE_VERIFICATION_GATE")
         if any(item["event_id"] == event_id for item in self._events):
             raise ProvenanceLedgerError("DUPLICATE_EVENT_ID")
 
