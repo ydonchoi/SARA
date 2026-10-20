@@ -151,10 +151,10 @@ def execute_request(runtime: SARADialogueRuntime, request: Any, timeout_seconds:
             status = "PARTIAL_OR_FAILED"
         elif route_output_status in {
             "PROPOSED", "NEEDS_REVIEW", "REVIEW_QUEUED",
-        } or verification_status in {
-            "UNVERIFIED", "NOT_VERIFIED", "PENDING", "UNSPECIFIED",
-            "MIXED", "PARTIALLY_VERIFIED", "INFERRED", "UNASSESSED",
-        }:
+        } or verification_status != "VERIFIED":
+            # Only the explicit canonical VERIFIED label may produce
+            # ROUTE_COMPLETED. Unknown, contradictory, pending, malformed,
+            # or absent status values must not fall through as success.
             status = "COMPLETED_UNVERIFIED"
         elif pipeline_status == "ROUTE_EXECUTED":
             status = "ROUTE_COMPLETED"
