@@ -475,7 +475,7 @@ SARA/
 
 v2.5 internal inference-trigger and runtime integration work is under review in [PR #46](https://github.com/ydonchoi/SARA/pull/46). It remains a prototype; its CI results do not establish research-quality improvement or production host integration. See the [promotion readiness plan](docs/v2.5-promotion-readiness-plan.md).
 
-`SARA_v2.3/`에는 다음 계층이 포함된다.
+아래는 **v2.3 버전 스냅샷의 구조 예시**이며, 현재 canonical 버전의 전체 파일 트리를 의미하지 않는다.
 
 ```text
 00_MASTER
@@ -512,19 +512,20 @@ README_v2.3.md
 SARA의 발전은 단순한 기능 추가의 연속이라기보다 다음과 같은 **구조적 이동**으로 볼 수 있다.
 
 ```text
-v1.0
-연구를 분석한다
-        ↓
-v2.1
-분석 과정을 모듈화한다
-        ↓
-v2.2
-모듈의 실행 관계를 관리한다
-        ↓
-v2.3
-시스템 검증과 연구 검증을 분리하고
-방법론의 실행 가능성까지 다룬다
+v1.0  연구 분석 프레임워크
+  ↓
+v2.1  분석 모듈화
+  ↓
+v2.2  의존성·로딩·계약 관리
+  ↓
+v2.3  시스템 검증과 연구 검증 분리, 재현/시뮬레이션 계층
+  ↓
+v2.4  Co-thoughts 통합, 전제·맥락·출처 및 논리 검토
+  ↓
+v2.5  내부 추론-트리거 프로토타입 (승격 전 검증 중)
 ```
+
+**버전 상태:** v2.4만 canonical verification baseline이다. v2.5는 자동 판정 및 대화 실행 경로의 프로토타입이며, CI 통과만으로 정식 버전으로 승격하지 않는다. 승격에는 독립 평가, 동일 조건 비교, 실제 호스트 통합 및 운영 안전성 증거와 명시적 승인이 필요하다.
 
 즉, SARA는
 
