@@ -263,3 +263,33 @@ def test_event_sink_failure_remains_visible_and_does_not_claim_recorded_audit():
     )
     assert result["audit_record_status"] == "FAILED"
     assert result["audit_record_error_type"] == "OSError"
+
+
+def test_low_and_medium_confidence_inference_routes_to_precheck_before_provider():
+    for confidence in ("LOW", "MEDIUM"):
+        calls = {"verify": 0, "precheck": 0}
+
+        def provider(_payload):
+            calls["verify"] += 1
+            return provider_result()
+
+        def precheck(_request, judgment, decision):
+            calls["precheck"] += 1
+            assert judgment["judgment_status"] == "INFERENCE_PRESENT"
+            assert decision["activation_action"] == "SARA_PRECHECK_REVIEW"
+            assert decision["reason_code"] == "JUDGMENT_CONFIDENCE_NOT_HIGH"
+            return {"status": "REVIEW_QUEUED"}
+
+        result = process_dialogue_turn(
+            request(),
+            judgment_generate=generate_for("INFERENCE_PRESENT", confidence),
+            verification_provider=provider,
+            model_id="sara-model",
+            model_revision="runtime-test-double",
+            precheck=precheck,
+        )
+
+        assert calls == {"verify": 0, "precheck": 1}
+        assert result["verification_provider_invoked"] is False
+        assert result["activation_decision"]["activation_action"] == "SARA_PRECHECK_REVIEW"
+        assert result["route_execution"]["output"]["status"] == "REVIEW_QUEUED"
