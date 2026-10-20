@@ -12,6 +12,7 @@ if V25_DIR not in sys.path:
     sys.path.insert(0, V25_DIR)
 
 import executor  # noqa: E402
+from internal_judgment_model import compute_judgment_input_digest  # noqa: E402
 
 
 def test_provider_requires_explicit_model_and_verifier(monkeypatch):
@@ -131,6 +132,80 @@ def test_route_completion_is_separated_from_verification_outcome(
     assert result["execution_completed"] is True
     assert result["route_callback_completed"] is True
     assert result["verification_status"] == expected_verification_status
+    assert result["claim_truth_assessed"] is False
+
+
+def _runtime_request():
+    return {
+        "request_id": "REQ-EXEC-1",
+        "conversation_id": "CONV-EXEC-1",
+        "turn_id": "TURN-EXEC-1",
+        "content": "Sales rose after the campaign, therefore the campaign caused the increase.",
+        "context": {"role": "assistant"},
+        "claim_candidates": [{"id": "C-1", "text": "The campaign caused the increase."}],
+        "evidence": [],
+    }
+
+
+def _judgment_generator(status="INFERENCE_PRESENT"):
+    def generate(_rubric, payload, timeout_seconds):
+        assert timeout_seconds > 0
+        detected = status == "INFERENCE_PRESENT"
+        return {
+            "request_id": payload["request_id"],
+            "input_revision_digest": compute_judgment_input_digest(payload),
+            "judgment_status": status,
+            "inference_types": ["CAUSAL"] if detected else [],
+            "basis_spans": ["therefore the campaign caused the increase"] if detected else [],
+            "rationale": "Deterministic test double; not a semantic evaluation.",
+            "uncertainty_reason": "",
+            "confidence": "HIGH",
+            "premise_refs": [],
+            "claim_refs": ["C-1"] if detected else [],
+            "evidence_ids": [],
+            "provenance_ids": [],
+        }
+    return generate
+
+
+def test_executor_integrates_with_real_dialogue_runtime_and_preserves_partial_failure():
+    provider = ModuleType("test_sara_executor_integration_provider")
+    provider.MODEL_ID = "deterministic-test-model"
+    provider.MODEL_REVISION = "unit-test-double"
+    provider.generate = _judgment_generator()
+    provider.verify_claim = lambda _request: {
+        "status": "FAILED",
+        "failure": {"code": "TEST_UPSTREAM_FAILURE"},
+        "verification_status": "UNVERIFIED",
+    }
+    runtime = executor.build_runtime(provider.__name__)
+    # build_runtime imports by name, so register this deterministic provider.
+    sys.modules[provider.__name__] = provider
+    runtime = executor.build_runtime(provider.__name__)
+
+    result = executor.execute_request(runtime, _runtime_request(), 1.0)
+
+    assert result["pipeline_status"] == "ROUTE_EXECUTED"
+    assert result["route_callback_completed"] is True
+    assert result["status"] == "PARTIAL_OR_FAILED"
+    assert result["verification_status"] == "UNVERIFIED"
+    assert result["claim_truth_assessed"] is False
+
+
+def test_executor_integrates_no_route_without_claiming_verification():
+    provider = ModuleType("test_sara_executor_no_route_provider")
+    provider.MODEL_ID = "deterministic-test-model"
+    provider.MODEL_REVISION = "unit-test-double"
+    provider.generate = _judgment_generator("NO_INFERENCE_DETECTED")
+    provider.verify_claim = lambda _request: pytest.fail("verifier must not run")
+    sys.modules[provider.__name__] = provider
+    runtime = executor.build_runtime(provider.__name__)
+
+    result = executor.execute_request(runtime, _runtime_request(), 1.0)
+
+    assert result["status"] == "NO_ROUTE_REQUIRED"
+    assert result["verification_status"] == "NOT_RUN"
+    assert result["route_callback_completed"] is False
     assert result["claim_truth_assessed"] is False
 
 
