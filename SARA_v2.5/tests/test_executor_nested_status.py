@@ -93,3 +93,28 @@ def test_malformed_nested_result_cannot_preserve_top_level_verified_status():
     assert result["verification_status"] == "MIXED"
     assert result["status"] == "COMPLETED_UNVERIFIED"
     assert result["claim_truth_assessed"] is False
+
+
+def test_contradicted_or_unknown_nested_status_does_not_look_successful():
+    for verifier_status in ("CONTRADICTED", "VERIFED_TYPO"):
+        result = _result([verifier_status])
+        assert result["verification_status"] == verifier_status
+        assert result["status"] == "COMPLETED_UNVERIFIED"
+        assert result["claim_truth_assessed"] is False
+
+
+def test_missing_nested_verification_status_fails_closed():
+    runtime = RuntimeStub({
+        "status": "ROUTE_EXECUTED",
+        "verification_results": [
+            {
+                "claim_id": "C-1",
+                "execution_status": "SUCCEEDED",
+                "output": {"status": "SUCCEEDED"},
+            }
+        ],
+    })
+    result = executor.execute_request(runtime, {"request_id": "missing-status"}, 1.0)
+    assert result["verification_status"] == "UNSPECIFIED"
+    assert result["status"] == "COMPLETED_UNVERIFIED"
+    assert result["claim_truth_assessed"] is False
