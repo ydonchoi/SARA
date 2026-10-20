@@ -83,3 +83,17 @@ def test_missing_expected_digest_is_rejected():
         assert str(exc) == "EXPECTED_JUDGMENT_INPUT_DIGEST_REQUIRED"
     else:
         raise AssertionError("missing digest must be rejected")
+
+
+import pytest
+
+
+@pytest.mark.parametrize("confidence", ["LOW", "MEDIUM"])
+def test_detected_inference_with_non_high_confidence_routes_to_precheck(confidence):
+    result = decide_sara_activation(
+        judgment("INFERENCE_PRESENT", confidence),
+        expected_input_revision_digest=DIGEST,
+    )
+    assert result["activation_action"] == "SARA_PRECHECK_REVIEW"
+    assert result["review_required"] is True
+    assert result["reason_code"] == "JUDGMENT_CONFIDENCE_NOT_HIGH"
