@@ -42,15 +42,17 @@ def decide_sara_activation(
     elif execution != "SUCCEEDED" or status not in JUDGMENT_STATUSES:
         action = "SARA_PRECHECK_REVIEW"
         reason = "JUDGMENT_UNAVAILABLE_OR_INVALID"
-    elif status == "INFERENCE_PRESENT":
-        action = "SARA_SELECTIVE_VERIFICATION"
-        reason = "INFERENCE_DETECTED"
     elif status == "AMBIGUOUS" or confidence not in CONFIDENCE_LEVELS:
         action = "SARA_PRECHECK_REVIEW"
         reason = "INFERENCE_JUDGMENT_AMBIGUOUS"
     elif confidence != "HIGH":
+        # Confidence gates routing regardless of whether inference was detected.
+        # A low-confidence positive judgment must not bypass the precheck.
         action = "SARA_PRECHECK_REVIEW"
         reason = "JUDGMENT_CONFIDENCE_NOT_HIGH"
+    elif status == "INFERENCE_PRESENT":
+        action = "SARA_SELECTIVE_VERIFICATION"
+        reason = "INFERENCE_DETECTED"
     else:
         action = "NO_INFERENCE_TRIGGER"
         reason = "NO_INFERENCE_DETECTED_WITH_HIGH_CONFIDENCE"
