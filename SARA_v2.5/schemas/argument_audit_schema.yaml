@@ -1,0 +1,75 @@
+version: "2.5-draft"
+name: sara_argument_audit
+status: PROPOSED
+
+node:
+  required:
+    - node_id
+    - node_type
+    - text
+  node_type:
+    - CLAIM
+    - PREMISE
+
+edge:
+  required:
+    - edge_id
+    - source_id
+    - target_id
+    - relation
+    - inference_type
+  relation:
+    - SUPPORTS
+    - CHALLENGES
+    - DERIVES_FROM
+  inference_type:
+    - DEDUCTIVE
+    - INDUCTIVE
+    - ABDUCTIVE
+    - CAUSAL
+    - ANALOGICAL
+    - UNKNOWN
+
+finding:
+  required:
+    - finding_id
+    - target_id
+    - category
+    - status
+    - severity
+    - rationale
+  category:
+    - FORMAL_VALIDITY
+    - INFERENCE_STRENGTH
+    - CAUSAL_INFERENCE
+    - GENERALIZATION
+    - CONCEPT_EQUIVOCATION
+    - CIRCULAR_REASONING
+    - NON_SEQUITUR
+    - EVIDENCE_SCOPE_MISMATCH
+    - ALTERNATIVE_EXPLANATION
+    - OTHER
+  status:
+    - CANDIDATE
+    - SUBSTANTIATED
+    - REJECTED
+    - UNASSESSED
+  severity:
+    - CRITICAL
+    - MATERIAL
+    - MINOR
+    - UNASSESSED
+  optional:
+    - related_node_ids
+    - evidence_ids
+    - counterexample_or_alternative
+    - assessor_id
+    - evaluator_revision
+    - rubric_revision
+
+separation:
+  - logical_finding_is_not_research_evidence
+  - structural_validity_is_not_semantic_validity
+  - evidence_truth_is_not_inference_validity
+  - candidate_finding_is_not_substantiated_finding
+  - no_findings_without_semantic_audit_does_not_mean_no_errors

@@ -1,0 +1,776 @@
+{
+  "dataset_id": "SARA-V25-PREFLIGHT-SEED",
+  "dataset_version": "0.3.0-draft",
+  "status": "DRAFT_NOT_INDEPENDENTLY_ADJUDICATED",
+  "purpose": "Synthetic seed cases for v2.4 logical-audit and v2.5 claim-version, evidence-conflict, evaluator invocation, and reverification-runner prototypes; not a gold benchmark.",
+  "boundaries": [
+    "Synthetic labels require independent review before performance claims.",
+    "The current v2.4 graph checker checks structure only, not semantic fallacies.",
+    "Expected categories are evaluation targets, not claims that a runtime detector already finds them."
+  ],
+  "cases": [
+    {
+      "case_id": "LA-001",
+      "case_type": "HARD_NEGATIVE_VALID_DEDUCTION",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "All mammals are warm-blooded."
+        },
+        {
+          "node_id": "P2",
+          "node_type": "PREMISE",
+          "text": "Whales are mammals."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "Whales are warm-blooded."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "DEDUCTIVE"
+        },
+        {
+          "edge_id": "A2",
+          "source_id": "P2",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "DEDUCTIVE"
+        }
+      ],
+      "expected_issue_categories": [],
+      "expected_action": "NO_MATERIAL_LOGICAL_ISSUE",
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
+    },
+    {
+      "case_id": "LA-002",
+      "case_type": "FORMAL_FALLACY",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "If it rains, the road is wet."
+        },
+        {
+          "node_id": "P2",
+          "node_type": "PREMISE",
+          "text": "The road is wet."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "It rained."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "DEDUCTIVE"
+        },
+        {
+          "edge_id": "A2",
+          "source_id": "P2",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "DEDUCTIVE"
+        }
+      ],
+      "expected_issue_categories": [
+        "FORMAL_VALIDITY"
+      ],
+      "expected_action": "REQUIRES_REVIEW",
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
+    },
+    {
+      "case_id": "LA-003",
+      "case_type": "CAUSAL_OVERREACH",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "The outcome increased after the policy began."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "The policy caused the increase."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "CAUSAL"
+        }
+      ],
+      "expected_issue_categories": [
+        "CAUSAL_INFERENCE",
+        "ALTERNATIVE_EXPLANATION"
+      ],
+      "expected_action": "REQUIRES_REVIEW",
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
+    },
+    {
+      "case_id": "LA-004",
+      "case_type": "OVERGENERALIZATION",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "Two volunteers reported that the tool was easy to use."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "The tool is easy to use for all target users."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "INDUCTIVE"
+        }
+      ],
+      "expected_issue_categories": [
+        "GENERALIZATION",
+        "INFERENCE_STRENGTH"
+      ],
+      "expected_action": "REQUIRES_REVIEW",
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
+    },
+    {
+      "case_id": "LA-005",
+      "case_type": "SUPPORT_CYCLE",
+      "nodes": [
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "Claim A is true because claim B is true."
+        },
+        {
+          "node_id": "C2",
+          "node_type": "CLAIM",
+          "text": "Claim B is true because claim A is true."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "C1",
+          "target_id": "C2",
+          "relation": "SUPPORTS",
+          "inference_type": "UNKNOWN"
+        },
+        {
+          "edge_id": "A2",
+          "source_id": "C2",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "UNKNOWN"
+        }
+      ],
+      "expected_issue_categories": [
+        "CIRCULAR_REASONING"
+      ],
+      "expected_action": "CANDIDATE_ONLY",
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
+    },
+    {
+      "case_id": "LA-006",
+      "case_type": "EVIDENCE_SCOPE_MISMATCH",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "A study found an effect in adults from one hospital."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "The intervention works for all age groups in every setting."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "INDUCTIVE"
+        }
+      ],
+      "expected_issue_categories": [
+        "EVIDENCE_SCOPE_MISMATCH",
+        "GENERALIZATION"
+      ],
+      "expected_action": "REQUIRES_REVIEW",
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
+    },
+    {
+      "case_id": "LA-007",
+      "case_type": "INSUFFICIENT_CONTEXT",
+      "nodes": [
+        {
+          "node_id": "P1",
+          "node_type": "PREMISE",
+          "text": "The intervention was associated with an outcome."
+        },
+        {
+          "node_id": "C1",
+          "node_type": "CLAIM",
+          "text": "The intervention was effective."
+        }
+      ],
+      "edges": [
+        {
+          "edge_id": "A1",
+          "source_id": "P1",
+          "target_id": "C1",
+          "relation": "SUPPORTS",
+          "inference_type": "UNKNOWN"
+        }
+      ],
+      "expected_issue_categories": [],
+      "expected_action": "UNASSESSED",
+      "label_status": "DRAFT",
+      "suite": "logical_audit"
+    },
+    {
+      "case_id": "CV-001",
+      "suite": "claim_identity",
+      "case_type": "STALE_VERIFICATION_BINDING",
+      "current_revision": {
+        "claim_id": "C1",
+        "revision_id": "R2",
+        "text": "The intervention reduces readmission.",
+        "scope": {
+          "population": "adults",
+          "setting": "one hospital",
+          "time_range": "2020-2024",
+          "modality": "observational",
+          "outcome": "readmission",
+          "causal_strength": "causal"
+        },
+        "content_digest": "CURRENT_DIGEST",
+        "provenance_ids": [
+          "FIXTURE-PROVENANCE-CV-001"
+        ]
+      },
+      "prior_binding": {
+        "claim_id": "C1",
+        "revision_id": "R1",
+        "content_digest": "OLD_DIGEST",
+        "verifier_revision": "verify-1",
+        "evidence_digest": "EVIDENCE-1",
+        "verification_status": "VERIFIED",
+        "verification_contract_revision": "contract-1"
+      },
+      "current_verifier_revision": "verify-1",
+      "current_evidence_digest": "EVIDENCE-1",
+      "expected_review_state": "REQUIRES_REVERIFICATION",
+      "expected_reuse_allowed": false,
+      "label_status": "DRAFT",
+      "current_contract_revision": "contract-1"
+    },
+    {
+      "case_id": "EC-001",
+      "suite": "evidence_conflict",
+      "case_type": "MIXED_VERIFIED_POLARITY_SAME_CONTEXT",
+      "claim_id": "C1",
+      "evidence_positions": [
+        {
+          "evidence_id": "E1",
+          "relation": "SUPPORTS",
+          "evidence_status": "VERIFIED",
+          "scope_key": "adults",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-A"
+        },
+        {
+          "evidence_id": "E2",
+          "relation": "CHALLENGES",
+          "evidence_status": "VERIFIED",
+          "scope_key": "adults",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-B"
+        }
+      ],
+      "expected_conflict_status": "UNRESOLVED_CONFLICT",
+      "expected_claim_verification_status": "UNASSESSED",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "EC-002",
+      "suite": "evidence_conflict",
+      "case_type": "PARTIALLY_VERIFIED_OPPOSING_SIGNAL",
+      "claim_id": "C1",
+      "evidence_positions": [
+        {
+          "evidence_id": "E1",
+          "relation": "SUPPORTS",
+          "evidence_status": "VERIFIED",
+          "scope_key": "adults",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-A"
+        },
+        {
+          "evidence_id": "E2",
+          "relation": "CHALLENGES",
+          "evidence_status": "PARTIALLY_VERIFIED",
+          "scope_key": "adults",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-B"
+        }
+      ],
+      "expected_conflict_status": "POTENTIAL_CONFLICT_REVIEW",
+      "expected_claim_verification_status": "UNASSESSED",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "EC-003",
+      "suite": "evidence_conflict",
+      "case_type": "OPPOSING_EVIDENCE_DIFFERENT_SCOPE",
+      "claim_id": "C1",
+      "evidence_positions": [
+        {
+          "evidence_id": "E1",
+          "relation": "SUPPORTS",
+          "evidence_status": "VERIFIED",
+          "scope_key": "adults",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-A"
+        },
+        {
+          "evidence_id": "E2",
+          "relation": "CHALLENGES",
+          "evidence_status": "VERIFIED",
+          "scope_key": "children",
+          "time_key": "2020-2024",
+          "source_independence_key": "STUDY-B"
+        }
+      ],
+      "expected_conflict_status": "CONTEXTUAL_DIVERGENCE_REVIEW",
+      "expected_claim_verification_status": "UNASSESSED",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "CV-002",
+      "suite": "claim_identity",
+      "case_type": "VERIFICATION_CONTRACT_CHANGED",
+      "current_revision": {
+        "claim_id": "C1",
+        "revision_id": "R1",
+        "text": "Outcome was associated.",
+        "scope": {
+          "population": "adults",
+          "setting": "one hospital",
+          "time_range": "2020-2024",
+          "modality": "observational",
+          "outcome": "readmission",
+          "causal_strength": "association"
+        },
+        "content_digest": "CLAIM-DIGEST-1",
+        "provenance_ids": [
+          "FIXTURE-PROVENANCE-CV-002"
+        ]
+      },
+      "prior_binding": {
+        "claim_id": "C1",
+        "revision_id": "R1",
+        "content_digest": "CLAIM-DIGEST-1",
+        "verifier_revision": "verify-1",
+        "verification_contract_revision": "contract-1",
+        "evidence_digest": "EVIDENCE-1",
+        "verification_status": "VERIFIED"
+      },
+      "current_verifier_revision": "verify-1",
+      "current_contract_revision": "contract-2",
+      "current_evidence_digest": "EVIDENCE-1",
+      "expected_review_state": "REQUIRES_REVERIFICATION",
+      "expected_reuse_allowed": false,
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "EV-001",
+      "suite": "evaluator_boundary",
+      "case_type": "TIMEOUT_WITHOUT_RESEARCH_FINDING",
+      "signal": {
+        "signal_id": "EV-S1",
+        "evaluator_id": "JEV",
+        "evaluator_revision": "jev-1.2",
+        "rubric_revision": "rubric-3",
+        "input_revision_digest": "claim-rev-digest-1",
+        "execution_status": "TIMEOUT",
+        "signal_status": "NOT_AVAILABLE",
+        "rationale": "",
+        "related_node_ids": [],
+        "evidence_ids": [],
+        "provenance_ids": [
+          "EV-PROV-1"
+        ]
+      },
+      "expected_execution_status": "TIMEOUT",
+      "expected_signal_status": "NOT_AVAILABLE",
+      "expected_review_required": true,
+      "expected_is_evidence": false,
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "RV-001",
+      "suite": "selective_reverification",
+      "case_type": "UPSTREAM_EVIDENCE_CHANGE_TRANSITIVE_IMPACT",
+      "nodes": {
+        "E1": "EVIDENCE",
+        "P1": "PREMISE",
+        "C1": "CLAIM",
+        "C2": "CLAIM",
+        "C3": "CLAIM"
+      },
+      "changed_node_ids": [
+        "E1"
+      ],
+      "dependency_edges": [
+        {
+          "upstream_id": "E1",
+          "dependent_id": "P1",
+          "relation": "SUPPORTS"
+        },
+        {
+          "upstream_id": "P1",
+          "dependent_id": "C1",
+          "relation": "SUPPORTS"
+        },
+        {
+          "upstream_id": "C1",
+          "dependent_id": "C2",
+          "relation": "DERIVED_FROM"
+        }
+      ],
+      "prior_verification_statuses": {
+        "C1": "VERIFIED",
+        "C2": "PARTIALLY_VERIFIED",
+        "C3": "VERIFIED"
+      },
+      "expected_impacted_claim_ids": [
+        "C1",
+        "C2"
+      ],
+      "expected_unaffected_claim_ids": [
+        "C3"
+      ],
+      "expected_plan_status": "PLANNED_NOT_EXECUTED",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "ER-001",
+      "suite": "evaluator_runner",
+      "case_type": "EVALUATOR_TIMEOUT",
+      "request": {
+        "request_id": "ER-001-REQ",
+        "claim_id": "C1",
+        "claim_revision_id": "R1",
+        "claim_text": "The policy caused the outcome.",
+        "input_revision_digest": "8d2ebd0155c57f818c6283de8c41db38eb0a3ef26aa353ecdbb96337a8c2be67",
+        "scope": {}
+      },
+      "provider_behavior": "TIMEOUT",
+      "expected_execution_status": "TIMEOUT",
+      "expected_signal_status": "NOT_AVAILABLE",
+      "expected_review_required": true,
+      "expected_commit_status": "NOT_COMMITTED",
+      "expected_is_evidence": false,
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "ER-002",
+      "suite": "evaluator_runner",
+      "case_type": "NO_ISSUE_SIGNAL_IS_NOT_VERIFICATION",
+      "request": {
+        "request_id": "ER-002-REQ",
+        "claim_id": "C2",
+        "claim_revision_id": "R1",
+        "claim_text": "Claim text.",
+        "input_revision_digest": "cb56d830de6f3b306b449ba72fc908d1e5d03c3e0b268f371eae93688fe4b552",
+        "scope": {}
+      },
+      "provider_behavior": "NO_ISSUE",
+      "expected_execution_status": "SUCCEEDED",
+      "expected_signal_status": "NO_ISSUE_REPORTED",
+      "expected_review_required": false,
+      "expected_commit_status": "NOT_COMMITTED",
+      "expected_is_evidence": false,
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "RR-001",
+      "suite": "reverification_runner",
+      "case_type": "SUCCESSFUL_RESULT_AWAITS_COMMIT",
+      "current_revision": {
+        "claim_id": "C1",
+        "revision_id": "R2",
+        "text": "Claim text.",
+        "scope": {
+          "population": "adults",
+          "setting": "one hospital",
+          "time_range": "2020-2024",
+          "modality": "observational",
+          "outcome": "readmission",
+          "causal_strength": "association"
+        }
+      },
+      "evidence": [
+        {
+          "id": "E1",
+          "provenance_id": "SOURCE-PROV-1",
+          "text": "Evidence"
+        }
+      ],
+      "prior_binding": {
+        "claim_id": "C1",
+        "revision_id": "R1",
+        "content_digest": "OLD-DIGEST",
+        "evidence_digest": "OLD-EVIDENCE-DIGEST",
+        "verifier_revision": "verify-0",
+        "verification_contract_revision": "contract-0",
+        "verification_status": "VERIFIED"
+      },
+      "provider_behavior": "VERIFIED",
+      "expected_execution_status": "SUCCEEDED",
+      "expected_proposed_verification_status": "VERIFIED",
+      "expected_commit_status": "NOT_COMMITTED",
+      "expected_truthfulness_status": "UNASSESSED",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "RR-002",
+      "suite": "reverification_runner",
+      "case_type": "TIMEOUT_PRESERVES_PRIOR_STATUS",
+      "current_revision": {
+        "claim_id": "C2",
+        "revision_id": "R2",
+        "text": "Another claim.",
+        "scope": {
+          "population": "adults",
+          "setting": "one hospital",
+          "time_range": "2020-2024",
+          "modality": "observational",
+          "outcome": "readmission",
+          "causal_strength": "association"
+        }
+      },
+      "evidence": [
+        {
+          "id": "E2",
+          "provenance_id": "SOURCE-PROV-2",
+          "text": "Evidence"
+        }
+      ],
+      "prior_binding": {
+        "claim_id": "C2",
+        "revision_id": "R1",
+        "content_digest": "OLD-DIGEST",
+        "evidence_digest": "OLD-EVIDENCE-DIGEST",
+        "verifier_revision": "verify-0",
+        "verification_contract_revision": "contract-0",
+        "verification_status": "PARTIALLY_VERIFIED"
+      },
+      "provider_behavior": "TIMEOUT",
+      "expected_execution_status": "TIMEOUT",
+      "expected_proposed_verification_status": null,
+      "expected_commit_status": "NOT_COMMITTED",
+      "expected_truthfulness_status": "UNASSESSED",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "IJ-001",
+      "suite": "internal_judgment_model",
+      "case_type": "CAUSAL_INFERENCE_CANDIDATE_BINDING",
+      "request": {
+        "request_id": "REQ-IJ-001",
+        "conversation_id": "CONV-IJ-001",
+        "turn_id": "TURN-IJ-001",
+        "content": "Sales rose after the campaign, therefore the campaign caused the increase.",
+        "context": {
+          "role": "assistant"
+        },
+        "claim_candidates": [
+          {
+            "id": "C-IJ-001",
+            "text": "The campaign caused the increase."
+          }
+        ]
+      },
+      "expected_judgment_status": "INFERENCE_PRESENT",
+      "expected_inference_types": [
+        "CAUSAL"
+      ],
+      "expected_claim_refs": [
+        "C-IJ-001"
+      ],
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "IT-001",
+      "suite": "inference_trigger",
+      "case_type": "DETECTED_INFERENCE_ACTIVATES_VERIFICATION",
+      "judgment": {
+        "execution_status": "SUCCEEDED",
+        "judgment_status": "INFERENCE_PRESENT",
+        "confidence": "HIGH",
+        "input_revision_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected_action": "SARA_SELECTIVE_VERIFICATION",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "IP-001",
+      "suite": "inference_pipeline",
+      "case_type": "AMBIGUOUS_JUDGMENT_ROUTES_TO_PRECHECK",
+      "input": {
+        "request_id": "REQ-IP-001",
+        "conversation_id": "CONV-IP-001",
+        "turn_id": "TURN-IP-001",
+        "content": "The result might be due to another cause.",
+        "context": {
+          "role": "assistant"
+        },
+        "claim_candidates": [
+          {
+            "id": "C-IP-001",
+            "text": "Another cause explains the result."
+          }
+        ]
+      },
+      "expected_judgment_status": "AMBIGUOUS",
+      "expected_action": "SARA_PRECHECK_REVIEW",
+      "expected_route": "precheck",
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "DR-001",
+      "suite": "dialogue_runtime",
+      "case_type": "BOUND_CAUSAL_INFERENCE_REACHES_SARA_VERIFIER",
+      "request": {
+        "request_id": "REQ-DR-001",
+        "conversation_id": "CONV-DR-001",
+        "turn_id": "TURN-DR-001",
+        "content": "Sales rose after the campaign, therefore the campaign caused the increase.",
+        "context": {
+          "role": "assistant"
+        },
+        "claim_candidates": [
+          {
+            "id": "C-DR-001",
+            "text": "The campaign caused the increase."
+          }
+        ],
+        "evidence": [],
+        "provenance_ids": [
+          "PROV-DR-001"
+        ]
+      },
+      "expected_judgment_status": "INFERENCE_PRESENT",
+      "expected_action": "SARA_SELECTIVE_VERIFICATION",
+      "expected_verified_claim_ids": [
+        "C-DR-001"
+      ],
+      "expected_route_execution_status": "SUCCEEDED",
+      "expected_claim_truth_assessed": false,
+      "label_status": "DRAFT"
+    },
+    {
+      "case_id": "V24-RT-001",
+      "suite": "v24_runtime_integration",
+      "case_type": "STRUCTURED_GRAPH_CYCLE_REACHES_CANONICAL_RUNTIME",
+      "request": {
+        "request_id": "REQ-V24-RT-001",
+        "capability": "verify_claim",
+        "claim": {
+          "id": "C-V24-RT-001",
+          "text": "A test proposition."
+        },
+        "premises": [],
+        "evidence": [],
+        "provenance_ids": [
+          "INPUT-PROV-V24-RT-001"
+        ],
+        "adapter_revision": "runtime-test-adapter-v1",
+        "requested_at": "2026-10-19T10:30:00Z",
+        "environment": {
+          "test": true
+        },
+        "argument_graph": {
+          "nodes": [
+            {
+              "node_id": "A",
+              "node_type": "CLAIM",
+              "text": "Claim A."
+            },
+            {
+              "node_id": "B",
+              "node_type": "CLAIM",
+              "text": "Claim B."
+            },
+            {
+              "node_id": "C",
+              "node_type": "CLAIM",
+              "text": "Claim C."
+            }
+          ],
+          "edges": [
+            {
+              "edge_id": "AB",
+              "source_id": "A",
+              "target_id": "B",
+              "relation": "SUPPORTS"
+            },
+            {
+              "edge_id": "BC",
+              "source_id": "B",
+              "target_id": "C",
+              "relation": "SUPPORTS"
+            },
+            {
+              "edge_id": "CA",
+              "source_id": "C",
+              "target_id": "A",
+              "relation": "SUPPORTS"
+            },
+            {
+              "edge_id": "AC",
+              "source_id": "A",
+              "target_id": "C",
+              "relation": "SUPPORTS"
+            }
+          ]
+        }
+      },
+      "expected_epistemic_verification_status": "UNVERIFIED",
+      "expected_logical_audit_status": "STRUCTURE_CHECKED",
+      "expected_candidate_findings": 2,
+      "expected_truthfulness_status": "UNASSESSED",
+      "label_status": "DRAFT"
+    }
+  ]
+}

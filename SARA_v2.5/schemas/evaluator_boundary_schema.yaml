@@ -1,0 +1,47 @@
+version: "2.5-draft"
+name: sara_evaluator_signal_boundary
+status: PROPOSED_PROTOTYPE
+
+purpose: >
+  Preserve the evaluator execution result separately from its decision-support
+  signal, bind the signal to the exact input revision, and prevent evaluator
+  failure or output from being promoted to research evidence or claim truth.
+
+evaluator_signal:
+  required:
+    - signal_id
+    - evaluator_id
+    - evaluator_revision
+    - rubric_revision
+    - input_revision_digest
+    - execution_status
+    - signal_status
+  execution_status:
+    - SUCCEEDED
+    - FAILED
+    - TIMEOUT
+    - INVALID_OUTPUT
+    - INCOMPLETE
+  signal_status:
+    - ISSUE_CANDIDATE
+    - NO_ISSUE_REPORTED
+    - UNASSESSED
+    - NOT_AVAILABLE
+
+rules:
+  - input_revision_digest_must_match_the_current_claim_revision
+  - non_succeeded_execution_must_use_NOT_AVAILABLE_signal_status
+  - non_succeeded_execution_must_not_carry_a_logical_finding
+  - successful_execution_must_not_use_NOT_AVAILABLE
+  - ISSUE_CANDIDATE_requires_rationale_and_known_basis_reference
+  - evaluator_references_must_resolve_to_known_nodes_or_evidence
+  - evaluator_signal_is_not_research_evidence
+  - evaluator_signal_does_not_set_claim_verification_status
+  - NO_ISSUE_REPORTED_does_not_prove_logical_validity
+  - execution_failure_requires_review_but_is_not_a_negative_finding
+
+output_boundary:
+  source: SARA_EVALUATOR_SIGNAL
+  is_evidence: false
+  claim_verification_status: NOT_EMITTED
+  truthfulness_status: NOT_EMITTED
