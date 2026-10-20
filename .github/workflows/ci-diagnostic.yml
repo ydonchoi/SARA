@@ -1,0 +1,38 @@
+name: CI Diagnostic
+
+on:
+  push:
+    branches:
+      - feat/v25-executable-runtime-cli
+  pull_request:
+    branches:
+      - feat/v25-executable-runtime-cli
+
+permissions:
+  contents: read
+
+jobs:
+  runner-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Report runner context
+        run: |
+          echo "diagnostic_started=true"
+          echo "event=${GITHUB_EVENT_NAME}"
+          echo "ref=${GITHUB_REF}"
+          echo "sha=${GITHUB_SHA}"
+          python --version
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pytest
+        run: python -m pip install pytest
+      - name: Run executor tests only
+        run: python -m pytest SARA_v2.5/tests/test_executor.py -q
+      - name: Confirm diagnostic reached end
+        if: always()
+        run: echo "diagnostic_finished=true"
