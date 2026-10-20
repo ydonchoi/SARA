@@ -121,3 +121,29 @@ def test_empty_scope_metadata_is_rejected():
                 EvidencePosition("E1", "SUPPORTS", "VERIFIED", "", "T1", "SRC")
             ],
         )
+
+
+def test_verified_conflict_requires_a_verified_pair_in_matching_scope_and_time():
+    result = adjudicate_evidence_conflict(
+        claim_id="C1",
+        evidence_positions=[
+            item("E1", "SUPPORTS", scope="adults", time="2020", status="VERIFIED"),
+            item("E2", "CHALLENGES", scope="children", time="2020", status="VERIFIED"),
+            item("E3", "SUPPORTS", scope="adults", time="2020", status="PARTIALLY_VERIFIED"),
+        ],
+    )
+    # A partial pair must not manufacture a conflict between the fully
+    # verified E1/E2 pair, which differs in scope.
+    assert result["conflict_status"] == "CONTEXTUAL_DIVERGENCE_REVIEW"
+
+
+def test_verified_opposition_in_matching_time_and_scope_beats_unrelated_pairs():
+    result = adjudicate_evidence_conflict(
+        claim_id="C1",
+        evidence_positions=[
+            item("E1", "SUPPORTS", scope="adults", time="2020", status="VERIFIED"),
+            item("E2", "CHALLENGES", scope="adults", time="2020", status="VERIFIED"),
+            item("E3", "SUPPORTS", scope="children", time="2020", status="PARTIALLY_VERIFIED"),
+        ],
+    )
+    assert result["conflict_status"] == "UNRESOLVED_CONFLICT"
