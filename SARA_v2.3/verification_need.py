@@ -33,7 +33,7 @@ _QUANTITATIVE = re.compile(r"(?<!\w)(?:\d+(?:[.,]\d+)*%?|\d{4}[-./]\d{1,2}(?:[-.
 _ASSERTIVE_CLAIM = re.compile(
     r"( is | are | was | were | has | have | causes? | means? | proves? | "
     r"equals? | increased | decreased | will | must | should )|"
-    r"(이다|있다|없다|한다|된다|때문이다|증가했다|감소했다|예정이다|필수다|최초다|최고다)",
+    r"(이다|있다|없다|한다|된다|높인다|유발한다|보인다|작용한다|발생한다|포함한다|때문이다|증가했다|감소했다|예정이다|필수다|최초다|최고다)",
     re.IGNORECASE,
 )
 
