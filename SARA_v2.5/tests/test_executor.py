@@ -86,3 +86,11 @@ def test_no_route_required_is_a_completed_execution_not_a_verification():
     assert result["status"] == "SUCCEEDED"
     assert result["execution_completed"] is True
     assert result["claim_truth_assessed"] is False
+
+
+
+@pytest.mark.parametrize("timeout", ["nan", "inf", "-inf", "0", "-1"])
+def test_cli_rejects_non_finite_or_non_positive_timeout(timeout, monkeypatch):
+    with pytest.raises(SystemExit) as exc:
+        executor.main(["--provider", "unused_provider", "--timeout-seconds", timeout])
+    assert exc.value.code == 2
