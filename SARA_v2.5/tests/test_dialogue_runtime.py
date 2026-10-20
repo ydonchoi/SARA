@@ -312,8 +312,8 @@ def test_failed_sara_verifier_response_is_not_reported_as_successful_route():
 
     route_output = result["route_execution"]["output"]
     assert result["verification_provider_invoked"] is True
-    assert result["pipeline_status"] == "PARTIALLY_FAILED"
     assert route_output["status"] == "PARTIALLY_FAILED"
+    assert result["verification_route_status"] == "PARTIALLY_FAILED"
     assert route_output["verification_results"][0]["execution_status"] == "FAILED"
     assert route_output["verification_results"][0]["error_code"] == (
         "SARA_VERIFY_CLAIM_STATUS_NOT_SUCCEEDED"
