@@ -54,7 +54,8 @@ def test_runtime_exception_does_not_become_success():
     assert result["status"] == "FAILED"
     assert result["execution_completed"] is False
     assert result["error_code"] == "DIALOGUE_TURN_CONTENT_REQUIRED"
-
+    assert result["verification_status"] == "NOT_RUN"
+    assert result["claim_truth_assessed"] is False
 
 
 def test_partial_verifier_failure_is_not_reported_as_success():
@@ -71,9 +72,12 @@ def test_partial_verifier_failure_is_not_reported_as_success():
     result = executor.execute_request(RuntimeStub(), {"request_id": "r2"}, 1.0)
     assert result["status"] == "PARTIAL_OR_FAILED"
     assert result["execution_completed"] is True
+    assert result["route_callback_completed"] is True
+    assert result["verification_status"] == "UNSPECIFIED"
+    assert result["claim_truth_assessed"] is False
 
 
-def test_no_route_required_is_a_completed_execution_not_a_verification():
+def test_no_route_required_is_not_misrepresented_as_verification_success():
     class RuntimeStub:
         def process_turn(self, request, *, timeout_seconds):
             return {
@@ -83,10 +87,51 @@ def test_no_route_required_is_a_completed_execution_not_a_verification():
             }
 
     result = executor.execute_request(RuntimeStub(), {"request_id": "r3"}, 1.0)
-    assert result["status"] == "SUCCEEDED"
+    assert result["status"] == "NO_ROUTE_REQUIRED"
     assert result["execution_completed"] is True
+    assert result["route_callback_completed"] is False
+    assert result["verification_status"] == "NOT_RUN"
     assert result["claim_truth_assessed"] is False
 
+
+@pytest.mark.parametrize(
+    ("output", "expected_status", "expected_verification_status"),
+    [
+        ({"status": "NEEDS_REVIEW"}, "COMPLETED_UNVERIFIED", "UNSPECIFIED"),
+        ({"status": "REVIEW_QUEUED"}, "COMPLETED_UNVERIFIED", "UNSPECIFIED"),
+        ({"status": "PROPOSED"}, "COMPLETED_UNVERIFIED", "UNSPECIFIED"),
+        (
+            {"status": "SUCCEEDED", "verification_status": "UNVERIFIED"},
+            "COMPLETED_UNVERIFIED",
+            "UNVERIFIED",
+        ),
+        (
+            {"status": "SUCCEEDED", "verification_status": "VERIFIED"},
+            "ROUTE_COMPLETED",
+            "VERIFIED",
+        ),
+    ],
+)
+def test_route_completion_is_separated_from_verification_outcome(
+    output, expected_status, expected_verification_status
+):
+    class RuntimeStub:
+        def process_turn(self, request, *, timeout_seconds):
+            return {
+                "pipeline_status": "ROUTE_EXECUTED",
+                "route_execution": {
+                    "execution_status": "SUCCEEDED",
+                    "output": output,
+                },
+                "claim_truth_assessed": False,
+            }
+
+    result = executor.execute_request(RuntimeStub(), {"request_id": "r4"}, 1.0)
+    assert result["status"] == expected_status
+    assert result["execution_completed"] is True
+    assert result["route_callback_completed"] is True
+    assert result["verification_status"] == expected_verification_status
+    assert result["claim_truth_assessed"] is False
 
 
 @pytest.mark.parametrize("timeout", ["nan", "inf", "-inf", "0", "-1"])
