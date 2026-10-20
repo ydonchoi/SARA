@@ -94,9 +94,16 @@ def _aggregate_verification_status(route_output: Any) -> str | None:
         return None
 
     top_level = route_output.get("verification_status")
+    if "verification_results" not in route_output:
+        return top_level if isinstance(top_level, str) and top_level.strip() else None
+
     results = route_output.get("verification_results")
     if not isinstance(results, list) or not results:
-        return top_level if isinstance(top_level, str) and top_level.strip() else None
+        # Once the per-claim field is present, malformed or empty per-claim
+        # results cannot be bypassed by a top-level VERIFIED label.
+        if isinstance(top_level, str) and top_level.strip():
+            return "MIXED"
+        return "UNSPECIFIED"
 
     statuses: list[str] = []
     if isinstance(top_level, str) and top_level.strip():
