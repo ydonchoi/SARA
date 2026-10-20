@@ -100,6 +100,8 @@ provider-reported status, not independent evidence that the claim is true.
 ## Current validation scope
 
 Unit tests cover provider-contract enforcement, fail-closed request handling,
-and separation of route completion from verification outcome. They do not
-establish that a production model/provider is configured, that external
-verification runs, or that the current ChatGPT app invokes this code.
+separation of route completion from verification outcome, and deterministic
+integration through the callable dialogue runtime using test doubles. They do
+not establish semantic judgment accuracy, that a production model/provider is
+configured, that a live external source check succeeds, or that the current
+ChatGPT app invokes this code.
