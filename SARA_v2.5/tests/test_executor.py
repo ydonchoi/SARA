@@ -178,8 +178,7 @@ def test_executor_integrates_with_real_dialogue_runtime_and_preserves_partial_fa
         "failure": {"code": "TEST_UPSTREAM_FAILURE"},
         "verification_status": "UNVERIFIED",
     }
-    runtime = executor.build_runtime(provider.__name__)
-    # build_runtime imports by name, so register this deterministic provider.
+    # build_runtime imports by name, so register this deterministic provider first.
     sys.modules[provider.__name__] = provider
     runtime = executor.build_runtime(provider.__name__)
 
