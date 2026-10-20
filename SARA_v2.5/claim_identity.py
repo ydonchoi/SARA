@@ -85,8 +85,12 @@ def create_claim_revision(
         raise ValueError("CLAIM_ID_REQUIRED")
     if not revision_id or not revision_id.strip():
         raise ValueError("REVISION_ID_REQUIRED")
+    if not isinstance(provenance_ids, (tuple, list)) or not provenance_ids:
+        raise ValueError("CLAIM_REVISION_PROVENANCE_REQUIRED")
     if any(not isinstance(item, str) or not item.strip() for item in provenance_ids):
         raise ValueError("EMPTY_PROVENANCE_ID")
+    if len(set(provenance_ids)) != len(provenance_ids):
+        raise ValueError("DUPLICATE_PROVENANCE_ID")
     canonical_text = text.replace("\r\n", "\n").replace("\r", "\n") if isinstance(text, str) else text
     canonical_scope = _canonical_scope(scope)
     digest = compute_content_digest(canonical_text, canonical_scope)
