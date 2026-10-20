@@ -77,7 +77,8 @@ def project_public_status(runtime_result: Any) -> dict[str, Any]:
     )
     if (
         execution_status == "FAILED"
-        or route_status in {"FAILED", "PARTIALLY_FAILED"}
+        or route_status == "FAILED"
+        or route_status == "PARTIALLY_FAILED"
         or pipeline_status == "ROUTE_FAILED"
         or results_are_invalid_or_failed
     ):
