@@ -31,6 +31,7 @@ from execution import (  # noqa: E402
     SARAExecutor,
 )
 from production_verification_backend import ProductionVerificationBackend  # noqa: E402
+from verification_need import assess_verification_need  # noqa: E402
 
 
 class ProductionBackendAdapter:
@@ -119,13 +120,53 @@ def execute_request(
     return executor.verify_claim(request)
 
 
+def execute_auto_request(
+    payload: Mapping[str, Any],
+    provider: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Triage a conversational claim and call the verifier only when rules require it."""
+    claim = payload.get("claim") or {}
+    text = claim.get("text") if isinstance(claim, Mapping) else None
+    text = text or payload.get("text")
+    assessment = assess_verification_need(
+        text,
+        payload.get("verification_context") or {},
+    )
+    if not assessment["verification_required"]:
+        return {
+            "status": "SKIPPED",
+            "verification_need": assessment,
+            "verification_status": "UNVERIFIED",
+            "truthfulness_status": "UNASSESSED",
+            "provider_called": False,
+            "reason": "AUTOMATIC_TRIAGE_DID_NOT_REQUIRE_EXTERNAL_CHECK",
+        }
+    if provider is None:
+        raise ValueError("PROVIDER_REQUIRED_FOR_VERIFICATION")
+    result = asdict(execute_request(payload, provider))
+    result["verification_need"] = assessment
+    result["provider_called"] = True
+    return result
+
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run one SARA v2.3 verification request.")
-    parser.add_argument("--provider", required=True, help="Provider callable as MODULE:ATTRIBUTE")
+    parser = argparse.ArgumentParser(description="Run SARA verification or verification-need triage.")
+    parser.add_argument("--provider", help="Provider callable as MODULE:ATTRIBUTE; required for execution.")
     parser.add_argument(
         "--request",
         default="-",
         help="JSON request file; '-' reads JSON from stdin.",
+    )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--assess-only",
+        action="store_true",
+        help="Assess whether external verification is needed; do not load or call a provider.",
+    )
+    mode.add_argument(
+        "--auto",
+        action="store_true",
+        help="Assess first and call the provider only when verification is required.",
     )
     return parser.parse_args()
 
@@ -137,8 +178,22 @@ def main() -> int:
             encoding="utf-8"
         )
         payload = json.loads(raw)
-        result = execute_request(payload, load_provider(args.provider))
-        print(json.dumps(asdict(result), ensure_ascii=False, sort_keys=True))
+        if args.assess_only:
+            claim = payload.get("claim") or {}
+            text = claim.get("text") if isinstance(claim, Mapping) else None
+            text = text or payload.get("text")
+            result = assess_verification_need(
+                text,
+                payload.get("verification_context") or {},
+            )
+        elif args.auto:
+            provider = load_provider(args.provider) if args.provider else None
+            result = execute_auto_request(payload, provider)
+        else:
+            if not args.provider:
+                raise ValueError("PROVIDER_REQUIRED_UNLESS_ASSESS_ONLY_OR_AUTO_SKIP")
+            result = asdict(execute_request(payload, load_provider(args.provider)))
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
     except Exception as exc:
         print(
