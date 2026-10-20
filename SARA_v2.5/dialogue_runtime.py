@@ -235,6 +235,18 @@ class SARADialogueRuntime:
                         "error_code": "SARA_VERIFY_CLAIM_OUTPUT_MUST_BE_MAPPING",
                     })
                     continue
+                # A callable returning a mapping is not necessarily a successful
+                # verification. The SARA execution contract carries its own status;
+                # do not turn a provider/backend FAILED response into route success.
+                if raw.get("status") != "SUCCEEDED":
+                    results.append({
+                        "claim_id": claim_id,
+                        "execution_status": "FAILED",
+                        "error_code": "SARA_VERIFY_CLAIM_STATUS_NOT_SUCCEEDED",
+                        "output": dict(raw),
+                        "output_is_research_evidence": False,
+                    })
+                    continue
                 results.append({
                     "claim_id": claim_id,
                     "execution_status": "SUCCEEDED",
