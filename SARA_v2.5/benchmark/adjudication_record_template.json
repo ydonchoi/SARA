@@ -11,10 +11,12 @@
     "conflict_of_interest": "DECLARE_OR_NONE"
   },
   "decision": {
-    "primary_label": "UNASSESSED",
+    "review_disposition": "UNASSESSABLE",
+    "expected_label_assessment": "NOT_REVIEWED",
+    "proposed_corrected_expected_label": null,
     "issue_categories": [],
     "confidence": "MEDIUM",
-    "rationale": "Explain which case facts and scope constraints support this label.",
+    "rationale": "Explain which case facts and scope constraints support this assessment.",
     "missing_context": [],
     "proposed_fixture_correction": null
   },
