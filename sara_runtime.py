@@ -1,8 +1,15 @@
 """Minimal independently callable SARA v2.3 runtime entrypoint.
 
-The runtime exposes the already-validated execution contract as a CLI.
-It deliberately requires an injected provider callable instead of inventing
-an HTTP/SDK transport or a verification algorithm.
+The runtime exposes the execution contract as a CLI and requires an injected
+provider callable rather than inventing an HTTP/SDK transport or verification
+algorithm.
+
+Engineering changes follow the repository's Correctness-First,
+Scope-Controlled policy in docs/engineering-principles.md: resolve root causes,
+choose the smallest sufficient correct change, preserve contracts and the v2.4
+canonical verification baseline, and report tests/integration evidence honestly.
+This policy note does not itself enforce coding-agent behavior or alter runtime
+verification semantics.
 """
 
 from __future__ import annotations
