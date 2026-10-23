@@ -1,0 +1,118 @@
+version: "2.5-draft"
+name: sara_canonical_promotion_gate
+status: PROPOSED
+
+purpose: >
+  Require current-head CI, runtime integration, explicit benchmark adjudication,
+  acceptance metrics, and version documentation to agree before v2.5 may become
+  the canonical baseline. Missing evidence is a blocker.
+
+required_evidence:
+  - head_sha
+  - ci.head_sha
+  - ci.conclusion
+  - ci.suites
+  - readiness
+  - benchmark
+  - documentation
+  - open_blockers
+
+ci:
+  head_sha_must_equal_candidate_head: true
+  conclusion: success
+  required_suites:
+    - external_execution_contracts
+    - content_access
+    - review_resolution_provenance
+    - v24_epistemic_logical_audit
+    - v24_runtime_integration
+    - v25_claim_identity_conflict
+    - v25_evaluator_boundary
+    - v25_evaluator_runner
+    - v25_selective_reverification
+    - v25_reverification_runner
+    - v25_provenance_ledger
+    - v25_verification_commit_gate
+    - v25_promotion_gate
+    - v25_preflight_coverage
+    - v25_preflight_json
+    - v25_internal_judgment_model
+    - v25_inference_trigger
+    - v25_inference_pipeline
+    - v25_dialogue_runtime
+
+readiness:
+  required_status: VERIFIED
+  fields:
+    - internal_judgment_model_status
+    - live_dialogue_integration_status
+    - inference_trigger_runtime_status
+    - reverification_runtime_status
+    - provenance_storage_replay_status
+    - human_review_commit_gate_status
+    - schema_consistency_status
+    - documentation_consistency_status
+
+benchmark:
+  dataset_status: INDEPENDENTLY_ADJUDICATED
+  minimum_case_count: 18
+  required_suites:
+    - v24_runtime_integration
+    - logical_audit
+    - claim_identity
+    - evidence_conflict
+    - evaluator_boundary
+    - evaluator_runner
+    - selective_reverification
+    - reverification_runner
+    - internal_judgment_model
+    - inference_trigger
+    - inference_pipeline
+    - dialogue_runtime
+  minimum_distinct_reviewers_per_case: 2
+  case_record_required:
+    - case_id
+    - suite
+    - label_status
+    - reference_label
+    - adjudications
+  reference_label_must_match_agreed_or_resolved_adjudication: true
+  review_record_required:
+    - reviewer_id
+    - independent_review
+    - decision
+    - rationale
+  reviewer_independence_required: true
+  disagreement_resolution_required: true
+  comparison_status: PASS
+  required_comparison_conditions:
+    - v2.3_baseline
+    - v2.4_no_evaluator
+    - v2.5_internal_judgment_trigger
+  comparison_run_evidence_required:
+    - run_id
+    - result_artifact_id
+  metric_decisions_must_all_pass: true
+  metric_decision_required:
+    - metric
+    - status
+    - observed_value
+    - threshold
+    - direction
+    - protocol_revision
+    - artifact_ref
+  metric_direction:
+    - MAXIMUM
+    - MINIMUM
+  metric_observed_value_must_satisfy_threshold: true
+
+documentation:
+  root_current_version: v2.5
+  v2_5_release_status: ACTIVE_CANONICAL
+
+rules:
+  - missing_evidence_is_a_blocker
+  - green_CI_alone_does_not_approve_canonical_promotion
+  - draft_synthetic_labels_are_not_a_gold_benchmark
+  - verifier_success_does_not_establish_claim_truth
+  - gate_output_does_not_mutate_canonical_state
