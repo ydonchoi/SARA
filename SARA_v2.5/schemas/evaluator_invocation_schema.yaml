@@ -1,0 +1,49 @@
+version: "2.5-draft"
+name: sara_evaluator_invocation_contract
+status: PROPOSED_PROTOTYPE
+
+request:
+  required:
+    - request_id
+    - claim_id
+    - claim_revision_id
+    - claim_text
+    - input_revision_digest
+    - timeout_seconds
+  evaluator_binding:
+    required:
+      - evaluator_id
+      - evaluator_revision
+      - rubric_revision
+  provider_interface:
+    callable_signature: invoke(request_object, timeout_seconds)
+    timeout_enforcement: provider_transport_must_enforce_timeout
+
+response:
+  required:
+    - claim_id
+    - claim_revision_id
+    - input_revision_digest
+    - signal_status
+  optional:
+    - rationale
+    - related_node_ids
+    - evidence_ids
+    - provenance_ids
+
+execution_status:
+  - SUCCEEDED
+  - FAILED
+  - TIMEOUT
+  - INVALID_OUTPUT
+  - INCOMPLETE
+
+rules:
+  - input_revision_digest_must_equal_canonical_claim_revision_digest
+  - response_claim_and_revision_must_match_request
+  - response_input_digest_must_match_request
+  - malformed_outputs_fail_closed_as_INVALID_OUTPUT_or_INCOMPLETE
+  - timeout_and_provider_exceptions_never_become_research_findings
+  - output_is_decision_support_not_evidence
+  - output_does_not_emit_claim_verification_status
+  - result_is_NOT_COMMITTED_until_downstream_review
