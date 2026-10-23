@@ -1,0 +1,76 @@
+version: "2.5-draft"
+name: sara_claim_identity_revision
+status: PROPOSED
+purpose: >
+  Bind claim verification and review findings to an immutable claim revision
+  and scope so a modified claim cannot silently reuse a stale verification state.
+
+claim_identity:
+  required:
+    - claim_id
+    - revision_id
+    - text
+    - scope
+    - content_digest
+  fields:
+    claim_id:
+      meaning: Stable identifier for the same proposition and scope.
+      immutable: true
+    revision_id:
+      meaning: Identifier for one immutable claim revision.
+      immutable: true
+    text:
+      meaning: Exact claim text submitted for this revision.
+    scope:
+      fields:
+        - population
+        - setting
+        - time_range
+        - modality
+        - outcome
+        - causal_strength
+      note: Use null/UNSPECIFIED when the source does not define a dimension.
+    content_digest:
+      meaning: Digest computed over canonical text plus scope and qualifiers.
+      binding: verification results must match this digest.
+    supersedes_revision_id:
+      required: false
+    derived_from_claim_id:
+      required: false
+    revision_reason:
+      required: false
+    provenance_ids:
+      required: true
+
+identity_relation:
+  enum:
+    - SAME_PROPOSITION
+    - QUALIFIED_REVISION
+    - DERIVED_CLAIM
+    - REPLACEMENT_CLAIM
+    - UNCERTAIN
+  policy:
+    - text_similarity_is_candidate_evidence_only
+    - material_scope_or_meaning_change_requires_new_identity_or_explicit_revision
+    - UNCERTAIN_must_not_reuse_prior_VERIFIED_state
+
+verification_binding:
+  required:
+    - claim_id
+    - revision_id
+    - content_digest
+    - verifier_revision
+    - verification_contract_revision
+    - verification_status
+  stale_when:
+    - claim_revision_changed
+    - scope_digest_changed
+    - relevant_evidence_changed
+    - verification_contract_changed
+
+review_state:
+  enum:
+    - CURRENT
+    - STALE
+    - REQUIRES_REVERIFICATION
+    - UNRESOLVED
