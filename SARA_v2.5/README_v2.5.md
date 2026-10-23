@@ -2,13 +2,7 @@
 
 ## Status
 
-**PROTOTYPE / NOT A RELEASED RUNTIME BASELINE.** SARA v2.4 remains the
-canonical verification baseline. v2.5 now has callable evaluator and selective
-re-verification adapters, a hash-chained provenance ledger with JSONL
-export/import and replay, and a deterministic promotion gate. The adapters are
-tested with injected providers; no live external evaluator provider is configured.
-Durable deployment storage/access control, independently adjudicated benchmarks,
-and evidence for comparative research-quality improvement remain incomplete.
+**USER-LED TRIAL CANDIDATE / PRODUCTION READINESS UNVERIFIED.** v2.5 is being promoted to main for hands-on use by the maintainer. v2.4 remains preserved as the rollback and comparison baseline. The runtime has injectable provider boundaries, but actual host dialogue-loop and live model/verifier configuration remain unverified. Durable deployment storage/access control, independently adjudicated benchmarks, and comparative research-quality evidence remain incomplete. The automated suite is intentionally not a prerequisite for this trial; observed runtime failures will drive targeted fixes.
 
 ## Goal
 
