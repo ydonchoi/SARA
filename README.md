@@ -551,3 +551,10 @@ https://github.com/ydonchoi/SARA
 **SARA v2.4 (canonical verification baseline)**
 
 v2.5 remains a prototype and is not promoted.
+
+
+## Executable Runtime and Default Verification Provider
+
+The root-level `sara_runtime.py` entrypoint now defaults to a live Crossref DOI metadata provider and wires it through the existing A2 evidence pipeline. See [Runtime and Provider Integration](docs/runtime-provider-integration.md) for the request contract, invocation, and verification limits.
+
+**Scope boundary:** Crossref confirms DOI registration and bibliographic metadata only. It does not establish substantive claim truth; claim-level status remains `UNVERIFIED` unless an appropriate content-level verification path is available. This runtime integration does not change the canonical v2.4 baseline.
