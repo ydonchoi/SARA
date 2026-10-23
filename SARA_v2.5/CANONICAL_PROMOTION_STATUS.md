@@ -1,29 +1,26 @@
-# SARA v2.5 Canonical Promotion Status
+# SARA v2.5 Operational Trial Status
 
-**Current decision: PROMOTION_BLOCKED.**
+**Decision: USER-LED TRIAL APPROVED; PRODUCTION READINESS UNVERIFIED.**
 
-SARA v2.4 remains the canonical verification baseline. The v2.5 branch contains prototype code and regression tests, but canonical promotion is conditional on complete acceptance evidence, not merely code presence or a green CI run.
+The repository's v2.5 runtime and dialogue route are being promoted to the main branch so the maintainer can exercise them in real usage and report observed failures for targeted fixes. This is an operational trial decision, not a claim that every promotion-evidence gate has passed.
 
-## Required evidence before promotion
+## Trial policy
 
-1. CI succeeds on the exact candidate head and runs every required test suite.
-2. The new callable dialogue-turn entrypoint is bound to the actual host SARA generation/verifier callables and live dialogue loop; input and claim-candidate revisions, model/rubric versioning, failure handling, and route invocation must be independently integration-tested in deployment. The current code is an injectable runtime boundary, not proof that production providers are configured.
-3. The selective reverification runner is exercised against the injected verifier contract; successful results remain proposals until the explicit verification commit gate finds a matching proposal, current claim/evidence/verifier/contract digests, and a bound ACCEPT review event.
-4. The provenance ledger passes append, tamper detection, export/import, and semantic replay tests. Durable storage, access control, authenticated reviewer identity, signatures, and deployment-level recovery must be established for the intended deployment.
-5. Schema, code, tests, and documentation vocabulary are consistent, including the explicit verification commit gate.
-6. The Preflight cases are independently adjudicated; at least two independent reviewers record each decision and rationale, and disagreements are resolved.
-7. A frozen comparative evaluation of the v2.3 baseline, v2.4 without the JEV-style trigger, and v2.5 with the SARA-internal judgment/trigger path passes predeclared acceptance thresholds.
-8. The promotion-gate code/test, all required CI jobs, schema/version consistency, and root README/version docs are reviewed and reverified. Root README and version docs are updated to v2.5 only after all gates above pass.
+1. Do not make the full automated test suite a precondition for this user-led trial.
+2. Preserve existing v2.4 components and regression assets; v2.4 remains the rollback/comparison baseline.
+3. Record errors observed during actual use with the input shape, runtime path, exception/failure output, relevant commit, and expected behavior.
+4. Fix issues from observed evidence, then run targeted checks only when needed to reproduce or confirm a fix.
+5. Keep provider/model configuration, host dialogue-loop integration, durable provenance storage, independent benchmark adjudication, and comparative evaluation explicitly marked unverified until evidence is supplied.
+6. Do not represent an injected provider fixture, code presence, or successful import as proof of live external-provider integration or semantic claim verification.
 
-## Current evidence boundaries
+## Current status
 
-- The fixture is marked DRAFT_NOT_INDEPENDENTLY_ADJUDICATED.
-- The internal JEV-style judgment contract and inference-trigger orchestration are tested with deterministic test doubles. A new callable entrypoint (`sara_runtime.process_dialogue_turn`) and `SARA_v2.5/dialogue_runtime.py` connect judgment to claim verification when the judgment binds explicit candidate claim IDs; missing/ambiguous targets route to precheck. This proves the injected contract path only, not that a live dialogue host/model/verifier is configured. The generic evaluator adapter remains a separate prototype and is not evidence that JEV itself is externally integrated.
-- Reverification results are proposals; the explicit commit gate rejects stale digests, version drift, missing reviews, non-ACCEPT decisions, and proposals not bound to the current revision. The gate does not authenticate reviewer identities by itself.
-- The current provenance ledger is hash-chained and supports JSONL export/import and semantic replay; it is in-memory/caller-persisted, and durable storage, access control, authenticated reviewer identities, signatures, and deployment-level recovery remain outside the prototype.
-- A green CI result proves only that the executed tests passed at that head. It is not evidence of research-verification accuracy or real-world improvement.
+- User-led trial: **APPROVED**
+- Main-branch promotion: pending merge of the integration PR
+- Automated tests in this promotion step: intentionally not run per maintainer decision
+- Live host dialogue/model/verifier integration: **UNVERIFIED**
+- Independent Preflight adjudication and comparative benchmark: **NOT COMPLETED**
+- Production readiness: **UNVERIFIED**
+- Rollback/comparison baseline: **SARA v2.4**
 
-The machine-readable checklist is in promotion_evidence_template.json. Its runtime status must reflect that a callable prototype entrypoint exists but live host integration remains unverified. Missing or unverified entries must remain blockers.
-
-
-The explicit status-commit gate is available as a prototype. It only commits after a matching ACCEPT review event and matching current proposal bindings; actual reviewer authentication/authorization is an external deployment responsibility.
+This status supersedes the earlier blanket `PROMOTION_BLOCKED` label only for the limited purpose of a user-led trial. It does not waive or claim completion of production-release evidence.
