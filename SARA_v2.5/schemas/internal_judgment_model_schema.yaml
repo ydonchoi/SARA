@@ -1,0 +1,93 @@
+version: "2.5-draft"
+name: sara_internal_jev_style_judgment
+status: PROPOSED_PROTOTYPE
+scope: SARA_INTERNAL_MODEL_RUNTIME
+
+request:
+  required:
+    - request_id
+    - conversation_id
+    - turn_id
+    - content
+  optional:
+    - context
+    - reference_catalog
+    - input_revision_digest
+    - claim_candidates
+  claim_candidates:
+    type: list of objects
+    required_fields: [id, text]
+    purpose: bind the judged inference to explicit candidate claims that SARA can verify
+    ids_must_be_unique: true
+  reference_catalog:
+    type: object
+    fields:
+      premise_refs: list of known premise IDs
+      claim_refs: list of known claim IDs
+      evidence_ids: list of known evidence IDs
+      provenance_ids: list of known provenance IDs
+  digest_fields:
+    - request_id
+    - conversation_id
+    - turn_id
+    - content
+    - context
+    - reference_catalog
+    - claim_candidates
+  digest_algorithm: SHA256_CANONICAL_JSON
+  supplied_digest_must_match: true
+
+judgment:
+  status:
+    - INFERENCE_PRESENT
+    - NO_INFERENCE_DETECTED
+    - AMBIGUOUS
+  inference_types:
+    - DEDUCTIVE
+    - INDUCTIVE
+    - ABDUCTIVE
+    - CAUSAL
+    - ANALOGICAL
+    - GENERALIZATION
+    - INTERPRETIVE
+    - PREDICTIVE
+    - NORMATIVE
+    - OTHER
+    - NONE
+  confidence:
+    - HIGH
+    - MEDIUM
+    - LOW
+  required_output:
+    - request_id
+    - input_revision_digest
+    - judgment_status
+    - inference_types
+    - basis_spans
+    - rationale
+    - uncertainty_reason
+    - confidence
+    - premise_refs
+    - claim_refs
+    - evidence_ids
+    - provenance_ids
+
+activation_policy:
+  revision: sara-inference-trigger-policy-v0.1
+  actions:
+    - SARA_SELECTIVE_VERIFICATION
+    - SARA_PRECHECK_REVIEW
+    - NO_INFERENCE_TRIGGER
+  rules:
+    - INFERENCE_PRESENT_triggers_selective_verification
+    - AMBIGUOUS_or_low_confidence_routes_to_precheck
+    - failed_timeout_or_invalid_output_never_becomes_no_inference
+    - stale_input_digest_routes_to_precheck
+    - NO_INFERENCE_TRIGGER_does_not_disable_other_verification_routes
+
+invariants:
+  - judgment_is_not_evidence
+  - judgment_does_not_establish_claim_truth
+  - model_runtime_is_SARA_internal_not_external_JEV_service
+  - semantic_accuracy_requires_independent_benchmark
+  - live_dialogue_runtime_integration_must_be_verified_separately

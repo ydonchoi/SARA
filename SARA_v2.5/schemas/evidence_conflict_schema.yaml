@@ -1,0 +1,44 @@
+version: "2.5-draft"
+name: sara_evidence_conflict_adjudication
+status: PROPOSED
+
+evidence_position:
+  required:
+    - evidence_id
+    - relation
+    - evidence_status
+    - scope_key
+    - time_key
+    - source_independence_key
+  relation:
+    - SUPPORTS
+    - CHALLENGES
+    - NEUTRAL
+  evidence_status:
+    - VERIFIED
+    - PARTIALLY_VERIFIED
+    - UNVERIFIED
+    - CONTRADICTED
+
+conflict_status:
+  enum:
+    - UNASSESSED
+    - NO_CROSS_POLARITY_CONFLICT_OBSERVED
+    - POTENTIAL_CONFLICT_REVIEW
+    - UNRESOLVED_CONFLICT
+    - CONTEXTUAL_DIVERGENCE_REVIEW
+
+rules:
+  - VERIFIED_support_and_challenge_in_matching_scope_and_time_is_UNRESOLVED_CONFLICT
+  - PARTIALLY_VERIFIED_opposing_polarity_is_POTENTIAL_CONFLICT_REVIEW
+  - opposing_polarities_across_different_scope_or_time_is_CONTEXTUAL_DIVERGENCE_REVIEW
+  - UNVERIFIED_or_CONTRADICTED_evidence_item_does_not_enter_polarity_aggregation
+  - non_eligible_evidence_ids_remain_visible_in_output
+  - source_independence_is_reported_but_not_inferred_or_adjudicated_by_this_module
+  - conflict_state_does_not_promote_or_downgrade_claim_truthfulness
+  - majority_vote_resolution_is_prohibited_without_an_explicit_policy
+
+separation:
+  claim_verification_status: UNASSESSED
+  truthfulness_status: UNASSESSED
+  is_evidence: false

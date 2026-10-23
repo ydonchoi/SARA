@@ -3,7 +3,7 @@
 
 SARA (**Senior Academic Research Architect**)는 학술 연구를 단순히 요약하는 것을 넘어, 연구의 **Claim → Evidence → Method → Verification → Inference → Uncertainty** 구조를 추적하고, 필요할 경우 연구 방법의 재현 가능성과 시뮬레이션 가능성을 별도로 검토하도록 설계된 연구 분석 시스템이다.
 
-이 저장소는 SARA의 **v1.0부터 v2.4까지의 발전 과정과 버전별 산출물을 함께 보존**한다. v2.4는 Co-thoughts v2.0과 연결되는 canonical verification baseline이다.
+이 저장소는 SARA의 **v1.0부터 v2.5 프로토타입까지의 발전 과정과 버전별 산출물을 함께 보존**한다. v2.4는 Co-thoughts v2.0과 연결되는 canonical verification baseline이며, v2.5는 아직 승격 조건을 충족하지 않은 프로토타입이다.
 
 ---
 
@@ -31,9 +31,11 @@ Unless a file or directory explicitly states otherwise, the license applies to t
 | **v1.0** | 연구 문헌 분석을 위한 초기 통합 프레임워크 | 연구요약 · 방법론 · 인사이트 · 논의/리뷰 · 후속 연구 |
 | **v2.1** | 단일 Master Prompt를 계층형 모듈 구조로 분해 | MASTER · CORE · ROUTER · AGENTS · ANALYSIS · OUTPUT · SCHEMA |
 | **v2.2** | 모듈 간 실행 관계와 의존성 관리 도입 | v2.1 + SYSTEM / Dependency & Loading Architecture |
-| **v2.3** | 구조적 결함 수정 + 검증 계층 분리 + 재현/시뮬레이션 에이전트 도입 | v2.2 + A6 Simulator/Reproducer + Verification Layer Separation |\n| **v2.4** | Co-thoughts integration + premise/context/provenance verification | Knowledge Gate + Thought Gate + Premise Evaluation + Temporal/Interpretive Context + Attribution Firewall |
+| **v2.3** | 구조적 결함 수정 + 검증 계층 분리 + 재현/시뮬레이션 에이전트 도입 | v2.2 + A6 Simulator/Reproducer + Verification Layer Separation |
+| **v2.4** | Co-thoughts integration + premise/context/provenance verification + logical audit boundary | Knowledge Gate + Thought Gate + Premise Evaluation + Logical Audit / Inference Review + Temporal/Interpretive Context + Attribution Firewall |
+| **v2.5 (user-led trial)** | Claim identity/versioning + logical audit + evidence-conflict separation + SARA-internal JEV-style judgment/trigger and callable dialogue-route prototype | Internal judgment rubric/model-runtime contract + candidate-claim binding + `process_dialogue_turn` entrypoint + tests; actual host/model/verifier configuration and independent benchmark remain unverified |
 
-> 버전별 폴더는 서로 다른 설계 단계를 보존하기 위한 **versioned snapshots**이다. 현재 canonical verification baseline은 `SARA_v2.4/`이다. v2.5는 별도 개발 브랜치의 프로토타입이며, 승격 조건을 충족하고 명시적으로 승인되기 전까지 canonical 버전으로 취급하지 않는다.
+> 버전별 폴더는 서로 다른 설계 단계를 보존하기 위한 **versioned snapshots**이다. 현재 canonical verification baseline은 `SARA_v2.4/`이며, 이전 버전 폴더는 비교·이력 보존용이다.
 
 ---
 
@@ -457,40 +459,39 @@ SARA의 출력은 다음 원칙을 따른다.
 
 # 14. Versioned Directory
 
-현재 저장소의 주요 버전 보존 구조:
+현재 저장소의 버전별 산출물은 다음과 같이 구분한다.
 
 ```text
 SARA/
-├─ legacy/
-├     ├─ SARA_v1.0/
-├     ├─ SARA_v2.1/
-├     └─ SARA_v2.2
-└─ SARA_v2.3
-
+├─ SARA_v2.3/                 # 이전 아키텍처와 검증/런타임 구성요소
+├─ SARA_v2.4/                 # 현재 canonical verification baseline
+└─ SARA_v2.5/                 # 프로토타입·제안 스키마·Preflight 초안; 미출시
 ```
 
-### Canonical baseline and development status
+### Current canonical baseline
 
-**Canonical verification baseline: v2.4**
+**v2.4 — ACTIVE / INTEGRATION BASELINE**
 
-v2.5 internal inference-trigger and runtime integration work is under review in [PR #46](https://github.com/ydonchoi/SARA/pull/46). It remains a prototype; its CI results do not establish research-quality improvement or production host integration. See the [promotion readiness plan](docs/v2.5-promotion-readiness-plan.md).
+- `SARA_v2.4/sara_v24_epistemic.py`
+- `SARA_v2.4/logical_audit.py`
+- `SARA_v2.4/co_thoughts_sara_adapter.py`
 
-`SARA_v2.3/`에는 다음 계층이 포함된다.
+이 계층은 상태/참조의 구조적 검증을 제공한다. 논리적 오류의 의미론적 판정은 별도 evaluator 또는 사람의 검토를 요구한다.
 
-```text
-00_MASTER
-01_CORE
-02_ROUTER
-03_AGENTS
-04_ANALYSIS
-05_OUTPUT
-06_SCHEMA
-07_SYSTEM
+### Proposed next version
 
-SARA_v2.3_Master.md
-SARA_v2.3_Restructure.md
-README_v2.3.md
-```
+**v2.5 — PROTOTYPE / PROMOTION BLOCKED**
+
+`SARA_v2.5/`에는 다음의 초기 구현과 회귀 테스트가 포함된다.
+
+- Claim Identity & Versioning 및 검증 결과 재사용 차단
+- Evidence Conflict 상태 분리와 selective re-verification 계획·실행 adapter
+- Stub provider로 테스트한 evaluator invocation adapter (외부 JEV 연결은 미구성)
+- `sara_runtime.process_dialogue_turn(...)` → SARA 내부 JEV형 판정 → 추론 활성화 정책 → 명시된 claim candidate에 대한 검증 호출; `execute_request(...)`는 v2.4 인식론적 경계 검사를 수행하고, 명시적 구조화 그래프가 있을 때 논리 감사기를 호출. provider 실행은 기존 v2.3 계약을 유지하며, 모호하거나 대상 주장이 바인딩되지 않으면 사전 검토 경로로 라우팅
+- Hash-chained provenance ledger, explicit human-review commit gate, promotion gate
+- 23개 synthetic Preflight fixture와 독립 판정 프로토콜 초안 (12개 필수 benchmark suite를 형식상 포괄; 라벨은 아직 모두 draft)
+
+새 dialogue-route의 결정론적 contract tests를 CI에 추가했다. 다만 실제 호스트 대화 루프와 모델·검증 provider 설정은 주입 가능한 경계로만 구현되었으며, 배포 환경의 실통합 검증은 완료되지 않았다. 현재 23개 Preflight 사례는 12개 필수 suite를 형식상 포괄하지만 라벨은 아직 모두 draft이며 독립 판정을 거치지 않았다. v2.3/v2.4/v2.5 비교 벤치마크, 실제 dialogue host/model/verifier 연동, 배포용 내구성 저장소와 리뷰어 인증도 미확인이다. 따라서 v2.5는 출시·통합된 runtime baseline이 아니며 v2.4가 계속 canonical이다.
 
 ---
 
@@ -502,16 +503,8 @@ README_v2.3.md
 | **v2.1** | Modularization | Master / Core / Router / Agents / Analysis / Output / Schema |
 | **v2.2** | Systemization | Dependency Map / Loading Rules / Module Contracts / Validation |
 | **v2.3** | Verification & Execution | Verification Layer Separation / A6 / Simulation / Contract Mapping |
-| **v2.4** | Co-thoughts integration and epistemic/logical audit | Premise/context/provenance checks; canonical verification baseline |
-| **v2.5 (prototype)** | Internal inference-trigger and callable dialogue-turn prototype | Not canonical; promotion blocked pending independent evaluation and integration evidence |
-
----
-
-## Engineering Policy: Correctness First
-
-Current engineering work follows **Correctness-First, Scope-Controlled Changes**. The former “lazy coding” / minimal-diff-first priority is withdrawn wherever it conflicts with correctness, root-cause resolution, architecture, or evidence-based verification. Scope discipline remains, but necessary refactors must not be rejected merely because they are larger.
-
-See [Engineering Principles](docs/engineering-principles.md) for the governing policy, workflow, verification requirements, and review checklist. This policy is distinct from **Minimal Loading**, which controls which modules are loaded—not how little code may be changed.
+| **v2.4** | Epistemic & Logical Audit | Claim-premise state separation / structured argument audit / temporal and attribution boundaries |
+| **v2.5 (prototype)** | Claim Identity & Reverification | Claim revision binding / evidence conflict separation / callable adapters / provenance and promotion gates; not canonical |
 
 ---
 
@@ -548,6 +541,4 @@ https://github.com/ydonchoi/SARA
 
 ## Current Version
 
-**SARA v2.4 (canonical verification baseline)**
-
-v2.5 remains a prototype and is not promoted.
+**SARA v2.4**

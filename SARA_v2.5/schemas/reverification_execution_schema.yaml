@@ -1,0 +1,49 @@
+version: "2.5-draft"
+name: sara_selective_reverification_execution
+status: PROPOSED_PROTOTYPE
+
+request:
+  required:
+    - plan_status
+    - impacted_claims
+    - current_claim_revision
+    - current_evidence
+    - current_evidence_digest
+    - prior_verification_binding
+    - verifier_revision
+    - verification_contract_revision
+    - timeout_seconds
+
+accepted_plan_status:
+  - PLANNED_NOT_EXECUTED
+
+execution_status:
+  - SUCCEEDED
+  - FAILED
+  - TIMEOUT
+  - INVALID_OUTPUT
+  - INCOMPLETE
+
+response:
+  required:
+    - claim_id
+    - revision_id
+    - content_digest
+    - evidence_digest
+    - verifier_revision
+    - verification_contract_revision
+    - proposed_verification_status
+    - execution_status
+    - commit_status
+
+rules:
+  - revision_id_must_not_be_rebound_to_new_content
+  - only_claims_in_the_supplied_impact_plan_may_be_called
+  - current_claim_digest_is_recomputed
+  - current_evidence_digest_is_recomputed
+  - verifier_and_contract_revisions_must_match_request
+  - external_result_provenance_must_be_present_and_distinct_from_input_provenance
+  - failed_or_invalid_runs_preserve_prior_claim_status
+  - successful_verification_is_a_proposal_not_an_automatic_commit
+  - truthfulness_status_remains_UNASSESSED
+  - commit_status_must_remain_NOT_COMMITTED_in_this_prototype
