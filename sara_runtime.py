@@ -1,17 +1,9 @@
-"""Minimal independently callable SARA v2.3 runtime entrypoint.
+"""Callable SARA runtime with a default live Crossref verification provider.
 
-The runtime exposes the execution contract as a CLI and requires an injected
-provider callable rather than inventing an HTTP/SDK transport or verification
-algorithm.
-
-Engineering changes follow the repository's Correctness-First,
-Scope-Controlled policy in docs/engineering-principles.md: resolve root causes,
-choose the smallest sufficient correct change, preserve contracts and the v2.4
-canonical verification baseline, and report tests/integration evidence honestly.
-This policy note does not itself enforce coding-agent behavior or alter runtime
-verification semantics.
+The default provider checks DOI registration and bibliographic metadata.
+It intentionally leaves substantive claim truth UNVERIFIED unless a separate
+content-level verification path supplies sufficient evidence.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -25,12 +17,16 @@ from typing import Any, Callable, Mapping
 ROOT = Path(__file__).resolve().parent / "SARA_v2.3"
 sys.path.insert(0, str(ROOT))
 
+from a2_evidence_pipeline import A2EvidencePipeline  # noqa: E402
+from crossref_content_accessor import CrossrefContentAccessor  # noqa: E402
 from execution import (  # noqa: E402
     SARAExecutionRequest,
     SARAExecutionResponse,
     SARAExecutor,
 )
 from production_verification_backend import ProductionVerificationBackend  # noqa: E402
+
+DEFAULT_PROVIDER = "sara_crossref_provider:verify"
 
 
 class ProductionBackendAdapter:
@@ -45,6 +41,7 @@ class ProductionBackendAdapter:
                 "request_id": request.request_id,
                 "claim": request.claim,
                 "evidence": request.evidence,
+                "provenance_ids": request.provenance_ids,
                 "adapter_revision": request.adapter_revision,
                 "requested_at": request.requested_at,
                 "environment": request.environment,
@@ -100,28 +97,41 @@ def load_provider(spec: str) -> Callable[[Mapping[str, Any]], Mapping[str, Any]]
 
 def execute_request(
     payload: Mapping[str, Any],
-    provider: Callable[[Mapping[str, Any]], Mapping[str, Any]],
+    provider: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None = None,
 ) -> SARAExecutionResponse:
-    """Execute one request through the production backend and SARA facade."""
+    """Execute one request through the live provider, A2 pipeline, and SARA facade."""
     request = SARAExecutionRequest(
         request_id=str(payload.get("request_id", "")),
-        capability=str(payload.get("capability", "")),
+        capability=str(payload.get("capability", "verify_claim")),
         claim=dict(payload.get("claim") or {}),
         evidence=tuple(payload.get("evidence") or ()),
         provenance_ids=tuple(payload.get("provenance_ids") or ()),
-        adapter_revision=str(payload.get("adapter_revision", "")),
+        adapter_revision=str(payload.get("adapter_revision", "runtime-provider-v1")),
         requested_at=str(payload.get("requested_at", "")),
         environment=dict(payload.get("environment") or {}),
         review_context=payload.get("review_context"),
     )
-    backend = ProductionVerificationBackend(provider)
-    executor = SARAExecutor(ProductionBackendAdapter(backend), request.adapter_revision)
+    selected_provider = provider or load_provider(DEFAULT_PROVIDER)
+    backend = ProductionVerificationBackend(
+        selected_provider,
+        a2_pipeline=A2EvidencePipeline(),
+        content_accessor=CrossrefContentAccessor(),
+    )
+    executor = SARAExecutor(
+        ProductionBackendAdapter(backend), request.adapter_revision
+    )
     return executor.verify_claim(request)
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run one SARA v2.3 verification request.")
-    parser.add_argument("--provider", required=True, help="Provider callable as MODULE:ATTRIBUTE")
+    parser = argparse.ArgumentParser(
+        description="Run one SARA claim verification request using a live provider."
+    )
+    parser.add_argument(
+        "--provider",
+        default=DEFAULT_PROVIDER,
+        help=f"Provider callable as MODULE:ATTRIBUTE (default: {DEFAULT_PROVIDER})",
+    )
     parser.add_argument(
         "--request",
         default="-",
