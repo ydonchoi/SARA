@@ -13,7 +13,7 @@ SARA (**Senior Academic Research Architect**)는 연구의 Claim → Premise →
 | v2.1 | 모듈화 |
 | v2.2 | Dependency / Loading / Contract |
 | v2.3 | Verification Layer Separation / Reproduction / Runtime Boundary |
-| **v2.4** | **Co-thoughts Integration / Premise Evaluation / Provenance / Temporal & Interpretive Context** |
+| **v2.4** | **Co-thoughts Integration / Premise Evaluation / Provenance / Temporal & Interpretive Context / Logical Audit Boundary** |
 
 ## v2.4 Architecture
 
@@ -40,6 +40,9 @@ SARA (**Senior Academic Research Architect**)는 연구의 Claim → Premise →
                ▼
       Temporal / Interpretive
              Context
+               │
+               ▼
+       Logical Audit / Inference Review
                │
                ▼
            Verification
@@ -117,7 +120,7 @@ evidence:
 FACT / INTERPRETATION / INFERENCE / HYPOTHESIS / SIMULATION
 
 ### Verification
-VERIFIED / PARTIALLY VERIFIED / UNVERIFIED / CONTRADICTED
+VERIFIED / PARTIALLY_VERIFIED / UNVERIFIED / CONTRADICTED
 
 ### Attribution
 AUTHOR_EXPLICIT / AUTHOR_SUPPORTED / SOURCE_INFERRED / MODERN_INTERPRETATION / SPECULATIVE / UNKNOWN
@@ -162,6 +165,8 @@ SARA는 source의 역사적 시점과 현재의 해석을 분리한다.
 - POST_PUBLICATION
 - CONTEMPORARY
 
+Temporal context and attribution are independent. AUTHOR_EXPLICIT requires attributable source evidence; it is not restricted to HISTORICAL context.
+
 ### Interpretive
 - AUTHOR_EXPLICIT
 - SOURCE_GROUNDED
@@ -197,7 +202,13 @@ SOURCE_CLAIM
 
 저자의 실제 주장으로 승격하려면 source-grounded evidence가 필요하다.
 
-## 8. Provenance Event Ledger
+## 8. Logical Audit & Inference Review
+
+v2.4 includes a deterministic argument-graph boundary checker, structured finding contract, and symbolic conditional-inference checker. The graph checker verifies references and flags directed support/dependency cycles as candidates. For explicitly structured symbols, the inference checker recognizes modus ponens/modus tollens as valid forms and affirming the consequent/denying the antecedent as invalid forms. It does not parse free-form prose or establish premise truth. Broader semantic review may consider inference strength, causal inference, generalization, equivocation, non sequitur, evidence-scope mismatch, and omitted alternatives, and still requires an explicit evaluator or human review.
+
+A finding is a decision-support signal, not evidence. The field semantic_audit_status = NOT_PERFORMED must remain visible until a semantic evaluator actually runs. A structurally valid graph does not establish that its reasoning is valid.
+
+## 9. Provenance Event Ledger
 
 검증 결과와 판단 상태의 출처를 이벤트 단위로 추적한다.
 
@@ -217,7 +228,7 @@ SOURCE_CLAIM
 
 를 재구성할 수 있게 하는 것이다.
 
-## 9. Dual Verification Flow
+## 10. Dual Verification Flow
 
 ~~~text
 [Knowledge Gate]
@@ -237,7 +248,7 @@ Human ↔ Co-thoughts
 
 두 흐름은 provenance와 event lineage를 공유하지만, origin은 혼동하지 않는다.
 
-## 10. Existing v2.3 Safety Boundaries
+## 11. Existing v2.3 Safety Boundaries
 
 v2.3의 다음 경계를 그대로 유지한다.
 
@@ -250,7 +261,7 @@ v2.3의 다음 경계를 그대로 유지한다.
 - Fail-closed on verification execution failure
 - Provider boundary and provenance retention remain mandatory
 
-## 11. Jev Boundary
+## 12. Jev Boundary
 
 Jev는 deterministic verification을 대체하지 않는다.
 
@@ -265,7 +276,7 @@ Jev가 연결되는 경우:
 
 Jev의 결과는 decision-support signal이며 research evidence가 아니다.
 
-## 12. Co-thoughts Integration Contract
+## 13. Co-thoughts Integration Contract
 
 Co-thoughts는 다음 구조로 SARA를 호출할 수 있다.
 
@@ -288,7 +299,7 @@ SARA는 verification result와 provenance event를 반환한다.
 
 Co-thoughts는 이를 사고 상태에 반영할 수 있지만 **verification result 자체를 새로운 evidence로 취급하지 않는다.**
 
-## 13. Output Boundary
+## 14. Output Boundary
 
 SARA는 다음을 구분한다.
 
@@ -300,7 +311,7 @@ SARA는 다음을 구분한다.
 
 이들은 서로 승격되지 않는다.
 
-## 14. Migration from v2.3
+## 15. Migration from v2.3
 
 v2.3:
 - Claim → Evidence → Method → Verification → Inference → Uncertainty
@@ -320,22 +331,7 @@ v2.4 adds:
 
 기존 v2.3 snapshot은 보존한다.
 
-## Engineering Policy: Correctness-First, Scope-Controlled Changes
-
-현재 canonical v2.4를 포함한 SARA 개발은 **정확성 우선, 범위 통제, 증거 기반 변경**을 따른다.
-
-- 가장 작은 diff가 아니라 문제를 해결하는 최소 충분 범위를 선택한다.
-- 근본 원인을 조사하고, 증상을 숨기거나 검증을 우회하지 않는다.
-- 필요한 리팩터링은 수정량이 늘어난다는 이유만으로 거부하지 않는다.
-- Minimal Loading은 유지하되, 이를 Minimal Modify 의무로 해석하지 않는다.
-- v2.4 canonical verification baseline과 기존 검증된 동작을 보호한다.
-- v2.5 프로토타입은 독립 평가 및 통합 증거 없이 canonical 버전으로 취급하지 않는다.
-- 테스트 실행, 통합 실행, 검증 완료를 구분하고 실행하지 않은 테스트를 통과로 보고하지 않는다.
-- 변경은 요구사항·위험에 비례해 검증하며, 미확인 사항과 차단 요인을 명시한다.
-
-상세 절차와 리뷰 체크리스트: [Engineering Principles](../docs/engineering-principles.md).
-
-## 15. Current Status
+## 16. Current Status
 
 **Version: v2.4**
 **Status: ACTIVE / INTEGRATION BASELINE**
@@ -344,6 +340,24 @@ v2.4는 Co-thoughts v2.0과 연결되는 verification baseline이다.
 
 ## v2.4 Runtime Modules
 
-Implemented modules: `SARA_v2.4/sara_v24_epistemic.py`, `SARA_v2.4/co_thoughts_sara_adapter.py`.
+Runtime modules: `SARA_v2.4/sara_v24_epistemic.py`, `SARA_v2.4/logical_audit.py`, and `SARA_v2.4/co_thoughts_sara_adapter.py`.
 
-The adapter accepts Co-thoughts claims/premises but never promotes generated output to evidence. Premise verification remains independent from Claim verification.
+The epistemic module normalizes the legacy PARTIALLY VERIFIED alias to schema spelling PARTIALLY_VERIFIED; reports a review signal when a VERIFIED Claim contains a CONTRADICTED premise without silently rewriting either status; and requires resolvable source-attribution evidence for AUTHOR_EXPLICIT. The logical-audit module checks graph integrity, reports support cycles as candidates, and audits four explicitly structured conditional forms; it does not parse natural-language claims. The adapter never promotes generated output to evidence. Regression tests cover these boundaries; CI results determine whether this change is verified.
+
+
+## Callable Runtime Integration (PR #46)
+
+The repository-level `sara_runtime.execute_request(...)` entrypoint now invokes
+`CoThoughtsSARAAdapter.evaluate(...)` before calling the injected verification
+provider. The returned `sara_v24_assessment` is a separate decision-support
+field; it is not evidence and does not establish claim truthfulness.
+`AUTHOR_EXPLICIT` attribution is rejected unless referenced evidence items
+have a non-empty string `source`.
+
+The v2.4 logical-audit checker is invoked only when the caller supplies an
+explicit structured `argument_graph` with `nodes` and `edges`. Without one,
+the result is `NOT_RUN`; the runtime does not infer a graph from free-form text.
+When a graph is supplied, structural cycle findings remain candidates and
+`semantic_audit_status` remains `NOT_PERFORMED`. Provider verification still
+uses the existing injected v2.3 execution/backend contract; no provider is
+invented or configured by this adapter.
