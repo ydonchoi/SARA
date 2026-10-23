@@ -15,6 +15,10 @@ claim:
     - id
     - text
     - type
+  optional:
+    - attribution_evidence_ids
+  attribution_requirements:
+    AUTHOR_EXPLICIT_requires_at_least_one: attribution_evidence_ids
   type:
     - FACT
     - INTERPRETATION
@@ -84,3 +88,48 @@ firewall:
   - dialogue_agreement_must_not_promote_verification_status
   - checkpoint_must_not_be_used_as_evidence
   - execution_success_must_not_promote_research_verification
+
+logical_audit:
+  categories:
+    - FORMAL_VALIDITY
+    - INFERENCE_STRENGTH
+    - CAUSAL_INFERENCE
+    - GENERALIZATION
+    - CONCEPT_EQUIVOCATION
+    - CIRCULAR_REASONING
+    - NON_SEQUITUR
+    - EVIDENCE_SCOPE_MISMATCH
+    - ALTERNATIVE_EXPLANATION
+    - OTHER
+  finding_status:
+    - CANDIDATE
+    - SUBSTANTIATED
+    - REJECTED
+    - UNASSESSED
+  severity:
+    - CRITICAL
+    - MATERIAL
+    - MINOR
+    - UNASSESSED
+  boundary:
+    - structural_cycle_is_candidate_only
+    - logical_audit_output_is_not_evidence
+    - graph_integrity_does_not_establish_semantic_validity
+
+
+runtime_integration:
+  callable_entrypoint: sara_runtime.execute_request
+  epistemic_adapter: co_thoughts_sara_adapter.CoThoughtsSARAAdapter
+  logical_audit_entrypoint: logical_audit.validate_argument_graph
+  argument_graph:
+    required_fields: [nodes, edges]
+    free_form_text_parsing: NOT_SUPPORTED
+    absent_graph_status: NOT_RUN
+    malformed_graph_status: INVALID_INPUT
+  source_attribution:
+    AUTHOR_EXPLICIT_requires_nonempty_evidence_source: true
+  boundaries:
+    - v2.4_assessment_is_decision_support_not_evidence
+    - structural_cycle_is_candidate_only
+    - semantic_audit_remains_NOT_PERFORMED_without_semantic_evaluator
+    - provider_execution_uses_injected_v2_3_contract
