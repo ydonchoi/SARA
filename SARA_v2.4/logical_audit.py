@@ -1,0 +1,299 @@
+"""SARA v2.4 logical-audit contract and structural argument checks.
+
+The deterministic checks in this module validate graph integrity and flag
+support/dependency cycles for review. They do not prove a fallacy, evaluate the
+truth of a premise, or substitute for a semantic evaluator or human reviewer.
+"""
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from typing import Iterable
+
+NODE_TYPES = {"CLAIM", "PREMISE"}
+EDGE_RELATIONS = {"SUPPORTS", "CHALLENGES", "DERIVES_FROM"}
+INFERENCE_TYPES = {"DEDUCTIVE", "INDUCTIVE", "ABDUCTIVE", "CAUSAL", "ANALOGICAL", "UNKNOWN"}
+FINDING_CATEGORIES = {
+    "FORMAL_VALIDITY",
+    "INFERENCE_STRENGTH",
+    "CAUSAL_INFERENCE",
+    "GENERALIZATION",
+    "CONCEPT_EQUIVOCATION",
+    "CIRCULAR_REASONING",
+    "NON_SEQUITUR",
+    "EVIDENCE_SCOPE_MISMATCH",
+    "ALTERNATIVE_EXPLANATION",
+    "OTHER",
+}
+FINDING_STATUSES = {"CANDIDATE", "SUBSTANTIATED", "REJECTED", "UNASSESSED"}
+SEVERITIES = {"CRITICAL", "MATERIAL", "MINOR", "UNASSESSED"}
+
+
+@dataclass(frozen=True)
+class ArgumentNode:
+    node_id: str
+    node_type: str
+    text: str
+
+
+@dataclass(frozen=True)
+class ArgumentEdge:
+    edge_id: str
+    source_id: str
+    target_id: str
+    relation: str
+    inference_type: str = "UNKNOWN"
+
+
+@dataclass(frozen=True)
+class LogicalAuditFinding:
+    finding_id: str
+    target_id: str
+    category: str
+    status: str
+    severity: str = "UNASSESSED"
+    related_node_ids: tuple[str, ...] = ()
+    evidence_ids: tuple[str, ...] = ()
+    rationale: str = ""
+    counterexample_or_alternative: str = ""
+    assessor_id: str = ""
+
+
+def validate_finding(
+    finding: LogicalAuditFinding,
+    *,
+    node_ids: Iterable[str],
+    evidence_ids: Iterable[str] = (),
+) -> dict:
+    """Validate an audit record; a finding is a decision-support signal, not evidence."""
+    known_nodes = set(node_ids)
+    known_evidence = set(evidence_ids)
+    if not finding.finding_id or not finding.finding_id.strip():
+        raise ValueError("FINDING_ID_REQUIRED")
+    if finding.target_id not in known_nodes:
+        raise ValueError("FINDING_TARGET_UNKNOWN")
+    if finding.category not in FINDING_CATEGORIES:
+        raise ValueError("INVALID_LOGICAL_FINDING_CATEGORY")
+    if finding.status not in FINDING_STATUSES:
+        raise ValueError("INVALID_LOGICAL_FINDING_STATUS")
+    if finding.severity not in SEVERITIES:
+        raise ValueError("INVALID_LOGICAL_FINDING_SEVERITY")
+    if any(node_id not in known_nodes for node_id in finding.related_node_ids):
+        raise ValueError("FINDING_RELATED_NODE_UNKNOWN")
+    if any(evidence_id not in known_evidence for evidence_id in finding.evidence_ids):
+        raise ValueError("FINDING_EVIDENCE_UNKNOWN")
+    if finding.status == "SUBSTANTIATED":
+        if not finding.rationale.strip():
+            raise ValueError("SUBSTANTIATED_FINDING_REQUIRES_RATIONALE")
+        if not finding.related_node_ids and not finding.evidence_ids:
+            raise ValueError("SUBSTANTIATED_FINDING_REQUIRES_BASIS_REFERENCE")
+    result = asdict(finding)
+    result["source"] = "SARA_LOGICAL_AUDIT"
+    result["is_evidence"] = False
+    return result
+
+
+def audit_conditional_inference(
+    *,
+    antecedent: str,
+    consequent: str,
+    second_premise_proposition: str,
+    second_premise_negated: bool,
+    conclusion_proposition: str,
+    conclusion_negated: bool,
+    premise_ids: tuple[str, ...],
+    conclusion_id: str,
+) -> dict:
+    """Audit a caller-supplied symbolic conditional form, not free-form prose.
+
+    Recognized patterns:
+    - P -> Q, P, therefore Q: modus ponens (valid form)
+    - P -> Q, not Q, therefore not P: modus tollens (valid form)
+    - P -> Q, Q, therefore P: affirming the consequent (invalid form)
+    - P -> Q, not P, therefore not Q: denying the antecedent (invalid form)
+
+    Unknown/mismatched forms remain UNASSESSED. Even a valid form does not
+    establish premise truth; a detected invalid form does not establish that
+    the conclusion itself is false.
+    """
+    values = (antecedent, consequent, second_premise_proposition, conclusion_proposition)
+    if any(not isinstance(value, str) or not value.strip() for value in values):
+        raise ValueError("CONDITIONAL_INFERENCE_PROPOSITIONS_REQUIRED")
+    antecedent, consequent, second_premise_proposition, conclusion_proposition = (
+        value.strip() for value in values
+    )
+    if antecedent == consequent:
+        raise ValueError("CONDITIONAL_ANTECEDENT_AND_CONSEQUENT_MUST_DIFFER")
+    if not isinstance(second_premise_negated, bool) or not isinstance(conclusion_negated, bool):
+        raise ValueError("CONDITIONAL_NEGATION_FLAGS_MUST_BE_BOOLEAN")
+    if not isinstance(conclusion_id, str) or not conclusion_id.strip():
+        raise ValueError("CONCLUSION_ID_REQUIRED")
+    conclusion_id = conclusion_id.strip()
+    if not isinstance(premise_ids, (tuple, list)):
+        raise ValueError("CONDITIONAL_PREMISE_IDS_REQUIRED")
+    if len(premise_ids) < 2 or any(
+        not isinstance(item, str) or not item.strip() for item in premise_ids
+    ):
+        raise ValueError("CONDITIONAL_PREMISE_IDS_REQUIRED")
+    premise_ids = tuple(item.strip() for item in premise_ids)
+    if len(set(premise_ids)) != len(premise_ids) or conclusion_id in premise_ids:
+        raise ValueError("CONDITIONAL_INFERENCE_NODE_IDS_MUST_BE_UNIQUE")
+
+    pattern = "UNRECOGNIZED"
+    validity = "UNASSESSED"
+    rationale = "The supplied symbolic form does not match a recognized pattern."
+    if second_premise_proposition == antecedent and not second_premise_negated:
+        if conclusion_proposition == consequent and not conclusion_negated:
+            pattern, validity = "MODUS_PONENS", "VALID_FORM"
+            rationale = "P implies Q; P; therefore Q is a valid conditional-inference form."
+    elif second_premise_proposition == consequent and second_premise_negated:
+        if conclusion_proposition == antecedent and conclusion_negated:
+            pattern, validity = "MODUS_TOLLENS", "VALID_FORM"
+            rationale = "P implies Q; not Q; therefore not P is a valid conditional-inference form."
+    elif second_premise_proposition == consequent and not second_premise_negated:
+        if conclusion_proposition == antecedent and not conclusion_negated:
+            pattern, validity = "AFFIRMING_CONSEQUENT", "INVALID_FORM"
+            rationale = "P implies Q; Q; therefore P affirms the consequent and is not deductively valid."
+    elif second_premise_proposition == antecedent and second_premise_negated:
+        if conclusion_proposition == consequent and conclusion_negated:
+            pattern, validity = "DENYING_ANTECEDENT", "INVALID_FORM"
+            rationale = "P implies Q; not P; therefore not Q denies the antecedent and is not deductively valid."
+
+    if pattern == "UNRECOGNIZED" and conclusion_proposition not in {antecedent, consequent}:
+        rationale = "The conclusion atom is outside the supplied conditional form."
+    result = {
+        "pattern": pattern,
+        "formal_form_status": validity,
+        "premises_truth_status": "UNASSESSED",
+        "conclusion_truth_status": "UNASSESSED",
+        "semantic_natural_language_audit": "NOT_PERFORMED",
+        "is_evidence": False,
+        "source": "SARA_LOGICAL_AUDIT",
+    }
+    if validity == "INVALID_FORM":
+        finding = LogicalAuditFinding(
+            finding_id=f"{conclusion_id}-{pattern.lower()}",
+            target_id=conclusion_id,
+            category="FORMAL_VALIDITY",
+            status="SUBSTANTIATED",
+            severity="MATERIAL",
+            related_node_ids=tuple(premise_ids),
+            rationale=rationale,
+        )
+        result["finding"] = validate_finding(
+            finding,
+            node_ids=set(premise_ids) | {conclusion_id},
+        )
+    elif validity == "VALID_FORM":
+        result["rationale"] = rationale
+        result["findings"] = []
+    else:
+        result["rationale"] = rationale
+        result["review_status"] = "UNASSESSED"
+    return result
+
+
+def validate_argument_graph(
+    nodes: Iterable[ArgumentNode],
+    edges: Iterable[ArgumentEdge],
+) -> dict:
+    """Check references and return candidate findings for directed support cycles.
+
+    A cycle is a structural warning only: an evaluator must inspect the actual
+    propositions before calling it circular reasoning.
+    """
+    node_list = tuple(nodes)
+    edge_list = tuple(edges)
+    node_map = {}
+    for node in node_list:
+        if not node.node_id or not node.node_id.strip():
+            raise ValueError("ARGUMENT_NODE_ID_REQUIRED")
+        if not node.text or not node.text.strip():
+            raise ValueError("ARGUMENT_NODE_TEXT_REQUIRED")
+        if node.node_type not in NODE_TYPES:
+            raise ValueError("INVALID_ARGUMENT_NODE_TYPE")
+        if node.node_id in node_map:
+            raise ValueError("DUPLICATE_ARGUMENT_NODE_ID")
+        node_map[node.node_id] = node
+
+    edge_ids = set()
+    adjacency = {node_id: set() for node_id in node_map}
+    for edge in edge_list:
+        if not edge.edge_id or not edge.edge_id.strip():
+            raise ValueError("ARGUMENT_EDGE_ID_REQUIRED")
+        if edge.edge_id in edge_ids:
+            raise ValueError("DUPLICATE_ARGUMENT_EDGE_ID")
+        edge_ids.add(edge.edge_id)
+        if edge.source_id not in node_map or edge.target_id not in node_map:
+            raise ValueError("ARGUMENT_EDGE_REFERENCES_UNKNOWN_NODE")
+        if edge.relation not in EDGE_RELATIONS:
+            raise ValueError("INVALID_ARGUMENT_EDGE_RELATION")
+        if edge.inference_type not in INFERENCE_TYPES:
+            raise ValueError("INVALID_INFERENCE_TYPE")
+        if edge.relation in {"SUPPORTS", "DERIVES_FROM"}:
+            adjacency[edge.source_id].add(edge.target_id)
+
+    cycles = _find_cycles(adjacency)
+    candidate_findings = []
+    for index, cycle in enumerate(cycles, start=1):
+        target_id = cycle[-1]
+        finding = LogicalAuditFinding(
+            finding_id=f"STRUCTURAL-CYCLE-{index}",
+            target_id=target_id,
+            category="CIRCULAR_REASONING",
+            status="CANDIDATE",
+            severity="MATERIAL",
+            related_node_ids=tuple(cycle[:-1]),
+            rationale=(
+                "A directed support/dependency cycle exists in the graph. "
+                "This is a review candidate, not proof of a semantic fallacy."
+            ),
+        )
+        candidate_findings.append(
+            validate_finding(finding, node_ids=node_map.keys())
+        )
+
+    return {
+        "graph_status": "STRUCTURALLY_VALID",
+        "node_ids": sorted(node_map),
+        "edge_ids": sorted(edge_ids),
+        "candidate_findings": candidate_findings,
+        "semantic_audit_status": "NOT_PERFORMED",
+        "source": "SARA_LOGICAL_AUDIT",
+        "is_evidence": False,
+    }
+
+
+def _find_cycles(adjacency: dict[str, set[str]]) -> list[tuple[str, ...]]:
+    """Return deterministic simple cycles, deduplicated by member set.
+
+    Each cycle is enumerated from its lexicographically smallest member. There
+    is intentionally no global visited set: a node already explored in one
+    path can participate in another distinct cycle with a different member
+    set (for example A-B-C-A and A-C-A).
+    """
+    cycles: dict[tuple[str, ...], tuple[str, ...]] = {}
+
+    for start_id in sorted(adjacency):
+        path = [start_id]
+        active = {start_id}
+
+        def visit(node_id: str) -> None:
+            for target_id in sorted(adjacency[node_id]):
+                if target_id == start_id:
+                    cycle = tuple(path + [start_id])
+                    key = tuple(sorted(active))
+                    cycles.setdefault(key, cycle)
+                    continue
+                # Each cycle is rooted at its smallest member, avoiding
+                # rotations of the same directed cycle.
+                if target_id < start_id or target_id in active:
+                    continue
+                path.append(target_id)
+                active.add(target_id)
+                visit(target_id)
+                active.remove(target_id)
+                path.pop()
+
+        visit(start_id)
+
+    return [cycles[key] for key in sorted(cycles)]
