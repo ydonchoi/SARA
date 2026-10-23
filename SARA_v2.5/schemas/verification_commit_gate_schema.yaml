@@ -1,0 +1,54 @@
+version: "2.5-draft"
+name: sara_verification_commit_gate
+status: PROPOSED_PROTOTYPE
+
+purpose: >
+  Commit a proposed verification status only when the proposal and ACCEPT review
+  belong to the current claim revision and current evidence/verifier/contract
+  bindings. This gate does not establish truthfulness or authenticate a reviewer
+  by itself.
+
+required_inputs:
+  - current_claim_revision
+  - current_evidence
+  - proposal_event_id
+  - review_event_id
+  - verifier_revision
+  - verification_contract_revision
+  - commit_actor_id
+
+preconditions:
+  - provenance_chain_is_valid
+  - claim_revision_digest_is_recomputed
+  - current_revision_matches_ledger_latest_revision
+  - proposal_event_exists_and_matches_claim_revision
+  - proposal_content_digest_matches_current_revision
+  - proposal_evidence_digest_matches_current_evidence
+  - proposal_verifier_revision_matches_current_verifier
+  - proposal_contract_revision_matches_current_contract
+  - review_event_exists_and_matches_claim_revision
+  - review_decision_is_ACCEPT
+  - review_event_references_exact_proposal
+  - review_rationale_is_nonempty
+  - reviewer_identity_matches_configured_expected_identity_when_supplied
+
+commit_event:
+  event_type: CLAIM_STATUS_COMMITTED
+  required:
+    - verification_status
+    - review_event_id
+    - proposal_event_id
+    - reviewer_id
+    - evidence_digest
+    - verifier_revision
+    - verification_contract_revision
+
+rules:
+  - no_commit_from_evaluator_signal_alone
+  - no_commit_from_proposed_status_without_human_review
+  - no_commit_if_claim_revision_or_evidence_is_stale
+  - no_commit_if_verifier_or_contract_revision_changed
+  - no_commit_if_review_rejected_or_requests_revision
+  - claim_status_commit_does_not_set_truthfulness
+  - reviewer_authentication_and_authorization_are_external_governance
+  - commit_output_is_not_research_evidence
