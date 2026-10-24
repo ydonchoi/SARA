@@ -48,6 +48,25 @@ def test_callable_loader_rejects_malformed_specs(spec):
 def test_request_runner_requires_both_provider_callables():
     with pytest.raises(ValueError, match="SARA_JUDGMENT_GENERATOR_REQUIRED"):
         dialogue_runner.run_dialogue_request(
-            {}, judgment_generator=None, verification_provider=lambda _: {},
+            {}, judgment_generator=None,
             model_id="sara", model_revision="test-v1",
         )
+
+
+def test_verifier_is_optional_but_defaults_to_explicit_unverified_result(monkeypatch):
+    calls = {}
+
+    def process(_payload, **kwargs):
+        calls.update(kwargs)
+        return {"pipeline_status": "ROUTE_SKIPPED"}
+
+    monkeypatch.setattr(dialogue_runner, "process_dialogue_turn", process)
+    dialogue_runner.run_dialogue_request(
+        {}, judgment_generator=lambda *_: {}, model_id="sara",
+        model_revision="test-v1",
+    )
+
+    fallback = calls["verification_provider"]({"claim": {"id": "C1"}})
+    assert fallback["status"] == "FAILED"
+    assert fallback["verification_status"] == "UNVERIFIED"
+    assert fallback["findings"] == ["SOURCE_VERIFICATION_PROVIDER_NOT_CONFIGURED"]

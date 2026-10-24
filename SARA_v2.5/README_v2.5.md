@@ -272,26 +272,48 @@ the inference-triggered route. Its implementation lives in
 
 ### Command-line execution
 
-`dialogue_runner.py` is the CLI entrypoint for one dialogue turn. It accepts
-explicit provider callables using `MODULE:ATTRIBUTE`; it does not ship or
-configure a model SDK or verification service. The judgment callable signature
-is `(rubric, payload, timeout_seconds)` and the verification callable signature
-is `(payload)`. Both must return mappings accepted by their respective
-contracts.
+`dialogue_runner.py` is the CLI entrypoint for one dialogue turn. Its built-in
+`builtin:llm` judgment adapter supports OpenAI API, Anthropic Messages, Gemini
+`generateContent`, and OpenAI-compatible endpoints such as local model servers.
+The adapter uses Python's standard library; custom adapters remain available
+through `MODULE:ATTRIBUTE`.
+
+Set the provider and credentials in environment variables. Do not store API
+keys in request files or source control:
+
+```powershell
+$env:SARA_LLM_PROVIDER = "openai" # openai, anthropic, gemini, openai_compatible
+$env:SARA_LLM_MODEL = "your-model-id"
+$env:SARA_LLM_API_KEY = "your-provider-api-key"
+# Optional for OpenAI-compatible servers; local example:
+# $env:SARA_LLM_BASE_URL = "http://localhost:1234/v1"
+```
+
+Then run one turn:
 
 ```powershell
 Get-Content .\turn.json -Raw | python .\SARA_v2.5\dialogue_runner.py `
-  --judgment-provider my_sara_adapter:generate_judgment `
-  --verification-provider my_sara_adapter:verify_claim `
-  --model-id sara-internal --model-revision deployment-2026-10
+  --model-id $env:SARA_LLM_MODEL --model-revision provider-configured
 ```
 
-Alternatively pass `--request .\turn.json`. Successful execution writes one
-JSON result to stdout; configuration or runtime exceptions return exit code 1
-and a structured error on stderr. The caller remains responsible for the
-provider adapters, credentials, timeout enforcement inside synchronous
-providers, and durable audit-event storage. This runner makes the route
-invocable; it is not evidence of live integration or production readiness.
+Alternatively pass `--request .\turn.json`. Add `--verification-provider
+MODULE:ATTRIBUTE` to connect a source-verification adapter. Without one, the
+route explicitly returns `UNVERIFIED` with
+`SOURCE_VERIFICATION_PROVIDER_NOT_CONFIGURED`; an LLM judgment alone is not
+source verification. Custom judgment callable signature is
+`(rubric, payload, timeout_seconds)` and custom verifier signature is
+`(payload)`. Both return mappings accepted by the SARA contracts.
+
+The built-in adapter sends turn content to the selected provider API. Provider
+accounts, API keys, data-processing terms, model access, rate limits, and actual
+production host integration remain deployment responsibilities. The consumer
+ChatGPT, Claude, or Gemini applications are not API endpoints; use the
+corresponding developer API or an OpenAI-compatible server. Successful local
+execution with stub transport does not prove live provider integration.
+
+Provider API references: [OpenAI Responses and structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs),
+[Anthropic Messages and structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs),
+and [Gemini generateContent](https://ai.google.dev/api/generate-content).
 
 ### Reproducing the contract suite
 

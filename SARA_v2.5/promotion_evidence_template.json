@@ -29,9 +29,9 @@
     "v2_5_release_status": "PROTOTYPE"
   },
   "open_blockers": [
-    "The internal JEV-style judgment and trigger now have a callable dialogue-turn entrypoint and deterministic tests, but the actual host dialogue loop and production model/verifier callables are not configured or independently integration-tested.",
+    "The internal judgment route has a generic OpenAI, Anthropic, Gemini, and OpenAI-compatible API adapter with stub-transport tests, but no live credentials/provider or production host is configured or integration-tested.",
     "Candidate-head CI evidence is pending until all source and documentation changes are complete; a green run for an earlier head cannot verify a later head.",
-    "The 23-case Preflight fixture has draft labels across the 12 required suite categories; it is not an independently adjudicated gold benchmark with two independent reviews per case.",
+    "The 23-case Preflight fixture has draft labels across the 12 required suite categories; no independent reviewers or adjudicator are assigned, so it is not an independently adjudicated benchmark.",
     "Comparative baseline evaluation and predeclared acceptance thresholds are not yet evidenced.",
     "Human reviewer authentication/authorization and a durable deployment storage policy are not yet provided.",
     "Canonical documentation must remain on v2.4 until every promotion gate passes."

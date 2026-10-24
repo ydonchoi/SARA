@@ -33,7 +33,7 @@ Unless a file or directory explicitly states otherwise, the license applies to t
 | **v2.2** | 모듈 간 실행 관계와 의존성 관리 도입 | v2.1 + SYSTEM / Dependency & Loading Architecture |
 | **v2.3** | 구조적 결함 수정 + 검증 계층 분리 + 재현/시뮬레이션 에이전트 도입 | v2.2 + A6 Simulator/Reproducer + Verification Layer Separation |
 | **v2.4** | Co-thoughts integration + premise/context/provenance verification + logical audit boundary | Knowledge Gate + Thought Gate + Premise Evaluation + Logical Audit / Inference Review + Temporal/Interpretive Context + Attribution Firewall |
-| **v2.5 (user-led trial)** | Claim identity/versioning + logical audit + evidence-conflict separation + SARA-internal JEV-style judgment/trigger and callable dialogue-route prototype | Internal judgment rubric/model-runtime contract + candidate-claim binding + `process_dialogue_turn` entrypoint + `SARA_v2.5/dialogue_runner.py` CLI + tests; actual host/model/verifier configuration and independent benchmark remain unverified |
+| **v2.5 (user-led trial)** | Claim identity/versioning + logical audit + evidence-conflict separation + SARA-internal JEV-style judgment/trigger and callable dialogue route | Internal judgment rubric + provider-neutral OpenAI/Anthropic/Gemini/OpenAI-compatible API adapter + `process_dialogue_turn` + CLI; production configuration and independent evaluation remain unverified |
 
 > 버전별 폴더는 서로 다른 설계 단계를 보존하기 위한 **versioned snapshots**이다. 현재 canonical verification baseline은 `SARA_v2.4/`이며, 이전 버전 폴더는 비교·이력 보존용이다.
 
@@ -491,7 +491,7 @@ SARA/
 - Hash-chained provenance ledger, explicit human-review commit gate, promotion gate
 - 23개 synthetic Preflight fixture와 독립 판정 프로토콜 초안 (12개 필수 benchmark suite를 형식상 포괄; 라벨은 아직 모두 draft)
 
-새 dialogue-route의 결정론적 contract tests를 CI에 추가했다. 다만 실제 호스트 대화 루프와 모델·검증 provider 설정은 주입 가능한 경계로만 구현되었으며, 배포 환경의 실통합 검증은 완료되지 않았다. 현재 23개 Preflight 사례는 12개 필수 suite를 형식상 포괄하지만 라벨은 아직 모두 draft이며 독립 판정을 거치지 않았다. v2.3/v2.4/v2.5 비교 벤치마크, 실제 dialogue host/model/verifier 연동, 배포용 내구성 저장소와 리뷰어 인증도 미확인이다. 따라서 v2.5는 출시·통합된 runtime baseline이 아니며 v2.4가 계속 canonical이다.
+새 dialogue-route의 결정론적 contract tests를 CI에 추가했다. 기본 판단 경로에는 OpenAI API, Anthropic Messages, Gemini generateContent 및 OpenAI-compatible 서버용 provider-neutral HTTP adapter가 구현되어 있다. 실제 provider 자격 증명과 배포 호스트 연동, source verifier 구성은 미확인이다. 현재 23개 Preflight 사례는 12개 필수 suite를 형식상 포괄하지만 라벨은 모두 draft이고 독립 리뷰어·이견 조정자가 지정되지 않았다. v2.3/v2.4/v2.5 비교 벤치마크, 배포용 내구성 저장소와 리뷰어 인증도 미확인이다. 따라서 v2.5는 출시·통합된 runtime baseline이 아니며 v2.4가 계속 canonical이다.
 
 ---
 

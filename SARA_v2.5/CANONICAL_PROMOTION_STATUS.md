@@ -17,10 +17,11 @@ The v2.5 runtime and dialogue route are present on the repository's `main` branc
 
 - User-led trial: **APPROVED**
 - Main-branch trial integration: present in the current checkout; later commits may change the exact tested head
-- Local full suite: **396 passed** on Python 3.12.14 on the local candidate branch; this does not replace hosted CI evidence bound to the exact candidate SHA
+- Local full suite: **406 passed** on Python 3.12.14 on the local candidate branch; this does not replace hosted CI evidence bound to the exact candidate SHA
+- Generic OpenAI/Anthropic/Gemini/OpenAI-compatible judgment adapter: **IMPLEMENTED; tested with stub transports; no live credentials/provider configured**
 - Live host dialogue/model/verifier integration: **UNVERIFIED**
 - Live Crossref request in this environment: **FAILED with URLError; retained as UNVERIFIED**
-- Independent Preflight adjudication and comparative benchmark: **NOT COMPLETED**
+- Independent reviewers/adjudicator: **NOT ASSIGNED**; Preflight adjudication and comparative benchmark: **NOT COMPLETED**
 - Production readiness: **UNVERIFIED**
 - Rollback/comparison baseline: **SARA v2.4**
 
