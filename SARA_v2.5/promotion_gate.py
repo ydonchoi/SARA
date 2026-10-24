@@ -14,6 +14,7 @@ REQUIRED_CI_SUITES = {
     "external_execution_contracts",
     "content_access",
     "review_resolution_provenance",
+    "v23_callable_boundary",
     "v24_epistemic_logical_audit",
     "v24_runtime_integration",
     "v25_claim_identity_conflict",
