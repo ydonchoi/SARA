@@ -1,544 +1,111 @@
 # SARA
-## Evidence-Centered Research Analysis & Simulation System
 
-SARA (**Senior Academic Research Architect**)는 학술 연구를 단순히 요약하는 것을 넘어, 연구의 **Claim → Evidence → Method → Verification → Inference → Uncertainty** 구조를 추적하고, 필요할 경우 연구 방법의 재현 가능성과 시뮬레이션 가능성을 별도로 검토하도록 설계된 연구 분석 시스템이다.
+**Evidence-Centered Research Analysis & Epistemic Verification System**
 
-이 저장소는 SARA의 **v1.0부터 v2.5 프로토타입까지의 발전 과정과 버전별 산출물을 함께 보존**한다. v2.4는 Co-thoughts v2.0과 연결되는 canonical verification baseline이며, v2.5는 아직 승격 조건을 충족하지 않은 프로토타입이다.
+SARA는 연구 주장을 근거·방법·출처와 연결해 검토하고, 검증 상태와 불확실성을 분리해 기록하는 연구 분석 시스템입니다. 저장소에는 버전별 설계 문서, Python 실행 모듈, 계약 테스트가 함께 있습니다.
 
----
+> **현재 상태:** v2.4는 canonical verification baseline입니다. v2.5는 maintainer의 제한된 operational trial을 위해 `main`에 제공되는 프로토타입이며, production readiness와 승격 근거는 아직 확인되지 않았습니다.
 
-## License
+## 무엇을 하는가
 
-This repository is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license.
+- Claim, premise, evidence, source, provenance 사이의 참조와 경계를 추적합니다.
+- 시스템 실행 검증과 연구 내용 검증을 구분합니다.
+- 검증 결과, 인용 정보, 논리 검토, 판단 신호를 서로 다른 상태로 유지합니다.
+- 명시적으로 제공된 주장 후보를 대상으로 선택적 검토와 재검증 흐름을 구성합니다.
+- 결정론적 계약 테스트로 입력·출력 및 실패 경계를 확인합니다.
 
-In brief, you may copy, share, adapt, and build upon the repository's original material for **non-commercial purposes**, provided that you give appropriate attribution, link to the license, and indicate changes.
+SARA의 구조적·계약 검사는 의미론적 사실 판정이나 독립적인 학술 리뷰를 대신하지 않습니다. `VERIFIED`는 해당 검증 경로의 제한된 결과이며, 그 자체로 주장의 진실성이 확립됐다는 뜻은 아닙니다.
 
-**Commercial use is not permitted under this license without separate permission from the copyright holder.**
+## 버전과 현재 상태
 
-- Full license: https://creativecommons.org/licenses/by-nc/4.0/legalcode
-- License deed: https://creativecommons.org/licenses/by-nc/4.0/
-- SPDX: `CC-BY-NC-4.0`
-- See [LICENSE](LICENSE) for the repository's license notice.
-
-Unless a file or directory explicitly states otherwise, the license applies to the original material in this repository. Third-party materials and dependencies remain subject to their respective licenses.
-
----
-
-## 1. Version Overview
-
-| Version | 핵심 변화 | 주요 구조 |
+| 버전 | 역할 | 상태 |
 |---|---|---|
-| **v1.0** | 연구 문헌 분석을 위한 초기 통합 프레임워크 | 연구요약 · 방법론 · 인사이트 · 논의/리뷰 · 후속 연구 |
-| **v2.1** | 단일 Master Prompt를 계층형 모듈 구조로 분해 | MASTER · CORE · ROUTER · AGENTS · ANALYSIS · OUTPUT · SCHEMA |
-| **v2.2** | 모듈 간 실행 관계와 의존성 관리 도입 | v2.1 + SYSTEM / Dependency & Loading Architecture |
-| **v2.3** | 구조적 결함 수정 + 검증 계층 분리 + 재현/시뮬레이션 에이전트 도입 | v2.2 + A6 Simulator/Reproducer + Verification Layer Separation |
-| **v2.4** | Co-thoughts integration + premise/context/provenance verification + logical audit boundary | Knowledge Gate + Thought Gate + Premise Evaluation + Logical Audit / Inference Review + Temporal/Interpretive Context + Attribution Firewall |
-| **v2.5 (user-led trial)** | Claim identity/versioning + logical audit + evidence-conflict separation + SARA-internal JEV-style judgment/trigger and callable dialogue route | Internal judgment rubric + provider-neutral OpenAI/Anthropic/Gemini/OpenAI-compatible API adapter + `process_dialogue_turn` + CLI; production configuration and independent evaluation remain unverified |
+| v1.0 | 초기 연구 분석 프레임워크 | 보존된 이력 |
+| v2.1 | 분석 모듈화 | 보존된 이력 |
+| v2.2 | 의존성·로딩·계약 관리 | 보존된 이력 |
+| v2.3 | 실행 경계, evidence 검증, 재현/시뮬레이션 구분 | 호환성과 실행 기반 |
+| **v2.4** | Claim/premise 상태, provenance, attribution, temporal context, 구조화 argument audit | **canonical baseline** |
+| **v2.5** | Claim identity, evidence conflict, provenance ledger, selective reverification, 내부 판단 경로와 CLI | **operational trial; 승격·운영 준비 미확인** |
 
-> 버전별 폴더는 서로 다른 설계 단계를 보존하기 위한 **versioned snapshots**이다. 현재 canonical verification baseline은 `SARA_v2.4/`이며, 이전 버전 폴더는 비교·이력 보존용이다.
+v2.5의 provider-neutral 판단 adapter는 OpenAI API, Anthropic Messages, Gemini `generateContent`, OpenAI-compatible endpoint 형식을 지원합니다. 저장소 테스트는 stub transport를 사용하며, 실제 계정·API key·서비스 연결이 설정됐다는 뜻은 아닙니다. 소비자용 ChatGPT, Claude, Gemini 앱의 내부 대화 흐름에도 자동 연결되지 않습니다.
 
----
+## 빠른 시작
 
-# 2. Evolution
+### 요구 사항
 
-## v1.0 — Initial Research Analysis Framework
+- Python 3.12 권장
+- 테스트 실행에는 저장소 루트의 `requirements-test.txt`에 고정된 pytest가 필요합니다.
 
-SARA v1.0은 연구 문헌을 분석하기 위한 초기 형태로, 연구 결과를 여러 분석 산출물로 분리하여 관리하는 접근을 취했다.
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements-test.txt
+python -m pytest -q
+```
 
-### 주요 산출물
+macOS/Linux에서는 가상환경을 `. .venv/bin/activate`로 활성화합니다. 별도 Python 패키지 배포물은 제공하지 않습니다.
 
-- 연구 요약
-- 연구 방법론 심화
-- 인사이트
-- 논의 및 리뷰
-- 후속 연구 주제 발굴
-- 후속 연구 계획
+### v2.5 대화 입력 실행
 
-### v1.0의 성격
+한 번의 대화 turn을 처리하는 CLI는 `SARA_v2.5/dialogue_runner.py`입니다. 입력에는 `request_id`, `conversation_id`, `turn_id`, `content`, 그리고 명시적인 `claim_candidates`가 필요합니다. 판단용 LLM은 환경변수로 설정하고, 실제 source 검증기는 별도 provider callable로 주입합니다.
 
-v1.0은 현재의 모듈형 시스템이라기보다 **연구 분석 작업을 위한 통합형 분석 프레임워크**에 가깝다.
+```powershell
+$env:SARA_LLM_PROVIDER = "openai" # anthropic, gemini, openai_compatible도 지원
+$env:SARA_LLM_MODEL = "your-model-id"
+$env:SARA_LLM_API_KEY = "your-api-key"
+Get-Content .\turn.json -Raw | python .\SARA_v2.5\dialogue_runner.py `
+  --model-revision configured-provider
+```
 
-현재 저장소에서는 다음 경로에 보존되어 있다.
+API key를 요청 JSON, 소스 파일, 커밋에 넣지 마세요. source verifier를 설정하지 않으면 결과는 `UNVERIFIED`로 남습니다. 입력 예시와 전체 provider 설정은 [v2.5 사용 안내](SARA_v2.5/README_v2.5.md)를 참고하세요.
+
+### JSONL 실행기
+
+`SARA_v2.5/executor.py`는 provider module을 명시해 여러 요청을 한 줄에 하나씩 처리하는 host-neutral 실행기입니다.
+
+```sh
+python SARA_v2.5/executor.py --provider package.module
+```
+
+provider module 계약, 입력 형식, 결과 상태는 [실행기 안내](SARA_v2.5/EXECUTOR.md)에 있습니다. 판단 callable과 source verification callable이 필요하며, 실행기만으로 provider나 검증 서비스가 구성되지는 않습니다.
+
+## 설계상 경계
+
+- **판단은 근거가 아닙니다.** LLM의 추론·분류 결과는 evidence나 검증 상태로 승격되지 않습니다.
+- **출처 검색은 검증이 아닙니다.** 검색 결과나 DOI 서지정보만으로 원문 내용 또는 주장의 진실성을 확인한 것으로 보지 않습니다.
+- **검증 상태와 진실성은 별개입니다.** 각 결과는 어떤 자료와 범위를 확인했는지 함께 해석해야 합니다.
+- **구조 검사와 의미 검토는 별개입니다.** v2.4 논리 감사는 명시적으로 입력된 argument graph를 구조적으로 검사합니다. 자유 형식 문장의 논리를 자동으로 완전 판정하지 않습니다.
+- **시뮬레이션은 재현이 아닙니다.** 가상 데이터 실행은 원 연구 결과의 확인 근거가 아닙니다.
+- **실서비스 운영 근거가 필요합니다.** 배포 provider, 지속 저장소, 접근 제어, 독립 benchmark와 host 연동은 별도 평가 대상입니다.
+
+## 저장소 구성
 
 ```text
-SARA_v1.0/
-├─ 1. 연구요약_1229
-├─ 2. 연구방법론 심화_1229.methodology
-├─ 3. 인사이트_1229
-├─ 4. 논의(리뷰)_1229
-├─ 4-1. 후속 연구 주제 발굴 심층보고서_1229
-└─ 후속 연구 계획서_1229
+SARA_v2.3/   호환 실행 계약과 evidence 검증 모듈
+SARA_v2.4/   canonical epistemic baseline과 구조화 논리 감사
+SARA_v2.5/   trial runtime, provider adapter, executor, 재검증·승격 프로토타입
+SARA_v1.0/   초기 연구 분석 산출물
+SARA_v2.1/   모듈형 architecture 문서
+SARA_v2.2/   dependency와 loading architecture 문서
+README.md    저장소 개요와 시작 안내
+requirements-test.txt
+              테스트 의존성
 ```
 
----
+## 문서와 테스트
 
-# 3. v2.1 — Modular Architecture
+- [v2.4 상세 설명](SARA_v2.4/README_v2.4.md)
+- [v2.5 상세 설명과 사용 예시](SARA_v2.5/README_v2.5.md)
+- [JSONL 실행기 계약](SARA_v2.5/EXECUTOR.md)
+- [테스트 환경 및 명령](SARA_v2.5/TESTING.md)
+- [현재 v2.5 operational trial 상태](SARA_v2.5/CANONICAL_PROMOTION_STATUS.md)
+- [v2.5 승격 준비 기준](docs/v2.5-promotion-readiness-plan.md)
+- [v2.4 regression baseline 정책](docs/v2.4-regression-baseline.md)
 
-v2.1에서는 SARA가 하나의 거대한 Master Prompt에 의존하는 방식에서 벗어나 **계층형 모듈 시스템**으로 재설계되었다.
+Pull request에는 변경한 계약에 대한 회귀 테스트를 포함하고, CI 결과를 확인하세요. 전체 테스트 명령은 `python -m pytest -q`입니다.
 
-핵심 분석 구조:
+## 라이선스
 
-> **Claim → Evidence → Method → Verification → Inference → Uncertainty**
+이 변경이 배포되는 revision부터 저장소의 원본 코드·프롬프트·스키마·문서·테스트 자료는 별도 표기가 없는 한 **MIT License**를 따릅니다. 상업적 이용, 수정, 재배포가 가능하며, 재배포 시 저작권 및 라이선스 고지를 포함해야 합니다. 제3자 자료와 의존성은 각자의 라이선스를 따릅니다. 자세한 범위와 전문은 [LICENSE](LICENSE)를 확인하세요.
 
-### Architecture
-
-```text
-SARA_v2.1/
-├─ 00_MASTER/
-├─ 01_CORE/
-├─ 02_ROUTER/
-├─ 03_AGENTS/
-├─ 04_ANALYSIS/
-├─ 05_OUTPUT/
-└─ 06_SCHEMA/
-```
-
-### 주요 구성
-
-#### MASTER
-시스템의 기본 정체성, 원칙, 실행 규칙을 정의한다.
-
-#### CORE
-- Identity
-- Core Principles
-- Source Policy
-- Uncertainty Policy
-
-를 담당한다.
-
-#### ROUTER
-사용자 요청을 적절한 Agent로 연결한다.
-
-| 요청 | Agent |
-|---|---|
-| `/요약` | A1 Summarizer |
-| `/검증` | A2 Investigator |
-| `/방법론` | A3 Methodologist |
-| `/인사이트` | A4 Visionary |
-| `/비평` | A5 Reviewer |
-| `/통합` | Full Pipeline |
-
-#### AGENTS
-
-- **A1 Summarizer** — 연구 구조 복원
-- **A2 Investigator** — 인용 및 근거 검증
-- **A3 Methodologist** — 방법론 정합성 감사
-- **A4 Visionary** — 연구 공백 및 후속 연구 방향
-- **A5 Reviewer** — 종합 비평
-
-#### ANALYSIS
-
-연구 매핑, citation audit, claim-evidence analysis, methodology audit, critical review, research gap 등의 분석 절차를 독립 모듈로 관리한다.
-
-#### SCHEMA
-
-연구, 주장, evidence를 구조화된 데이터 모델로 관리한다.
-
-### v2.1의 핵심 설계 원칙
-
-- 모든 파일을 매번 읽지 않는다.
-- 필요한 모듈만 최소한으로 로드한다.
-- 확인되지 않은 내용을 임의로 채우지 않는다.
-- 원문 주장과 SARA의 해석을 구분한다.
-- 사실과 추론을 구분한다.
-- 실제 재현과 시뮬레이션을 구분한다.
-- 연구 유형에 맞지 않는 변수를 강제하지 않는다.
-- 명시적인 근거 없이 정확도·재현율·신뢰도 등의 수치를 생성하지 않는다.
-
----
-
-# 4. v2.2 — Dependency & Loading Architecture
-
-v2.2에서는 v2.1의 **논리적 모듈 분리**를 한 단계 확장하여, 모듈들이 실제 실행 과정에서 어떻게 연결되고 로드되는지를 명시하기 시작했다.
-
-### 핵심 변화
-
-> **v2.1: 모듈을 분리했다.**  
-> **v2.2: 모듈의 실행 관계까지 명시했다.**
-
-### 추가된 SYSTEM Layer
-
-```text
-SARA_v2.2/
-├─ 00_MASTER/
-├─ 01_CORE/
-├─ 02_ROUTER/
-├─ 03_AGENTS/
-├─ 04_ANALYSIS/
-├─ 05_OUTPUT/
-├─ 06_SCHEMA/
-└─ 07_SYSTEM/
-   ├─ dependency_map.md
-   ├─ loading_rules.md
-   ├─ module_contracts.md
-   ├─ validation_rules.md
-   └─ architecture_audit.md
-```
-
-### 추가된 개념
-
-#### 1. Dependency Map
-각 route와 module이 요구하는 dependency를 명시한다.
-
-#### 2. Loading Rules
-필요한 파일만 로드하는 **Minimal Loading**을 실행 규칙으로 구체화한다.
-
-#### 3. Module Contracts
-각 Agent가 요구하는 입력과 산출물을 계약 형태로 정의한다.
-
-#### 4. Validation Rules
-모듈 실행 결과가 정의된 구조와 규칙을 따르는지 검증한다.
-
-#### 5. Architecture Audit
-시스템 자체의 구조적 결함을 별도로 감사한다.
-
-### v2.2의 핵심 통찰
-
-> **파일이 존재하는 것과 시스템이 파일을 사용할 수 있는 것은 다르다.**
-
-따라서 연구 내용의 정확성뿐 아니라 **시스템 내부 dependency, loading, contract, validation 자체**가 분석 대상이 되었다.
-
----
-
-# 5. v2.3 — Research Analysis & Simulation System
-
-v2.3은 v2.2 Architecture Audit에서 확인된 구조적 문제를 수정하고, 연구 방법의 **실행적 재현/시뮬레이션**을 별도의 Agent로 분리한 버전이다.
-
-### 핵심 변화
-
-1. MASTER ↔ SYSTEM 순환 dependency 제거
-2. Instruction Hierarchy 단일화
-3. Module Contract 기계화
-4. Agent → Schema → Output 매핑 명시
-5. `/통합` wildcard dependency 제거
-6. `system_verification` / `research_verification` 분리
-7. **A6 Simulator/Reproducer 신설**
-8. External Citation Verification 분리
-9. 전 route에 조건부 Confession trigger 확대
-
----
-
-## 5.1 v2.3 Architecture
-
-```text
-SYSTEM (meta/control layer)
-        │
-        ▼
-MASTER
-        │
-        ▼
-CORE
-        │
-        ▼
-ROUTER
-        │
-        ├──────────────┐
-        ▼              ▼
-     AGENTS         ANALYSIS
-        │              │
-        └──────┬───────┘
-               ▼
-             SCHEMA
-               │
-               ▼
-             OUTPUT
-```
-
-SYSTEM은 콘텐츠 모듈이 아니라 **dependency / loading / validation / contract를 통제하는 meta/control layer**로 정의된다.
-
-따라서 v2.2에서 발견된 `MASTER → SYSTEM → MASTER` 순환을 제거하고 단방향 구조를 명시한다.
-
----
-
-# 6. Verification Architecture
-
-v2.3의 중요한 변화는 **시스템 자체의 검증과 연구 내용의 검증을 분리한 것**이다.
-
-### System Verification
-
-시스템이 올바르게 구성되고 실행되는지를 확인한다.
-
-```yaml
-system_verification:
-  dependency_resolution:
-  module_access:
-  loading_completeness:
-  contract_compliance:
-```
-
-### Research Verification
-
-연구 내용 자체가 어느 정도 확인되는지를 평가한다.
-
-```yaml
-research_verification:
-  source_access:
-  methodology_evidence:
-  citation_verification:
-  claim_evidence_fit:
-  reproduction_status:
-```
-
-### 핵심 규칙
-
-> **SYSTEM verification 실패가 RESEARCH verification 실패를 자동으로 의미하지 않는다.**
-
-예를 들어 특정 SARA 시스템 파일에 접근하지 못했다는 사실과 논문의 연구방법이 원문에서 확인되는지는 서로 다른 검증 층위다.
-
----
-
-# 7. A6 — Simulator / Reproducer
-
-v2.3에서 가장 큰 기능적 확장 중 하나다.
-
-기존 A3 Methodologist가 **방법론을 감사(Audit)**했다면, A6는 방법론을 **실행 관점에서 재현/시뮬레이션(Execution)**한다.
-
-| | A3 Methodologist | A6 Simulator/Reproducer |
-|---|---|---|
-| 관점 | Audit | Execution |
-| 핵심 질문 | 이 방법론은 타당한가? | 이 방법론을 실제/가상 데이터로 실행할 수 있는가? |
-| 산출물 | Methodology Audit | Dummy Data + Analysis Code + Simulation Report |
-| 원자료 | 필수 아님 | Full reproduction에는 필요 |
-| 원자료가 없을 때 | 방법론 평가 | Simulated Reproduction |
-| 검증 근거 | 방법론 분석 | **A2의 verification evidence로 인정하지 않음** |
-
-### Reproduction ≠ Simulation
-
-v2.3은 이 구분을 명시적인 시스템 원칙으로 채택한다.
-
-- **Full Reproduction** — 원자료와 실제 절차를 이용한 재현
-- **Simulated Reproduction** — 논문의 변수구조와 분석방법을 반영한 가상 데이터 실행
-- **Reproduction Unavailable** — 필요한 자료가 없어 실행 자체가 불가능한 경우
-
-시뮬레이션 결과는 실제 논문의 결과를 검증한 것으로 취급하지 않는다.
-
----
-
-# 8. v2.3 Agent Architecture
-
-| Agent | 역할 | 주요 산출물 |
-|---|---|---|
-| A1 | Structural Research Summarizer | 연구 구조 요약 |
-| A2 | Citation & Evidence Verifier | Verification Report |
-| A3 | Methodology Auditor | Methodology Audit |
-| A4 | Research Gap & Vision Generator | Research Gap / Vision |
-| A5 | Critical Reviewer | Critical Review |
-| **A6** | **Simulator / Reproducer** | **Simulation Report** |
-
-### Agent → Schema → Output
-
-```text
-A1 → research_schema → agent_report
-A2 → claim_schema + evidence_schema → verification
-A3 → research_schema + methodology_audit → agent_report
-A4 → uncertainty + research_gap → agent_report
-A5 → claim_schema + evidence_schema → agent_report
-A6 → research_schema + simulation_schema → simulation_report
-```
-
-이 명시적 mapping을 통해 Agent가 어떤 Schema를 사용하고 어떤 Output으로 연결되는지 추적할 수 있다.
-
----
-
-# 9. v2.3 Routing
-
-| Trigger | Route |
-|---|---|
-| `/요약` | A1 |
-| `/검증` | A2 |
-| `/방법론` | A3 |
-| `/재현` | A6 |
-| `/시뮬레이션` | A6 |
-| `/인사이트` | A4 |
-| `/비평` | A5 |
-| `/통합` | Default Full Pipeline |
-
-A6는 기본 통합 pipeline에 무조건 포함되지 않는다. 사용자가 재현 또는 시뮬레이션을 요청한 경우에 선택적으로 활성화한다.
-
----
-
-# 10. Default Workflow
-
-```text
-1. Research Mapping
-        ↓
-2. Summary
-        ↓
-3. Verification
-        ↓
-4. Methodology Audit
-        ↓
-5. [Optional] Reproduction / Simulation
-        ↓
-6. Claim–Evidence Matrix
-        ↓
-7. Critical Review
-        ↓
-8. Research Gap / Vision
-        ↓
-9. Uncertainty Audit
-        ↓
-10. Executive Synthesis
-```
-
-핵심 원칙은 **No Blind Loading**이다. 요청과 관계없는 모듈은 불필요하게 실행하지 않는다.
-
----
-
-# 11. Information Boundary
-
-SARA는 정보의 인식론적 상태를 명시적으로 구분한다.
-
-| Status | 의미 |
-|---|---|
-| `VERIFIED` | 직접 확인됨 |
-| `PARTIALLY VERIFIED` | 일부 확인됨 |
-| `INFERRED` | 근거로부터 합리적으로 추론 |
-| `HYPOTHESIZED` | 검증 전 가설 |
-| `UNVERIFIED` | 확인할 수 없음 |
-| `CONTRADICTED` | 신뢰할 수 있는 근거와 충돌 |
-
-또한 내용의 성격을 다음과 같이 분리한다.
-
-- **FACT**
-- **INFERENCE**
-- **HYPOTHESIS**
-- **SPECULATION**
-
----
-
-# 12. Source & Evidence Policy
-
-기본적인 source hierarchy:
-
-1. **Primary Source** — 분석 대상 원문
-2. **Official / Original Academic Source**
-3. **Review / Secondary Academic Source**
-4. **General Web**
-
-외부 검색은 다음과 같은 경우에 한해 수행한다.
-
-- 인용문헌의 존재 및 서지정보 확인
-- 원문만으로 사실 확인이 불가능한 경우
-- 최신 연구·정책·통계 확인
-- 경쟁 가설 또는 반대 증거 확인
-- 사용자가 외부 검증을 요청한 경우
-
-핵심 verification sequence:
-
-```text
-Existence
-    ↓
-Bibliographic Accuracy
-    ↓
-Content
-    ↓
-Citation Fit
-    ↓
-Evidence Strength
-```
-
----
-
-# 13. Output Principles
-
-SARA의 출력은 다음 원칙을 따른다.
-
-- 기본 언어: 한국어
-- 핵심 academic terminology: English 병기
-- Markdown / Obsidian-compatible 구조
-- 외부 자료는 가능한 경우 APA 7 reference로 기록
-- 핵심 주장과 evidence의 관계를 명시
-- 확인되지 않은 내용을 확인된 사실처럼 표현하지 않음
-- 저자의 주장과 SARA의 해석을 분리
-- 실제 재현과 시뮬레이션을 분리
-- 근거 없는 정량 점수를 생성하지 않음
-- 불확실성을 숨기지 않고 별도로 기록
-
----
-
-# 14. Versioned Directory
-
-현재 저장소의 버전별 산출물은 다음과 같이 구분한다.
-
-```text
-SARA/
-├─ SARA_v2.3/                 # 이전 아키텍처와 검증/런타임 구성요소
-├─ SARA_v2.4/                 # 현재 canonical verification baseline
-└─ SARA_v2.5/                 # 프로토타입·제안 스키마·Preflight 초안; 미출시
-```
-
-### Current canonical baseline
-
-**v2.4 — ACTIVE / INTEGRATION BASELINE**
-
-- `SARA_v2.4/sara_v24_epistemic.py`
-- `SARA_v2.4/logical_audit.py`
-- `SARA_v2.4/co_thoughts_sara_adapter.py`
-
-이 계층은 상태/참조의 구조적 검증을 제공한다. 논리적 오류의 의미론적 판정은 별도 evaluator 또는 사람의 검토를 요구한다.
-
-### Proposed next version
-
-**v2.5 — PROTOTYPE / PROMOTION BLOCKED**
-
-`SARA_v2.5/`에는 다음의 초기 구현과 회귀 테스트가 포함된다.
-
-- Claim Identity & Versioning 및 검증 결과 재사용 차단
-- Evidence Conflict 상태 분리와 selective re-verification 계획·실행 adapter
-- Stub provider로 테스트한 evaluator invocation adapter (외부 JEV 연결은 미구성)
-- `sara_runtime.process_dialogue_turn(...)` → SARA 내부 JEV형 판정 → 추론 활성화 정책 → 명시된 claim candidate에 대한 검증 호출; `execute_request(...)`는 v2.4 인식론적 경계 검사를 수행하고, 명시적 구조화 그래프가 있을 때 논리 감사기를 호출. provider 실행은 기존 v2.3 계약을 유지하며, 모호하거나 대상 주장이 바인딩되지 않으면 사전 검토 경로로 라우팅
-- Hash-chained provenance ledger, explicit human-review commit gate, promotion gate
-- 23개 synthetic Preflight fixture와 독립 판정 프로토콜 초안 (12개 필수 benchmark suite를 형식상 포괄; 라벨은 아직 모두 draft)
-
-새 dialogue-route의 결정론적 contract tests를 CI에 추가했다. 기본 판단 경로에는 OpenAI API, Anthropic Messages, Gemini generateContent 및 OpenAI-compatible 서버용 provider-neutral HTTP adapter가 구현되어 있다. 실제 provider 자격 증명과 배포 호스트 연동, source verifier 구성은 미확인이다. 현재 23개 Preflight 사례는 12개 필수 suite를 형식상 포괄하지만 라벨은 모두 draft이고 독립 리뷰어·이견 조정자가 지정되지 않았다. v2.3/v2.4/v2.5 비교 벤치마크, 배포용 내구성 저장소와 리뷰어 인증도 미확인이다. 따라서 v2.5는 출시·통합된 runtime baseline이 아니며 v2.4가 계속 canonical이다.
-
----
-
-# 15. Version History
-
-| Version | Architectural Focus | Major Addition |
-|---|---|---|
-| **v1.0** | Integrated research analysis | 연구요약·방법론·인사이트·리뷰·후속 연구 |
-| **v2.1** | Modularization | Master / Core / Router / Agents / Analysis / Output / Schema |
-| **v2.2** | Systemization | Dependency Map / Loading Rules / Module Contracts / Validation |
-| **v2.3** | Verification & Execution | Verification Layer Separation / A6 / Simulation / Contract Mapping |
-| **v2.4** | Epistemic & Logical Audit | Claim-premise state separation / structured argument audit / temporal and attribution boundaries |
-| **v2.5 (prototype)** | Claim Identity & Reverification | Claim revision binding / evidence conflict separation / callable adapters / provenance and promotion gates; not canonical |
-
----
-
-## 16. Design Philosophy
-
-SARA의 발전은 단순한 기능 추가의 연속이라기보다 다음과 같은 **구조적 이동**으로 볼 수 있다.
-
-```text
-v1.0
-연구를 분석한다
-        ↓
-v2.1
-분석 과정을 모듈화한다
-        ↓
-v2.2
-모듈의 실행 관계를 관리한다
-        ↓
-v2.3
-시스템 검증과 연구 검증을 분리하고
-방법론의 실행 가능성까지 다룬다
-```
-
-즉, SARA는
-
-> **Research Analysis → Modular Research Architecture → Executable Research Architecture → Evidence-Centered Analysis & Simulation**
-
-의 방향으로 확장되었다.
-
----
-
-## Repository
-
-https://github.com/ydonchoi/SARA
-
-## Current Version
-
-**SARA v2.4**
+이전 revision은 당시 표시된 **CC BY-NC 4.0** 조건으로 이미 허가된 이용 권리를 유지합니다. 이 전환은 이전 배포본에 부여된 라이선스를 철회하지 않습니다.
