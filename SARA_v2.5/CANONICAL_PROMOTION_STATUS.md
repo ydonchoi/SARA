@@ -17,7 +17,7 @@ The v2.5 runtime and dialogue route are present on the repository's `main` branc
 
 - User-led trial: **APPROVED**
 - Main-branch trial integration: present in the current checkout; later commits may change the exact tested head
-- Local full suite: **396 passed** on Python 3.12.14 for the current worktree; this does not replace CI evidence bound to the exact candidate SHA
+- Local full suite: **396 passed** on Python 3.12.14 on the local candidate branch; this does not replace hosted CI evidence bound to the exact candidate SHA
 - Live host dialogue/model/verifier integration: **UNVERIFIED**
 - Live Crossref request in this environment: **FAILED with URLError; retained as UNVERIFIED**
 - Independent Preflight adjudication and comparative benchmark: **NOT COMPLETED**
