@@ -270,6 +270,41 @@ v2.4 remains canonical.
 the inference-triggered route. Its implementation lives in
 `SARA_v2.5/dialogue_runtime.py`.
 
+### Command-line execution
+
+`dialogue_runner.py` is the CLI entrypoint for one dialogue turn. It accepts
+explicit provider callables using `MODULE:ATTRIBUTE`; it does not ship or
+configure a model SDK or verification service. The judgment callable signature
+is `(rubric, payload, timeout_seconds)` and the verification callable signature
+is `(payload)`. Both must return mappings accepted by their respective
+contracts.
+
+```powershell
+Get-Content .\turn.json -Raw | python .\SARA_v2.5\dialogue_runner.py `
+  --judgment-provider my_sara_adapter:generate_judgment `
+  --verification-provider my_sara_adapter:verify_claim `
+  --model-id sara-internal --model-revision deployment-2026-10
+```
+
+Alternatively pass `--request .\turn.json`. Successful execution writes one
+JSON result to stdout; configuration or runtime exceptions return exit code 1
+and a structured error on stderr. The caller remains responsible for the
+provider adapters, credentials, timeout enforcement inside synchronous
+providers, and durable audit-event storage. This runner makes the route
+invocable; it is not evidence of live integration or production readiness.
+
+### Reproducing the contract suite
+
+From the repository root, with Python 3.12 and `pytest` installed, run:
+
+```powershell
+python -m pytest -q
+```
+
+The suite uses deterministic provider fixtures except for the explicitly
+marked Crossref live probe. That probe records unavailable network access as
+`UNVERIFIED`; a passing suite therefore does not certify live source access.
+
 ```text
 Dialogue turn + explicit claim candidates
                  |

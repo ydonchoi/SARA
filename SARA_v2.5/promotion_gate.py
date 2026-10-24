@@ -30,6 +30,8 @@ REQUIRED_CI_SUITES = {
     "v25_inference_trigger",
     "v25_inference_pipeline",
     "v25_dialogue_runtime",
+    "v25_dialogue_runner",
+    "v25_promotion_config_consistency",
 }
 REQUIRED_BENCHMARK_SUITES = {
     "v24_runtime_integration",

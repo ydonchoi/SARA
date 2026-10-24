@@ -2,7 +2,7 @@
 
 **Decision: USER-LED TRIAL APPROVED; PRODUCTION READINESS UNVERIFIED.**
 
-The repository's v2.5 runtime and dialogue route are being promoted to the main branch so the maintainer can exercise them in real usage and report observed failures for targeted fixes. This is an operational trial decision, not a claim that every promotion-evidence gate has passed.
+The v2.5 runtime and dialogue route are present on the repository's `main` branch for maintainer-led operational trial. This is an operational trial decision, not a canonical release or a claim that every promotion-evidence gate has passed.
 
 ## Trial policy
 
@@ -16,9 +16,10 @@ The repository's v2.5 runtime and dialogue route are being promoted to the main 
 ## Current status
 
 - User-led trial: **APPROVED**
-- Main-branch promotion: pending merge of the integration PR
-- Automated tests in this promotion step: intentionally not run per maintainer decision
+- Main-branch trial integration: present in the current checkout; later commits may change the exact tested head
+- Local full suite: **396 passed** on Python 3.12.14 for the current worktree; this does not replace CI evidence bound to the exact candidate SHA
 - Live host dialogue/model/verifier integration: **UNVERIFIED**
+- Live Crossref request in this environment: **FAILED with URLError; retained as UNVERIFIED**
 - Independent Preflight adjudication and comparative benchmark: **NOT COMPLETED**
 - Production readiness: **UNVERIFIED**
 - Rollback/comparison baseline: **SARA v2.4**
