@@ -23,6 +23,9 @@ jobs:
       - id: review_resolution_provenance
         name: Run P18 review resolution provenance tests
         run: python -m pytest tests/test_review_resolution_provenance.py -q
+      - id: v23_callable_boundary
+        name: Run SARA v2.3 callable boundary regression tests
+        run: python -m pytest SARA_v2.3/07_SYSTEM/test_sara_callable.py -q
       - id: v24_epistemic_logical_audit
         name: Run SARA v2.4 epistemic and logical-audit tests
         run: python -m pytest SARA_v2.4/tests/test_epistemic.py SARA_v2.4/tests/test_logical_audit.py -q
