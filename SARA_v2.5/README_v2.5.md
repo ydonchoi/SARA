@@ -270,6 +270,63 @@ v2.4 remains canonical.
 the inference-triggered route. Its implementation lives in
 `SARA_v2.5/dialogue_runtime.py`.
 
+### Command-line execution
+
+`dialogue_runner.py` is the CLI entrypoint for one dialogue turn. Its built-in
+`builtin:llm` judgment adapter supports OpenAI API, Anthropic Messages, Gemini
+`generateContent`, and OpenAI-compatible endpoints such as local model servers.
+The adapter uses Python's standard library; custom adapters remain available
+through `MODULE:ATTRIBUTE`.
+
+Set the provider and credentials in environment variables. Do not store API
+keys in request files or source control:
+
+```powershell
+$env:SARA_LLM_PROVIDER = "openai" # openai, anthropic, gemini, openai_compatible
+$env:SARA_LLM_MODEL = "your-model-id"
+$env:SARA_LLM_API_KEY = "your-provider-api-key"
+# Optional for OpenAI-compatible servers; local example:
+# $env:SARA_LLM_BASE_URL = "http://localhost:1234/v1"
+```
+
+Then run one turn:
+
+```powershell
+Get-Content .\turn.json -Raw | python .\SARA_v2.5\dialogue_runner.py `
+  --model-id $env:SARA_LLM_MODEL --model-revision provider-configured
+```
+
+Alternatively pass `--request .\turn.json`. Add `--verification-provider
+MODULE:ATTRIBUTE` to connect a source-verification adapter. Without one, the
+route explicitly returns `UNVERIFIED` with
+`SOURCE_VERIFICATION_PROVIDER_NOT_CONFIGURED`; an LLM judgment alone is not
+source verification. Custom judgment callable signature is
+`(rubric, payload, timeout_seconds)` and custom verifier signature is
+`(payload)`. Both return mappings accepted by the SARA contracts.
+
+The built-in adapter sends turn content to the selected provider API. Provider
+accounts, API keys, data-processing terms, model access, rate limits, and actual
+production host integration remain deployment responsibilities. The consumer
+ChatGPT, Claude, or Gemini applications are not API endpoints; use the
+corresponding developer API or an OpenAI-compatible server. Successful local
+execution with stub transport does not prove live provider integration.
+
+Provider API references: [OpenAI Responses and structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs),
+[Anthropic Messages and structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs),
+and [Gemini generateContent](https://ai.google.dev/api/generate-content).
+
+### Reproducing the contract suite
+
+From the repository root, with Python 3.12 and `pytest` installed, run:
+
+```powershell
+python -m pytest -q
+```
+
+The suite uses deterministic provider fixtures except for the explicitly
+marked Crossref live probe. That probe records unavailable network access as
+`UNVERIFIED`; a passing suite therefore does not certify live source access.
+
 ```text
 Dialogue turn + explicit claim candidates
                  |

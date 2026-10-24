@@ -71,3 +71,12 @@ jobs:
       - id: v25_dialogue_runtime
         name: Test callable dialogue-to-verification runtime integration
         run: python -m pytest SARA_v2.5/tests/test_dialogue_runtime.py -q
+      - id: v25_dialogue_runner
+        name: Test SARA v2.5 dialogue command-line runner
+        run: python -m pytest SARA_v2.5/tests/test_dialogue_runner.py -q
+      - id: v25_promotion_config_consistency
+        name: Verify promotion gate suite lists stay synchronized
+        run: python -m pytest SARA_v2.5/tests/test_promotion_config_consistency.py -q
+      - id: v25_generic_llm_adapter
+        name: Test generic LLM provider adapters with stub transports
+        run: python -m pytest SARA_v2.5/tests/test_llm_provider_adapter.py -q
