@@ -107,6 +107,7 @@ def test_gemini_generate_content_request_uses_json_mode_and_model_path():
     assert calls["url"].endswith("/v1beta/models/test-model:generateContent")
     assert calls["headers"]["x-goog-api-key"] == "test-secret"
     assert calls["body"]["generationConfig"]["responseMimeType"] == "application/json"
+    assert calls["body"]["generationConfig"]["responseSchema"] == {"type": "object"}
     assert calls["body"]["systemInstruction"]["parts"][0]["text"] == "Return JSON."
 
 

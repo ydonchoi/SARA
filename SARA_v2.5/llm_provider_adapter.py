@@ -198,7 +198,10 @@ class LLMProviderAdapter:
             body = {
                 "systemInstruction": {"parts": [{"text": system_prompt}]},
                 "contents": [{"role": "user", "parts": [{"text": user_text}]}],
-                "generationConfig": {"responseMimeType": "application/json"},
+                "generationConfig": {
+                    "responseMimeType": "application/json",
+                    "responseSchema": dict(output_schema),
+                },
             }
         try:
             encoded = json.dumps(body, ensure_ascii=False).encode("utf-8")
