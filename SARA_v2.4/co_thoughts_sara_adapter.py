@@ -35,6 +35,19 @@ class CoThoughtsSARAAdapter:
         evidence_items = payload.get("evidence") or []
         if not isinstance(evidence_items, (list, tuple)):
             raise ValueError("EVIDENCE_ITEMS_MUST_BE_LIST")
+        provenance_ids = payload.get("provenance_ids") or []
+        if not isinstance(provenance_ids, (list, tuple)) or any(
+            not isinstance(item, str) or not item.strip() for item in provenance_ids
+        ):
+            raise ValueError("PROVENANCE_IDS_MUST_BE_LIST_OF_NONEMPTY_STRINGS")
+        attribution_evidence_ids = claim.get("attribution_evidence_ids") or []
+        if not isinstance(attribution_evidence_ids, (list, tuple)) or any(
+            not isinstance(item, str) or not item.strip()
+            for item in attribution_evidence_ids
+        ):
+            raise ValueError(
+                "ATTRIBUTION_EVIDENCE_IDS_MUST_BE_LIST_OF_NONEMPTY_STRINGS"
+            )
         # Attribution evidence must carry an actual source; an arbitrary ID is
         # not enough to support AUTHOR_EXPLICIT attribution.
         available_evidence_ids = {
@@ -55,10 +68,8 @@ class CoThoughtsSARAAdapter:
                 attribution_status=str(claim.get("attribution_status", "UNKNOWN")),
                 temporal_status=str(claim.get("temporal_status", "CONTEMPORARY")),
                 premise_evaluations=premise_evaluations,
-                provenance_ids=tuple(payload.get("provenance_ids") or ()),
-                attribution_evidence_ids=tuple(
-                    claim.get("attribution_evidence_ids") or ()
-                ),
+                provenance_ids=tuple(provenance_ids),
+                attribution_evidence_ids=tuple(attribution_evidence_ids),
             ),
             available_evidence_ids=available_evidence_ids,
         )

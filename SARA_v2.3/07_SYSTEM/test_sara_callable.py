@@ -63,5 +63,17 @@ class CallableSARATest(unittest.TestCase):
         with self.assertRaisesRegex(SARAExecutionError, "CITATION_INVALID"):
             CallableSARA(lambda _: res)(request())
 
+    def test_succeeded_requires_result_provenance(self):
+        res = response()
+        res["external_result_provenance_ids"] = []
+        with self.assertRaisesRegex(SARAExecutionError, "PROVENANCE_REQUIRED"):
+            CallableSARA(lambda _: res)(request())
+
+    def test_invalid_citation_status_is_rejected(self):
+        res = response()
+        res["external_citation_verification"] = {"status": "ESTABLISHED"}
+        with self.assertRaisesRegex(SARAExecutionError, "CITATION_STATUS_INVALID"):
+            CallableSARA(lambda _: res)(request())
+
 if __name__ == "__main__":
     unittest.main()

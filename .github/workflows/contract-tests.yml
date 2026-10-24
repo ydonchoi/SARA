@@ -12,8 +12,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install test dependency
-        run: python -m pip install pytest
+      - name: Install pinned test dependencies
+        run: python -m pip install -r requirements-test.txt
       - id: external_execution_contracts
         name: Run external execution contract tests
         run: python -m pytest tests/test_external_execution.py -q
@@ -71,9 +71,9 @@ jobs:
       - id: v25_dialogue_runtime
         name: Test callable dialogue-to-verification runtime integration
         run: python -m pytest SARA_v2.5/tests/test_dialogue_runtime.py -q
-      - id: v25_dialogue_runner
-        name: Test SARA v2.5 dialogue command-line runner
-        run: python -m pytest SARA_v2.5/tests/test_dialogue_runner.py -q
+      - id: v25_executor_cli
+        name: Test SARA v2.5 executable JSONL runtime adapter
+        run: python -m pytest SARA_v2.5/tests/test_executor.py SARA_v2.5/tests/test_executor_nested_status.py -q
       - id: v25_promotion_config_consistency
         name: Verify promotion gate suite lists stay synchronized
         run: python -m pytest SARA_v2.5/tests/test_promotion_config_consistency.py -q

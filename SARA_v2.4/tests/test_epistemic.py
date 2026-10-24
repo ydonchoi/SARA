@@ -142,3 +142,33 @@ def test_adapter_accepts_author_explicit_attribution_with_source_bearing_evidenc
     })
     assert result["attribution_status"] == "AUTHOR_EXPLICIT"
     assert result["attribution_evidence_ids"] == ["E1"]
+
+
+def test_adapter_rejects_string_for_attribution_evidence_ids():
+    from co_thoughts_sara_adapter import CoThoughtsSARAAdapter
+
+    with pytest.raises(ValueError, match="ATTRIBUTION_EVIDENCE_IDS_MUST_BE_LIST"):
+        CoThoughtsSARAAdapter().evaluate({
+            "claim": {"id": "C1", "text": "claim", "attribution_evidence_ids": "E1"},
+            "evidence": [{"id": "E1", "source": "paper.pdf"}],
+        })
+
+
+def test_adapter_rejects_string_for_provenance_ids():
+    from co_thoughts_sara_adapter import CoThoughtsSARAAdapter
+
+    with pytest.raises(ValueError, match="PROVENANCE_IDS_MUST_BE_LIST"):
+        CoThoughtsSARAAdapter().evaluate({
+            "claim": {"id": "C1", "text": "claim"},
+            "provenance_ids": "P1",
+        })
+
+
+@pytest.mark.parametrize("ids", [[""], [1], "E1"])
+def test_adapter_rejects_invalid_attribution_evidence_id_collection(ids):
+    from co_thoughts_sara_adapter import CoThoughtsSARAAdapter
+
+    with pytest.raises(ValueError, match="ATTRIBUTION_EVIDENCE_IDS_MUST_BE_LIST"):
+        CoThoughtsSARAAdapter().evaluate({
+            "claim": {"id": "C1", "text": "claim", "attribution_evidence_ids": ids},
+        })
