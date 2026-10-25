@@ -33,7 +33,7 @@ def config(provider, base_url=None):
 
 
 def response_bytes(content, provider="openai"):
-    if provider in {"openai", "openai_compatible"}:
+    if provider in {"openai", "openai_compatible", "kimi"}:
         body = {"choices": [{"message": {"content": json.dumps(content)}}]}
     elif provider == "anthropic":
         body = {"content": [{"type": "text", "text": json.dumps(content)}]}
@@ -67,6 +67,40 @@ def test_openai_compatible_request_uses_json_schema_and_parses_content(provider,
     assert calls["body"]["response_format"]["type"] == "json_schema"
     assert calls["body"]["response_format"]["json_schema"]["strict"] is True
     assert calls["timeout"] == 2.5
+
+
+def test_kimi_uses_openai_compatible_json_mode_and_validates_schema_after_parse():
+    calls = {}
+
+    def sender(url, headers, body, timeout):
+        calls.update(url=url, headers=headers, body=json.loads(body))
+        return response_bytes({"ok": True}, "kimi")
+
+    provider = LLMProviderAdapter(
+        LLMProviderConfig(provider="kimi", model="kimi-test", api_key="test-secret"),
+        sender=sender,
+    )
+    assert provider.generate_json(
+        system_prompt="Return JSON.", user_payload={"x": 1},
+        output_schema={"type": "object", "required": ["ok"]}, timeout_seconds=2,
+    ) == {"ok": True}
+    assert calls["url"] == "https://api.moonshot.ai/v1/chat/completions"
+    assert calls["headers"]["Authorization"] == "Bearer test-secret"
+    assert calls["body"]["response_format"] == {"type": "json_object"}
+    assert "JSON Schema" in calls["body"]["messages"][0]["content"]
+
+
+def test_json_object_mode_still_validates_required_fields_locally():
+    provider = LLMProviderAdapter(
+        LLMProviderConfig(provider="kimi", model="kimi-test", api_key="test-secret"),
+        sender=lambda *_: response_bytes({"unexpected": True}, "kimi"),
+    )
+    with pytest.raises(LLMProviderError, match="LLM_OUTPUT_SCHEMA_REQUIRED_FIELD_MISSING"):
+        provider.generate_json(
+            system_prompt="Return JSON.", user_payload={},
+            output_schema={"type": "object", "required": ["ok"], "properties": {"ok": {"type": "boolean"}}},
+            timeout_seconds=2,
+        )
 
 
 def test_anthropic_messages_request_uses_output_config_and_versioned_headers():

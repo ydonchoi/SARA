@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import os
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -285,6 +286,73 @@ def process_dialogue_turn(
         event_sink=event_sink,
     )
     return runtime.process_turn(payload, timeout_seconds=timeout_seconds)
+
+
+def process_dialogue_turn_from_environment(
+    payload: Mapping[str, Any],
+    *,
+    timeout_seconds: float = 15.0,
+) -> dict[str, Any]:
+    """Run the v2.5 Co-thoughts dialogue path using explicit environment config.
+
+    Judgment uses the existing SARA_LLM_* provider adapter. Source verification
+    is independently loaded from SARA_VERIFICATION_PROVIDER (MODULE:ATTRIBUTE);
+    when unset, the runtime returns its explicit UNVERIFIED fallback.
+    """
+    v25_root = Path(__file__).resolve().parent / "SARA_v2.5"
+    if str(v25_root) not in sys.path:
+        sys.path.insert(0, str(v25_root))
+
+    from llm_provider_adapter import (
+        JUDGMENT_OUTPUT_SCHEMA,
+        LLMProviderAdapter,
+        LLMProviderConfig,
+        unconfigured_verification_provider,
+    )
+
+
+    provider_config = LLMProviderConfig.from_environment()
+    provider_adapter = LLMProviderAdapter(provider_config)
+
+    def judgment_generate(rubric, judgment_payload, provider_timeout):
+        return provider_adapter.generate_json(
+            system_prompt=rubric,
+            user_payload=judgment_payload,
+            output_schema=JUDGMENT_OUTPUT_SCHEMA,
+            timeout_seconds=provider_timeout,
+        )
+
+    verification_spec = os.environ.get("SARA_VERIFICATION_PROVIDER", "").strip()
+    verification_provider = (
+        load_provider(verification_spec)
+        if verification_spec
+        else unconfigured_verification_provider
+    )
+    model_revision = os.environ.get("SARA_LLM_MODEL_REVISION", "").strip()
+    model_revision = model_revision or f"{provider_config.provider}-json-api-v1"
+    return process_dialogue_turn(
+        payload,
+        judgment_generate=judgment_generate,
+        verification_provider=verification_provider,
+        model_id=provider_config.model,
+        model_revision=model_revision,
+        timeout_seconds=timeout_seconds,
+    )
+
+
+def process_v3_dialogue_turn(
+    payload: Mapping[str, Any],
+    *,
+    timeout_seconds: float = 15.0,
+) -> dict[str, Any]:
+    """Invoke the unified v3 runtime using repository environment configuration.
+
+    The v2.3/v2.4-compatible ``execute_request`` remains available for legacy
+    callers. New Co-thoughts integrations should use this v3 entrypoint.
+    """
+    from SARA_v3.runtime import process_turn_from_environment as process_v3
+
+    return process_v3(payload, timeout_seconds=timeout_seconds)
 
 
 def parse_args() -> argparse.Namespace:

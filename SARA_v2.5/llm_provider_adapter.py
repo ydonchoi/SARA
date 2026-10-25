@@ -24,6 +24,42 @@ class LLMProviderError(RuntimeError):
     """Sanitized provider/configuration/output error; contains no response body."""
 
 
+def _validate_json_schema(value: Any, schema: Mapping[str, Any], path: str = "$") -> None:
+    """Validate the JSON Schema subset used by SARA independent of provider enforcement."""
+    if not isinstance(schema, Mapping):
+        raise LLMProviderError("LLM_OUTPUT_SCHEMA_INVALID")
+    expected = schema.get("type")
+    valid = {
+        "object": lambda v: isinstance(v, dict),
+        "array": lambda v: isinstance(v, list),
+        "string": lambda v: isinstance(v, str),
+        "number": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
+        "integer": lambda v: isinstance(v, int) and not isinstance(v, bool),
+        "boolean": lambda v: isinstance(v, bool),
+        "null": lambda v: v is None,
+    }
+    expected_types = expected if isinstance(expected, list) else [expected]
+    if expected is not None and not any(kind in valid and valid[kind](value) for kind in expected_types):
+        raise LLMProviderError("LLM_OUTPUT_SCHEMA_TYPE_MISMATCH")
+    if "enum" in schema and value not in schema["enum"]:
+        raise LLMProviderError("LLM_OUTPUT_SCHEMA_ENUM_MISMATCH")
+    if isinstance(value, dict):
+        required = schema.get("required", [])
+        properties = schema.get("properties", {})
+        if not isinstance(required, list) or not isinstance(properties, Mapping):
+            raise LLMProviderError("LLM_OUTPUT_SCHEMA_INVALID")
+        if any(key not in value for key in required):
+            raise LLMProviderError("LLM_OUTPUT_SCHEMA_REQUIRED_FIELD_MISSING")
+        if schema.get("additionalProperties") is False and any(key not in properties for key in value):
+            raise LLMProviderError("LLM_OUTPUT_SCHEMA_ADDITIONAL_FIELD")
+        for key, item in value.items():
+            if key in properties:
+                _validate_json_schema(item, properties[key], f"{path}.{key}")
+    if isinstance(value, list) and "items" in schema:
+        for index, item in enumerate(value):
+            _validate_json_schema(item, schema["items"], f"{path}[{index}]")
+
+
 class _NoRedirectHandler(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
@@ -36,6 +72,7 @@ class LLMProviderConfig:
     api_key: str = ""
     base_url: str | None = None
     anthropic_version: str = "2023-06-01"
+    json_schema_mode: bool | None = None
 
     @classmethod
     def from_environment(cls, prefix: str = "SARA_LLM") -> "LLMProviderConfig":
@@ -43,17 +80,22 @@ class LLMProviderConfig:
         model = os.environ.get(f"{prefix}_MODEL", "").strip()
         api_key = os.environ.get(f"{prefix}_API_KEY", "")
         base_url = os.environ.get(f"{prefix}_BASE_URL", "").strip() or None
+        schema_mode_value = os.environ.get(f"{prefix}_JSON_SCHEMA", "").strip().lower()
+        if schema_mode_value and schema_mode_value not in {"true", "false"}:
+            raise LLMProviderError(f"{prefix}_JSON_SCHEMA_MUST_BE_TRUE_OR_FALSE")
+        json_schema_mode = schema_mode_value != "false" if schema_mode_value else provider != "kimi"
         if not provider:
             raise LLMProviderError(f"{prefix}_PROVIDER_REQUIRED")
         if not model:
             raise LLMProviderError(f"{prefix}_MODEL_REQUIRED")
-        if provider not in {"openai", "openai_compatible", "anthropic", "gemini"}:
+        if provider not in {"openai", "openai_compatible", "anthropic", "gemini", "kimi"}:
             raise LLMProviderError("UNSUPPORTED_LLM_PROVIDER")
-        return cls(provider=provider, model=model, api_key=api_key, base_url=base_url)
+        return cls(provider=provider, model=model, api_key=api_key, base_url=base_url,
+                   json_schema_mode=json_schema_mode)
 
 
 def _validate_config(config: LLMProviderConfig) -> tuple[str, str]:
-    if config.provider not in {"openai", "openai_compatible", "anthropic", "gemini"}:
+    if config.provider not in {"openai", "openai_compatible", "anthropic", "gemini", "kimi"}:
         raise LLMProviderError("UNSUPPORTED_LLM_PROVIDER")
     if not isinstance(config.model, str) or not config.model.strip():
         raise LLMProviderError("LLM_MODEL_REQUIRED")
@@ -62,6 +104,7 @@ def _validate_config(config: LLMProviderConfig) -> tuple[str, str]:
         "openai_compatible": "http://localhost:1234/v1",
         "anthropic": "https://api.anthropic.com",
         "gemini": "https://generativelanguage.googleapis.com",
+        "kimi": "https://api.moonshot.ai/v1",
     }
     base_url = (config.base_url or defaults[config.provider]).rstrip("/")
     parsed = urlparse(base_url)
@@ -142,7 +185,7 @@ class LLMProviderAdapter:
             system_prompt, user_payload, output_schema
         )
         raw = self._sender(url, headers, body, float(timeout_seconds))
-        return self._parse_response(raw)
+        return self._parse_response(raw, output_schema=output_schema)
 
     def _build_request(
         self,
@@ -154,24 +197,35 @@ class LLMProviderAdapter:
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         user_text = json.dumps(user_payload, ensure_ascii=False, sort_keys=True)
 
-        if provider in {"openai", "openai_compatible"}:
+        if provider in {"openai", "openai_compatible", "kimi"}:
             url = f"{self.base_url}/chat/completions"
             if self.config.api_key:
                 headers["Authorization"] = f"Bearer {self.config.api_key}"
-            body = {
-                "model": self.config.model,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_text},
-                ],
-                "response_format": {
+            use_json_schema = self.config.json_schema_mode if self.config.json_schema_mode is not None else provider != "kimi"
+            response_format = (
+                {
                     "type": "json_schema",
                     "json_schema": {
                         "name": "sara_structured_output",
                         "strict": True,
                         "schema": dict(output_schema),
                     },
-                },
+                }
+                if use_json_schema else {"type": "json_object"}
+            )
+            schema_prompt = system_prompt
+            if not use_json_schema:
+                schema_prompt += (
+                    "\n\nReturn exactly one JSON object conforming to this JSON Schema:\n"
+                    + json.dumps(dict(output_schema), ensure_ascii=False, sort_keys=True)
+                )
+            body = {
+                "model": self.config.model,
+                "messages": [
+                    {"role": "system", "content": schema_prompt},
+                    {"role": "user", "content": user_text},
+                ],
+                "response_format": response_format,
             }
         elif provider == "anthropic":
             url = f"{self.base_url}/v1/messages"
@@ -209,7 +263,7 @@ class LLMProviderAdapter:
             raise LLMProviderError("LLM_REQUEST_NOT_JSON_SERIALIZABLE") from exc
         return url, headers, encoded
 
-    def _parse_response(self, raw: bytes) -> dict[str, Any]:
+    def _parse_response(self, raw: bytes, *, output_schema: JSONMapping) -> dict[str, Any]:
         try:
             response = json.loads(raw.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError, AttributeError) as exc:
@@ -218,7 +272,7 @@ class LLMProviderAdapter:
             raise LLMProviderError("LLM_PROVIDER_RESPONSE_MUST_BE_OBJECT")
 
         provider = self.config.provider
-        if provider in {"openai", "openai_compatible"}:
+        if provider in {"openai", "openai_compatible", "kimi"}:
             choices = response.get("choices")
             if not isinstance(choices, list) or not choices or not isinstance(choices[0], Mapping):
                 raise LLMProviderError("LLM_PROVIDER_RESPONSE_CONTENT_MISSING")
@@ -259,6 +313,7 @@ class LLMProviderAdapter:
             raise LLMProviderError("LLM_PROVIDER_OUTPUT_INVALID_JSON") from exc
         if not isinstance(parsed, dict):
             raise LLMProviderError("LLM_PROVIDER_OUTPUT_MUST_BE_OBJECT")
+        _validate_json_schema(parsed, output_schema)
         return parsed
 
 

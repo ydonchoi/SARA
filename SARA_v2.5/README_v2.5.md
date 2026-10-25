@@ -266,8 +266,10 @@ v2.4 remains canonical.
 
 ## SARA-Internal JEV-Style Dialogue Route — Prototype
 
-`sara_runtime.process_dialogue_turn(...)` is the callable entrypoint added for
-the inference-triggered route. Its implementation lives in
+`sara_runtime.process_dialogue_turn(...)` is the dependency-injected callable
+entrypoint for the inference-triggered route. Python hosts can use
+`sara_runtime.process_dialogue_turn_from_environment(payload)` to load the
+repository's configured providers. Runtime implementation lives in
 `SARA_v2.5/dialogue_runtime.py`.
 
 ### Command-line execution
@@ -303,6 +305,15 @@ route explicitly returns `UNVERIFIED` with
 source verification. Custom judgment callable signature is
 `(rubric, payload, timeout_seconds)` and custom verifier signature is
 `(payload)`. Both return mappings accepted by the SARA contracts.
+
+The environment-based Python entrypoint reads judgment configuration from
+`SARA_LLM_PROVIDER`, `SARA_LLM_MODEL`, and the applicable API key/base URL
+variables above. Set `SARA_VERIFICATION_PROVIDER=MODULE:ATTRIBUTE` to load the
+separate source-verification callable; if omitted, the explicit UNVERIFIED
+fallback is used. `SARA_LLM_MODEL_REVISION` optionally labels the judgment
+provider revision. Judgment provider configuration is required; missing
+`SARA_LLM_*` settings fail explicitly. The host must make the custom verifier
+module importable.
 
 The built-in adapter sends turn content to the selected provider API. Provider
 accounts, API keys, data-processing terms, model access, rate limits, and actual
