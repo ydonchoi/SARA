@@ -3,6 +3,7 @@
 - **상태:** v3 구현 후보 — 로컬 구현 완료, release gate 및 canonical 승격 대기
 - **검토일:** 2026-10-25
 - **현재 기준선:** v2.4 canonical; v2.5 operational trial
+- **통합 후보:** v3.0.0이 `main`에 구현됨; canonical 지정은 대기
 - **로컬 검증:** Python 3.13.9 / pytest 8.4.2, 전체 suite 453 passed (2026-10-25); live/host/release gate는 미검증
 - **목적:** 버전별로 분리된 실행·판단·출처 확인 경로를 외부 LLM 및 Co-thoughts와 연결하는 v3 기준을 정의한다.
 
@@ -162,7 +163,7 @@ flowchart TD
 - 기본 웹 검색에서 snippet-only, metadata-only, abstract, full-text, unavailable 케이스를 각각 검증한다. snippet-only가 `VERIFIED`가 될 수 없음을 확인한다.
 - source/MCP provider가 임의의 `VERIFIED`를 반환해도 상태가 승격되지 않으며, retrieval, literal citation fit, semantic relation, SARA proposal, reviewer commit이 서로 분리됨을 확인한다.
 - MCP 도구 allowlist, read-only 기본권한, timeout, malformed response, prompt injection, secret redaction을 확인한다.
-- SARA 결과가 Co-thoughts host를 통해 외부 LLM 호출에 전달되고, 후속 LLM이 결과를 무시·오염한 경우 상태가 승격되지 않는 live host integration evidence를 확보한다.
+- Co-thoughts host가 승인된 범위의 turn과 claim candidates로 SARA를 호출하고, 반환된 assessment envelope을 후속 외부 LLM 맥락에 보존·전달하는 live integration evidence를 확보한다. 후속 모델의 응답은 SARA 상태를 바꾸지 않아야 한다.
 - source verification 판단과 reviewer-bound durable commit이 구분되고, conflict·stale revision·partial failure가 fail-closed임을 검증한다.
 - 독립 adjudication이 된 benchmark와 사전 지정된 false-positive/false-negative/abstention/latency/cost 기준으로 비교 평가한다.
 - 영속 저장·접근 통제·보존·복구·감사 요구사항을 실제 배포 환경에서 확인한다.

@@ -28,7 +28,7 @@ SARA의 구조적·계약 검사는 의미론적 사실 판정이나 독립적�
 | **v2.5** | Claim identity, evidence conflict, provenance ledger, selective reverification, 내부 판단 경로와 CLI | **operational trial; 승격·운영 준비 미확인** |
 | **v3.0.0** | v2.3~v2.5 통합 대화 런타임, 외부 LLM judgment/응답, 기본 웹 검색, 선택 MCP, SARA assessment envelope | **구현 후보; release gate 대기** |
 
-v2.5의 provider-neutral 판단 adapter는 OpenAI API, Anthropic Messages, Gemini `generateContent`, OpenAI-compatible endpoint 형식을 지원합니다. 저장소 테스트는 stub transport를 사용하며, 실제 계정·API key·서비스 연결이 설정됐다는 뜻은 아닙니다. v3는 이 경로에 Kimi(OpenAI-compatible JSON mode)를 포함하며, schema 결과는 응답 후 로컬 검증합니다. 소비자용 ChatGPT, Claude, Gemini 앱의 내부 대화 흐름에도 자동 연결되지 않습니다.
+판단 adapter는 OpenAI API, Anthropic Messages, Gemini `generateContent`, Kimi(OpenAI-compatible JSON mode), 일반 OpenAI-compatible endpoint를 지원합니다. 저장소 테스트는 stub transport를 사용하며, 실제 계정·API key·서비스 연결이 설정됐다는 뜻은 아닙니다. JSON mode 응답은 SARA가 로컬 schema 계약으로 다시 검사합니다. 소비자용 ChatGPT, Claude, Gemini 앱의 내부 대화 흐름에도 자동 연결되지 않습니다.
 
 ## 빠른 시작
 
@@ -84,6 +84,8 @@ $env:SARA_VERIFICATION_PROVIDER = "my_sara_provider:verify_claim"
 
 판단용 `SARA_LLM_*` 설정은 필수이며, 누락 시 실행이 명시적 구성 오류로 종료됩니다. 검증 callable은 SARA 요청 mapping을 받고 provider 결과 mapping을 반환해야 합니다. `SARA_VERIFICATION_PROVIDER`가 비어 있으면 fail-closed provider가 사용되어 출처 검증 상태는 `UNVERIFIED`로 유지됩니다. LLM judgment와 source verification은 서로 다른 provider이며, 둘 다 구성됐다는 사실만으로 claim의 진실성이 보장되지는 않습니다. provider 자격 증명은 호스트 환경에서 관리하세요.
 
+새 Co-thoughts 통합에는 `sara_runtime.process_v3_dialogue_turn(payload)` 또는 [v3 CLI](SARA_v3/README_v3.md)를 사용하세요. Co-thoughts가 SARA를 호출하고 assessment를 돌려받는 host 연결은 별도 integration gate이며, 현재 저장소에는 호출 계약과 local stub 테스트만 있습니다.
+
 ### JSONL 실행기
 
 `SARA_v2.5/executor.py`는 provider module을 명시해 여러 요청을 한 줄에 하나씩 처리하는 host-neutral 실행기입니다.
@@ -110,6 +112,7 @@ SARA_v2.3/   호환 실행 계약과 evidence 검증 모듈
 SARA_v2.4/   canonical epistemic baseline과 구조화 논리 감사
 SARA_v2.5/   trial runtime, provider adapter, executor, 재검증·승격 프로토타입
 SARA_v3/    통합 대화 runtime 후보, web/MCP source adapter, assessment contract
+LEGACY/     v2.1–v2.2 보존 문서
 SARA_v1.0/   초기 연구 분석 산출물
 SARA_v2.1/   모듈형 architecture 문서
 SARA_v2.2/   dependency와 loading architecture 문서
@@ -119,6 +122,8 @@ requirements-test.txt
 ```
 
 ## 문서와 테스트
+
+루트 README와 `docs/v3-integration-design.md`가 현재 저장소 상태를 설명합니다. `SARA_v2.3/`–`SARA_v2.5/` 문서는 각 버전의 계약과 당시 승격 기록을 보존하므로, 버전 내부의 historical status를 현재 v3 상태와 혼동하지 마세요. v3는 구현 후보이고 v2.4는 release gate가 통과될 때까지 canonical baseline입니다.
 
 - [v2.4 상세 설명](SARA_v2.4/README_v2.4.md)
 - [v2.5 상세 설명과 사용 예시](SARA_v2.5/README_v2.5.md)

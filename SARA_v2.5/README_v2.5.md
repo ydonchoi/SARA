@@ -2,7 +2,7 @@
 
 ## Status
 
-**USER-LED TRIAL CANDIDATE / PRODUCTION READINESS UNVERIFIED.** v2.5 is being promoted to main for hands-on use by the maintainer. v2.4 remains preserved as the rollback and comparison baseline. The runtime has injectable provider boundaries, but actual host dialogue-loop and live model/verifier configuration remain unverified. Durable deployment storage/access control, independently adjudicated benchmarks, and comparative research-quality evidence remain incomplete. The automated suite is intentionally not a prerequisite for this trial; observed runtime failures will drive targeted fixes.
+**VERSION-SCOPED STATUS: USER-LED TRIAL CANDIDATE / PRODUCTION READINESS UNVERIFIED.** v2.5 remains available on `main` for compatibility and trial use; v2.4 remains the canonical rollback/comparison baseline. The integrated successor candidate is SARA v3.0; its current state and release gates are in the root [README](../README.md) and [v3 integration design](../docs/v3-integration-design.md). This v2.5 runtime has injectable provider boundaries, but actual host dialogue-loop and live model/verifier configuration remain unverified. Durable deployment storage/access control, independently adjudicated benchmarks, and comparative research-quality evidence remain incomplete. The automated suite is intentionally not a prerequisite for this historical v2.5 trial; observed runtime failures drive targeted fixes.
 
 ## Goal
 
@@ -276,7 +276,9 @@ repository's configured providers. Runtime implementation lives in
 
 `dialogue_runner.py` is the CLI entrypoint for one dialogue turn. Its built-in
 `builtin:llm` judgment adapter supports OpenAI API, Anthropic Messages, Gemini
-`generateContent`, and OpenAI-compatible endpoints such as local model servers.
+`generateContent`, Kimi's OpenAI-compatible JSON mode, and OpenAI-compatible
+endpoints such as local model servers. Provider support is transport
+compatibility; it does not mean credentials or a live provider are configured.
 The adapter uses Python's standard library; custom adapters remain available
 through `MODULE:ATTRIBUTE`.
 

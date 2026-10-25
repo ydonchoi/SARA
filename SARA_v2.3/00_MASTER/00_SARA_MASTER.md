@@ -52,7 +52,7 @@ v2.2에서는 MASTER §2(Instruction Hierarchy)와 07_SYSTEM/loading_rules.md §
 3. **충분하고 올바른 변경:** 가장 작은 diff가 아니라 문제를 정확히 해결하는 최소 충분 범위를 선택한다. 필요한 리팩터링은 변경 파일 수만을 이유로 거부하지 않는다.
 4. **범위 통제:** 무관한 재작성과 추측성 확장은 피한다. 의존성, 호출자, 스키마, 상태 전이, 오류 경로와 통합 경계를 검토한다.
 5. **Minimal Loading과 구분:** 필요한 모듈만 로드하는 Minimal Loading은 유지한다. 이는 코드 변경량을 최소화하라는 규칙이 아니다.
-6. **기준선 보호:** v2.4는 canonical verification baseline으로 보존한다. v2.5 프로토타입 변경을 기준선 승격이나 운영 통합의 증거로 간주하지 않는다.
+6. **기준선 보호:** v2.4는 현재 canonical verification baseline으로 보존한다. v3.0 통합 후보가 release gate를 통과하기 전까지 v2.3/v2.5 버전별 프로토타입 기록을 canonical 승격이나 운영 통합의 증거로 간주하지 않는다. 현재 상태는 저장소 루트 README와 `docs/v3-integration-design.md`를 따른다.
 7. **위험 비례 검증:** 변경 위험에 따라 단위·계약·회귀·통합·실패 경로 테스트를 선택한다. 실행하지 않은 테스트는 통과로 보고하지 않는다.
 8. **상태와 증거 분리:** Implemented, Tested, Integrated, Verified, Unverified/Blocked를 구분하고 실행 명령·결과 및 남은 위험을 기록한다.
 9. **변경 근거 기록:** 넓은 변경은 근본 원인, 영향 인터페이스·의존성, 기대 효과, 회귀 위험, 고려한 대안 및 검증 계획을 기록한다.

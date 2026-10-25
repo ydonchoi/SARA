@@ -2,6 +2,8 @@
 
 **Decision: USER-LED TRIAL APPROVED; PRODUCTION READINESS UNVERIFIED.**
 
+**Version scope:** This page records the v2.5 trial and its promotion evidence. The integrated successor candidate is v3.0; the root [README](../README.md) and [v3 integration design](../docs/v3-integration-design.md) are authoritative for current repository status. v2.4 remains canonical until v3 release gates are evidenced and accepted.
+
 The v2.5 runtime and dialogue route are present on the repository's `main` branch for maintainer-led operational trial. This is an operational trial decision, not a canonical release or a claim that every promotion-evidence gate has passed.
 
 ## Trial policy
@@ -17,8 +19,10 @@ The v2.5 runtime and dialogue route are present on the repository's `main` branc
 
 - User-led trial: **APPROVED**
 - Main-branch trial integration: present in the current checkout; later commits may change the exact tested head
-- Local full suite: **406 passed** on Python 3.12.14 on the local candidate branch; this does not replace hosted CI evidence bound to the exact candidate SHA
-- Generic OpenAI/Anthropic/Gemini/OpenAI-compatible judgment adapter: **IMPLEMENTED; tested with stub transports; no live credentials/provider configured**
+- v2.5 trial snapshot suite: **406 passed** on Python 3.12.14 for its 2026-10-24 candidate; this is historical local evidence only
+- Integrated repository suite: **453 passed** on Python 3.13.9 / pytest 8.4.2 on the v3 integration candidate, 2026-10-25; this does not replace hosted CI evidence for a later exact commit
+- Generic OpenAI/Anthropic/Gemini/Kimi/OpenAI-compatible judgment adapter: **IMPLEMENTED; tested with stub transports; no live credentials/provider configured**
+- v3 integration candidate: present on `main`; Co-thoughts host call/assessment-return integration remains **UNVERIFIED**
 - Live host dialogue/model/verifier integration: **UNVERIFIED**
 - Live Crossref request in this environment: **FAILED with URLError; retained as UNVERIFIED**
 - Independent reviewers/adjudicator: **NOT ASSIGNED**; Preflight adjudication and comparative benchmark: **NOT COMPLETED**

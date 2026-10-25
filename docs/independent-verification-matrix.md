@@ -1,10 +1,17 @@
 # SARA Independent Verification Matrix
 
-**Status:** Initial documentation baseline; not an execution report  
-**Scope:** Repository-level independent verification planning without GitHub Actions or runtime execution  
+**Status:** Verification plan with a dated current-state addendum; not a live-provider or production-readiness report  
+**Scope:** Repository-level verification planning and local test evidence  
 **Canonical comparison baseline:** SARA v2.4  
-**Prototype under separate review:** SARA v2.5  
-**Last updated:** 2026-10-24
+**Integrated successor candidate:** SARA v3.0 on `main`  
+**Last updated:** 2026-10-25
+
+### Current-state addendum — 2026-10-25
+
+- Documentation now consistently identifies v2.4 as canonical, v2.5 as a version-scoped trial, and v3.0 as the integrated successor candidate awaiting release gates.
+- The full repository test suite passed locally: **453 passed**, Python 3.13.9, pytest 8.4.2. This does not establish live provider or Co-thoughts host integration.
+- The v3 runtime entrypoint exists, but the actual Co-thoughts → SARA → assessment-return host path remains **UNVERIFIED**. Provider credentials/configuration, independent adjudication, and durable production operations are not evidenced.
+- Original matrix rows below remain a planning snapshot except V-01 and V-16, which have been updated to the current state.
 
 ## 1. Purpose and boundaries
 
@@ -16,7 +23,7 @@ This document does **not** assert that any test passed. During this documentatio
 - Existing tests were inspected as repository assets only.
 - No production-readiness or semantic-correctness claim is made.
 
-Repository policy in `docs/engineering-principles.md` remains applicable: preserve v2.4 as the canonical baseline, keep v2.5 as a prototype unless separately promoted, and distinguish implementation, test execution, integration, and verification evidence.
+Repository policy in `docs/engineering-principles.md` remains applicable: preserve v2.4 as the canonical baseline until the v3 release gates pass, keep v2.5 version-scoped, and distinguish implementation, test execution, integration, and verification evidence.
 
 ## 2. Status vocabulary
 
@@ -39,7 +46,7 @@ The initial statuses below describe the evidence available from repository inspe
 
 | ID | Verification area | Evidence / relevant paths | Method and acceptance criterion | Initial status |
 |---|---|---|---|---|
-| V-01 | Canonical version boundary | `README.md`, `SARA_v2.4/README_v2.4.md`, `SARA_v2.5/CANONICAL_PROMOTION_STATUS.md` | Confirm v2.4 is the canonical comparison/rollback baseline and v2.5 is explicitly a user-led prototype trial, not production-ready. Record any contradictory version wording separately. | PARTIALLY VERIFIED — documented statements inspected; no full documentation reconciliation performed |
+| V-01 | Canonical version boundary | `README.md`, `docs/v3-integration-design.md`, version-scoped v2.4/v2.5 status docs | Confirm v2.4 is the canonical baseline, v2.5 is a version-scoped trial, and v3.0 is an integrated candidate pending live, independent, and operational evidence. | VERIFIED — current and version-scoped status wording reconciled; does not assert release readiness |
 | V-02 | Python syntax / importability | Python files under `SARA_v2.3/`, `SARA_v2.4/`, `SARA_v2.5/`, and root `tests/` | On the local checkout, run syntax/compile checks without invoking the application runtime. Acceptance: no syntax errors in the declared scope; report exclusions and environment. | NOT RUN |
 | V-03 | Schema and fixture parseability | `SARA_v2.4/schemas/`, `SARA_v2.5/schemas/`, `SARA_v2.5/benchmark/preflight_cases.json`, `docs/schemas/` | Parse JSON/YAML with declared tooling and validate fixtures against their intended schema where a validator exists. Parseability alone does not prove semantic validity. | NOT RUN |
 | V-04 | v2.4 epistemic-state unit tests | `SARA_v2.4/tests/test_epistemic.py` | Run the targeted local test file. Acceptance: all assertions pass on the recorded commit and environment. | NOT RUN |
@@ -54,7 +61,7 @@ The initial statuses below describe the evidence available from repository inspe
 | V-13 | Preflight fixture structure and coverage | `SARA_v2.5/benchmark/preflight_cases.json`, `SARA_v2.5/tests/test_preflight_fixture.py` | Validate JSON and declared suite coverage. Keep fixture validation separate from adjudication and model-performance claims. | NOT RUN |
 | V-14 | Independent benchmark adjudication | `SARA_v2.5/benchmark/ADJUDICATION_PROTOCOL.md`, `REVIEWER_PACKET.md`, `docs/v2.5-evaluation-protocol-v0.1.md` | Obtain two independent labels per case, preserve rationales/provenance, adjudicate disagreements, and freeze protocol/data before scoring. Model-generated labels do not count as independent human labels. | BLOCKED — repository docs identify the current fixture labels as draft / not independently adjudicated |
 | V-15 | Comparative evaluation | `docs/v2.5-evaluation-protocol-v0.1.md`, `docs/v2.5-promotion-readiness-plan.md` | Compare v2.3, v2.4 without trigger routing, and v2.5 on the same frozen, independently adjudicated cases using predeclared metrics and thresholds. | NOT RUN |
-| V-16 | Live host/model/verifier integration | `SARA_v2.5/CANONICAL_PROMOTION_STATUS.md`, `SARA_v2.5/README_v2.5.md` | In a controlled local environment, exercise the actual host dialogue loop with configured model and verifier providers; capture successful and failure-path evidence. | UNVERIFIED — code presence or injected fixtures are not live integration evidence |
+| V-16 | Live Co-thoughts/SARA/provider integration | `SARA_v3/runtime.py`, `SARA_v3/README_v3.md`, `docs/v3-integration-design.md` | In an explicitly approved environment, exercise Co-thoughts → SARA invocation → assessment return, with configured model/search providers and success/failure cases. | UNVERIFIED — callable entrypoint and local stubs exist; no actual host/provider round trip is configured or evidenced |
 | V-17 | Security and secret handling | Repository source, configuration examples, workflow definitions, and `docs/engineering-principles.md` | Inspect secret exposure, untrusted input handling, least privilege, unsafe deserialization, logging, provenance tampering, and dependency risks. Record findings and scope; static review cannot prove absence of vulnerabilities. | NOT RUN |
 | V-18 | Reproducibility of local checks | Local environment metadata and recorded commands | Record OS, Python version, dependency lock/source, command, commit SHA, exit status, and artifact/log location. A result without revision/environment identity is incomplete. | NOT RUN |
 | V-19 | License boundary | `LICENSE`, `README.md` | Apply MIT to original project materials beginning with the revision that publishes this change; retain prior CC BY-NC 4.0 grants for earlier copies; keep third-party materials under their own licenses. | PARTIALLY VERIFIED — repository notices updated; no third-party license audit performed |

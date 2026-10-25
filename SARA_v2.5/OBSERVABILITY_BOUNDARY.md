@@ -1,7 +1,7 @@
 # SARA v2.5 Observability Boundary — Draft v0.1
 
 **Status:** Design note based on repository code inspection; not a live deployment security assessment.
-**Canonical baseline:** SARA v2.4 remains canonical. This note does not authorize v2.5 promotion.
+**Canonical baseline:** SARA v2.4 remains canonical. SARA v3.0 is the integrated successor candidate on `main`; this v2.5 note is version-scoped and does not assert v3 production readiness.
 
 ## 1. Finding
 

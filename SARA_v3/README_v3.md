@@ -1,6 +1,6 @@
 # SARA v3.0.0 integration candidate
 
-**Status:** Implemented candidate, not canonical. v2.4 remains the canonical baseline. The v3 local contract and stub tests do not establish live-provider quality, Co-thoughts host integration, production security, durable storage, or promotion readiness.
+**Status:** SARA v3.0.0 integration candidate on `main`, not canonical. SARA v2.4 remains the canonical baseline until the v3 release gates pass. Local contracts and stub tests do not establish live-provider quality, a Co-thoughts → SARA → assessment-return host connection, production security, durable storage, or promotion readiness.
 
 ## Runtime
 
@@ -41,4 +41,4 @@ The MCP callback accepts `(tool_name, arguments)` and returns an MCP mapping wit
 
 ## Verification
 
-Run the repository suite with `python -m pytest -q`. The full suite passed locally on 2026-10-25 with Python 3.13.9 and pytest 8.4.2 (453 passed). This is local regression evidence only. Before canonical promotion, meet the release gates in [the integration design](../docs/v3-integration-design.md), including live provider smoke tests, Co-thoughts round-trip, independent adjudication, security review, and durable ledger evidence.
+Run the repository suite with `python -m pytest -q`. The full suite passed locally on 2026-10-25 with Python 3.13.9 and pytest 8.4.2 (453 passed) on the v3 integration candidate. This is local regression evidence only. Before canonical promotion, meet the release gates in [the integration design](../docs/v3-integration-design.md), including live provider smoke tests, an approved Co-thoughts host invocation and assessment-return test, independent adjudication, security review, and durable ledger evidence.

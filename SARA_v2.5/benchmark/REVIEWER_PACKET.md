@@ -1,5 +1,7 @@
 # SARA v2.5 Preflight — Reviewer Packet
 
+**Version scope:** This packet evaluates only the v2.5 preflight fixture. The current integrated successor candidate is v3.0; its current status and release gates are tracked in the root README and `docs/v3-integration-design.md`.
+
 ## Purpose and status
 
 This packet makes independent case adjudication operational. It does not mean review has begun or that the draft fixture is a gold benchmark. Do not report benchmark performance until the dataset and labels are frozen after adjudication.
