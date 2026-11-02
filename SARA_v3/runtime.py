@@ -10,6 +10,7 @@ import sys
 from typing import Any, Callable, Mapping
 
 from .mcp_adapter import MCPSourceAdapter
+from .crawl4ai_adapter import Crawl4AIContentFetcher
 from .provenance import ProvenanceEventLedger
 from .verification import llm_relation_assessor, trusted_domains_from_environment, verify_claim_from_sources
 from .web_search import web_search_from_environment
@@ -52,6 +53,7 @@ class SARA_v3Runtime:
                  search_provider: Any | None,
                  relation_assessor: Callable[[Mapping[str, Any], Mapping[str, Any], float], Mapping[str, Any]] | None,
                  mcp_source: MCPSourceAdapter | None = None,
+                 content_fetcher: Any | None = None,
                  response_generate: Callable[[str, Mapping[str, Any], float], Mapping[str, Any]] | None = None,
                  response_model_id: str = "", response_model_revision: str = "",
                  trusted_source_domains: set[str] | None = None,
@@ -60,6 +62,7 @@ class SARA_v3Runtime:
         self.search_provider = search_provider
         self.relation_assessor = relation_assessor
         self.mcp_source = mcp_source
+        self.content_fetcher = content_fetcher
         self.response_generate = response_generate
         self.response_model_id = response_model_id
         self.response_model_revision = response_model_revision
@@ -70,6 +73,7 @@ class SARA_v3Runtime:
         def verify_claim(request: Mapping[str, Any]) -> Mapping[str, Any]:
             return verify_claim_from_sources(
                 request, search_provider=self.search_provider, mcp_source=self.mcp_source,
+                content_fetcher=self.content_fetcher,
                 relation_assessor=self.relation_assessor, timeout_seconds=self.timeout_seconds,
                 trusted_source_domains=self.trusted_source_domains,
                 ledger=self.provenance_ledger,
@@ -179,7 +183,8 @@ def _load_callable(spec: str) -> Callable[..., Any]:
 def process_turn(payload: Mapping[str, Any], *, judgment_generate: Callable[..., Mapping[str, Any]],
                  judgment_model_id: str, judgment_model_revision: str, search_provider: Any | None,
                  relation_assessor: Callable[..., Mapping[str, Any]] | None,
-                 mcp_source: MCPSourceAdapter | None = None, response_generate: Callable[..., Mapping[str, Any]] | None = None,
+                 mcp_source: MCPSourceAdapter | None = None, content_fetcher: Any | None = None,
+                 response_generate: Callable[..., Mapping[str, Any]] | None = None,
                  response_model_id: str = "", response_model_revision: str = "",
                  trusted_source_domains: set[str] | None = None,
                  provenance_ledger: ProvenanceEventLedger | None = None,
@@ -187,7 +192,7 @@ def process_turn(payload: Mapping[str, Any], *, judgment_generate: Callable[...,
     runtime = SARA_v3Runtime(
         judgment_generate=judgment_generate, judgment_model_id=judgment_model_id,
         judgment_model_revision=judgment_model_revision, search_provider=search_provider,
-        relation_assessor=relation_assessor, mcp_source=mcp_source,
+        relation_assessor=relation_assessor, mcp_source=mcp_source, content_fetcher=content_fetcher,
         response_generate=response_generate, response_model_id=response_model_id,
         response_model_revision=response_model_revision, trusted_source_domains=trusted_source_domains,
         provenance_ledger=provenance_ledger,
@@ -225,6 +230,8 @@ def process_turn_from_environment(payload: Mapping[str, Any], *, timeout_seconds
                                       allowed_tools={v for v in (search_tool, fetch_tool) if v},
                                       fetch_allowed_domains=domains)
 
+    content_fetcher = Crawl4AIContentFetcher.from_environment()
+
     response_config = LLMProviderConfig.from_environment(prefix="SARA_RESPONSE_LLM") if os.environ.get("SARA_RESPONSE_LLM_PROVIDER") else judgment_config
     response_adapter = judgment_adapter if response_config == judgment_config else LLMProviderAdapter(response_config)
 
@@ -233,10 +240,14 @@ def process_turn_from_environment(payload: Mapping[str, Any], *, timeout_seconds
                                               output_schema=RESPONSE_OUTPUT_SCHEMA, timeout_seconds=timeout)
 
     response_revision = os.environ.get("SARA_RESPONSE_LLM_MODEL_REVISION", "").strip() or f"{response_config.provider}:{response_config.model}"
-    return process_turn(
-        payload, judgment_generate=judgment_generate, judgment_model_id=judgment_config.model,
-        judgment_model_revision=revision, search_provider=search, relation_assessor=relation_assessor,
-        mcp_source=mcp_source, response_generate=response_generate,
-        response_model_id=response_config.model, response_model_revision=response_revision,
-        trusted_source_domains=trusted_domains_from_environment(), timeout_seconds=timeout_seconds,
-    )
+    try:
+        return process_turn(
+            payload, judgment_generate=judgment_generate, judgment_model_id=judgment_config.model,
+            judgment_model_revision=revision, search_provider=search, relation_assessor=relation_assessor,
+            mcp_source=mcp_source, content_fetcher=content_fetcher, response_generate=response_generate,
+            response_model_id=response_config.model, response_model_revision=response_revision,
+            trusted_source_domains=trusted_domains_from_environment(), timeout_seconds=timeout_seconds,
+        )
+    finally:
+        if content_fetcher is not None:
+            content_fetcher.close()

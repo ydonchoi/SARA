@@ -11,6 +11,7 @@ from .contracts import V3ContractError, create_assessment_envelope, normalize_ev
 from .provenance import record_proposal
 from .mcp_adapter import MCPAdapterError
 from .web_search import WebSearchError
+from .crawl4ai_adapter import Crawl4AIAdapterError
 
 _ROOT = Path(__file__).resolve().parents[1]
 _V24 = _ROOT / "SARA_v2.4"
@@ -64,7 +65,7 @@ def _safe_error_code(exc: Exception, fallback: str) -> str:
     # Exception text may contain URLs, queries, source content, or secrets.
     # Expose only stable contract codes; otherwise use the caller's fixed code.
     value = str(exc).strip()
-    safe_exception_types = {V3ContractError, MCPAdapterError, WebSearchError}
+    safe_exception_types = {V3ContractError, MCPAdapterError, WebSearchError, Crawl4AIAdapterError}
     if (type(exc) in safe_exception_types and value and len(value) <= 96
             and value.replace("_", "").isalnum() and value.upper() == value):
         return value
@@ -73,6 +74,7 @@ def _safe_error_code(exc: Exception, fallback: str) -> str:
 
 def verify_claim_from_sources(
     request: Mapping[str, Any], *, search_provider: Any | None, mcp_source: Any | None,
+    content_fetcher: Any | None = None,
     relation_assessor: Callable[[Mapping[str, Any], Mapping[str, Any], float], Mapping[str, Any]] | None,
     timeout_seconds: float = 15.0, trusted_source_domains: set[str] | None = None,
     ledger: Any | None = None,
@@ -140,13 +142,13 @@ def verify_claim_from_sources(
         except V3ContractError as exc:
             findings.append(str(exc))
 
-    if mcp_source is not None:
+    if mcp_source is not None or content_fetcher is not None:
         enriched = []
         for evidence in normalized:
             try:
-                fetched = mcp_source.fetch(evidence["url"])
+                fetched = mcp_source.fetch(evidence["url"]) if mcp_source is not None else None
                 if fetched:
-                    fetched["evidence_id"] = fetched.get("evidence_id") or evidence["evidence_id"]
+                    fetched["evidence_id"] = evidence["evidence_id"]
                     if fetched.get("url") != evidence["url"]:
                         raise V3ContractError("MCP_FETCH_URL_MISMATCH")
                     candidate = normalize_evidence(fetched, fallback_id=evidence["evidence_id"])
@@ -154,6 +156,22 @@ def verify_claim_from_sources(
                         evidence = candidate
             except Exception as exc:
                 findings.append(_safe_error_code(exc, "MCP_FETCH_FAILED"))
+            if content_fetcher is not None and evidence["access_level"] != "FULL_TEXT":
+                try:
+                    fetched = content_fetcher.fetch(evidence["url"])
+                    fetched["evidence_id"] = evidence["evidence_id"]
+                    if fetched.get("url") != evidence["url"]:
+                        raise V3ContractError("CRAWL4AI_FETCH_URL_MISMATCH")
+                    candidate = normalize_evidence(fetched, fallback_id=evidence["evidence_id"])
+                    metadata = candidate.get("retrieval_metadata", {})
+                    if (metadata.get("retrieval_status") == "SUCCEEDED"
+                            and metadata.get("extraction_status") in {"COMPLETE", "PARTIAL"}
+                            and metadata.get("completeness_status") not in {"EMPTY", "OVERSIZE"}):
+                        evidence = candidate
+                    else:
+                        findings.append("CRAWL4AI_CONTENT_INCOMPLETE")
+                except Exception as exc:
+                    findings.append(_safe_error_code(exc, "CRAWL4AI_FETCH_FAILED"))
             enriched.append(evidence)
         normalized = enriched
 

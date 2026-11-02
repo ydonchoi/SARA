@@ -86,6 +86,14 @@ SARA 결과는 prompt에만 덧붙이지 않고, 호스트가 상태로 보존�
 - 지지와 반박 근거가 함께 있으면 v2.5 conflict 상태를 유지하고, 단순 다수결로 결론내리지 않는다.
 - 웹 검색 실패, MCP 실패, timeout은 부정 증거가 아니라 `NOT_ASSESSED`/`UNVERIFIED`와 오류 코드로 기록한다.
 
+### D4a. Crawl4AI는 선택형 원문 수집기다
+
+Crawl4AI는 검색·판정기를 대체하지 않고, 기존 검색 또는 명시적으로 제출된 URL의 콘텐츠를 가져오는 선택형 `content_fetcher`로 연결한다. MCP fetch가 이미 완전한 원문을 반환하면 재수집하지 않는다. 원문이 없거나 초록/부분 자료인 경우에만 명시적으로 활성화한 Crawl4AI fetcher를 호출한다. 기본 상태는 비활성화이며, 설정된 HTTPS 도메인 허용 목록 밖으로 요청하지 않는다.
+
+수집기는 `evidence_id`와 출처 URL 계약을 유지하고, `retrieval_metadata` 안에 원 URL·최종 URL·조회 시각·HTTP 상태·원문/Markdown 해시·저장 참조·추출기 버전·`retrieval_status`·`extraction_status`·`completeness_status`를 기록한다. 원문 HTML과 Markdown은 content-addressed 경로에 각각 저장한다. `source_id`는 URL 기반 수집 ID이며, SARA 내부 주장 연결 ID인 `evidence_id`를 대신하지 않는다. HTTP 수집 성공, 추출 파이프라인 완료, 원 출처의 완전성, 주장 검증은 별도 상태다. 추출 파이프라인이 끝나도 출판물 전체가 페이지에 실렸는지 알 수 없어 `completeness_status=UNKNOWN`을 기록한다. 비어 있거나 일부만 추출됐으면 각각 `EMPTY` 또는 `PARTIAL`이며 `FULL_TEXT`로 승격하지 않는다. Crawl4AI 결과에 `verification_status`를 두지 않는다.
+
+현재 v3 verification 호출 경계는 동기식이므로, adapter는 한 호출 내에서 재사용되는 worker loop에 비동기 Crawl4AI crawler를 유지하고 동기 `fetch(url)` 계약을 제공한다. 최대 페이지 수·동시성·시간 제한은 adapter에서 제한한다. 브라우저는 정적 페이지에서 추가 지연을 만들 수 있어 전면 활성화하지 않는다. 실제 사이트 구성으로 기존 fetch 경로와 latency/throughput/추출 완전성을 비교한 뒤 선택적으로 운영한다. DNS 검증과 browser request routing만으로 브라우저 DNS 재해결과 다운로드 전 응답 크기 제한을 보장할 수 없으므로, 강한 SSRF/대용량 응답 방어는 배포 네트워크 egress 정책 또는 검증 proxy가 필요하다.
+
 ### D5. 외부 콘텐츠와 도구 호출은 불신 경계에 둔다
 
 검색 페이지·문서·MCP 응답·외부 LLM 출력은 모두 분석 데이터다. 그 안에 포함된 지시문은 실행 지시로 취급하지 않는다. LLM이 임의의 MCP 도구를 선택·호출하게 하지 않고, SARA orchestrator가 권한·입력 스키마·호출 횟수·시간 제한을 검증한 뒤 허용된 tool만 호출한다.

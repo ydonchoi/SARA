@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from hashlib import sha256
 import json
 from pathlib import Path
+import re
+from posixpath import normpath
 import sys
 from typing import Any, Mapping
 from urllib.parse import urlparse
@@ -59,6 +61,62 @@ def normalize_evidence(item: Mapping[str, Any], *, fallback_id: str) -> dict[str
     source_type = item.get("source_type", "WEB")
     if not isinstance(source_type, str) or not source_type.strip():
         raise V3ContractError("EVIDENCE_SOURCE_TYPE_INVALID")
+    retrieval = item.get("retrieval_metadata")
+    if retrieval is not None:
+        if not isinstance(retrieval, Mapping):
+            raise V3ContractError("EVIDENCE_RETRIEVAL_METADATA_INVALID")
+        allowed_retrieval_fields = {
+            "source_id", "source_url", "final_url", "retrieved_at", "http_status",
+            "content_hash", "markdown_hash", "raw_content_ref", "markdown_ref",
+            "extractor_version", "retrieval_status", "completeness_status", "extraction_status",
+            "retrieval_error_code",
+        }
+        if set(retrieval) - allowed_retrieval_fields:
+            raise V3ContractError("EVIDENCE_RETRIEVAL_METADATA_FIELDS_INVALID")
+        retrieval = dict(retrieval)
+        for field in ("source_id", "source_url", "retrieved_at", "extractor_version",
+                      "retrieval_status", "completeness_status"):
+            if field in retrieval and retrieval[field] is not None and (
+                    not isinstance(retrieval[field], str) or not retrieval[field].strip()):
+                raise V3ContractError("EVIDENCE_RETRIEVAL_METADATA_VALUE_INVALID")
+        for field in ("source_url", "final_url"):
+            value = retrieval.get(field)
+            if value is not None:
+                try:
+                    parsed_value = urlparse(value)
+                except (TypeError, ValueError):
+                    raise V3ContractError("EVIDENCE_RETRIEVAL_URL_INVALID") from None
+                if parsed_value.scheme != "https" or not parsed_value.hostname or parsed_value.username or parsed_value.password:
+                    raise V3ContractError("EVIDENCE_RETRIEVAL_URL_INVALID")
+        status = retrieval.get("http_status")
+        if status is not None and (isinstance(status, bool) or not isinstance(status, int) or not 100 <= status <= 599):
+            raise V3ContractError("EVIDENCE_HTTP_STATUS_INVALID")
+        for field in ("content_hash", "markdown_hash"):
+            value = retrieval.get(field)
+            if value is not None and (not isinstance(value, str) or not re.fullmatch(r"[a-f0-9]{64}", value)):
+                raise V3ContractError("EVIDENCE_CONTENT_HASH_INVALID")
+        for field in ("raw_content_ref", "markdown_ref"):
+            value = retrieval.get(field)
+            if value is not None and (not isinstance(value, str) or not value or value.startswith(("/", "\\"))
+                                      or "\\" in value or normpath(value) != value
+                                      or value == ".." or value.startswith("../")):
+                raise V3ContractError("EVIDENCE_CONTENT_REF_INVALID")
+        if retrieval.get("retrieval_status") is not None and retrieval.get("retrieval_status") not in ("SUCCEEDED", "FAILED"):
+            raise V3ContractError("EVIDENCE_RETRIEVAL_STATUS_INVALID")
+        if retrieval.get("completeness_status") is not None and retrieval.get("completeness_status") not in (
+                "COMPLETE", "PARTIAL", "EMPTY", "OVERSIZE", "UNKNOWN"):
+            raise V3ContractError("EVIDENCE_COMPLETENESS_STATUS_INVALID")
+        if retrieval.get("extraction_status") is not None and retrieval.get("extraction_status") not in (
+                "COMPLETE", "PARTIAL", "EMPTY", "OVERSIZE"):
+            raise V3ContractError("EVIDENCE_EXTRACTION_STATUS_INVALID")
+        if retrieval.get("retrieval_error_code") is not None and retrieval.get("retrieval_error_code") not in (
+                "HTTP_ERROR", "CRAWL_FAILED", "CONTENT_TOO_LARGE", "ROBOTS_DISALLOWED", "ROBOTS_POLICY_UNAVAILABLE"):
+            raise V3ContractError("EVIDENCE_RETRIEVAL_ERROR_CODE_INVALID")
+        if access_level == "FULL_TEXT" and (
+                retrieval.get("retrieval_status") not in {None, "SUCCEEDED"}
+                or retrieval.get("extraction_status") not in {None, "COMPLETE"}
+                or retrieval.get("completeness_status") in {"PARTIAL", "EMPTY", "OVERSIZE"}):
+            raise V3ContractError("FULL_TEXT_REQUIRES_COMPLETE_RETRIEVAL")
     return {
         "evidence_id": evidence_id, "url": url, "domain": hostname.lower(),
         "title": title, "publisher": str(item.get("publisher", "UNKNOWN")),
@@ -69,6 +127,7 @@ def normalize_evidence(item: Mapping[str, Any], *, fallback_id: str) -> dict[str
         "source_independence_key": str(item.get("source_independence_key", hostname.lower())),
         "scope_key": str(item.get("scope_key", "UNSPECIFIED")),
         "provenance": dict(item.get("provenance") or {}) if isinstance(item.get("provenance") or {}, Mapping) else {},
+        **({"retrieval_metadata": retrieval} if retrieval is not None else {}),
         "is_evidence": True,
     }
 

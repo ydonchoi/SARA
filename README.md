@@ -76,6 +76,8 @@ Get-Content .\turn.json -Raw | python -m SARA_v3.cli
 
 MCP는 자동 탐색하지 않습니다. 호스트의 인증된 MCP client를 `SARA_MCP_CALL_TOOL=module:call_tool`로 연결하고, 사용할 tool 이름을 `SARA_MCP_SEARCH_TOOL`/`SARA_MCP_FETCH_TOOL`에 명시해야 합니다. Fetch tool에는 `SARA_MCP_FETCH_ALLOWED_DOMAINS`가 필수입니다. 현재 v3 ledger 기본값은 process-local memory이며, 영속 ledger adapter는 호스트가 주입해야 합니다. 상세 계약·환경변수·미충족 출시 gate는 [v3 안내](SARA_v3/README_v3.md)와 [v3 설계 및 검토 기록](docs/v3-integration-design.md)을 참고하세요.
 
+v3에는 별도로 설치하는 Crawl4AI 기반 단일 페이지 수집기가 선택형 fetch fallback으로 제공됩니다. 기본 비활성화이며 명시적인 HTTPS 도메인 허용 목록이 필요합니다. 브라우저 실행이 모든 페이지를 더 빠르게 만드는 것은 아니므로 운영 전에 source mix를 기준으로 비교 측정하세요. 설치·보안 한계·환경변수는 [v3 안내](SARA_v3/README_v3.md)를 참고하세요.
+
 Python 호스트(Co-thoughts 포함)는 루트의 `sara_runtime.process_dialogue_turn_from_environment(payload)`를 호출할 수 있습니다. 이 진입점은 위의 `SARA_LLM_*` 설정으로 판단 provider를 구성하고, 선택적으로 아래처럼 source verifier를 연결합니다.
 
 ```powershell

@@ -23,6 +23,33 @@ The request follows the v2.5 dialogue contract: `request_id`, `conversation_id`,
 | Trusted source policy | `SARA_TRUSTED_SOURCE_DOMAINS=example.gov,example.org` | Only full-text supporting evidence from an explicitly trusted domain can yield a `VERIFIED` proposal. Empty allowlist fails closed to `PARTIALLY_VERIFIED` at best. |
 | Optional response LLM | `SARA_RESPONSE_LLM_PROVIDER`, `SARA_RESPONSE_LLM_MODEL`, `SARA_RESPONSE_LLM_API_KEY`; other fields use the `SARA_RESPONSE_LLM_` prefix | Defaults to the JEV model configuration. It receives SARA assessment envelopes as structured context. |
 | Optional MCP bridge | `SARA_MCP_CALL_TOOL=module:call_tool`, `SARA_MCP_SEARCH_TOOL`, `SARA_MCP_FETCH_TOOL`; fetch additionally requires `SARA_MCP_FETCH_ALLOWED_DOMAINS` | The host supplies an already-authenticated MCP client callback. Only named tools are called; fetch URLs must be HTTPS and within the configured domain allowlist. This package does not configure MCP servers, authentication, or transport. |
+| Optional Crawl4AI fetcher | `SARA_CRAWL4AI_ENABLED=1`, `SARA_CRAWL4AI_ALLOWED_DOMAINS=example.org` | Fetch-only fallback after MCP when evidence is not full text. Disabled by default. It uses a local Chromium browser, respects robots.txt, and stores raw HTML and Markdown separately under `SARA_CRAWL4AI_STORE_DIR` (default `.sara-crawl4ai`). |
+
+### Crawl4AI setup and limits
+
+Crawl4AI is an optional dependency, pinned separately from the core runtime:
+
+```powershell
+python -m pip install -r requirements-test.txt -r requirements-crawl4ai.txt
+crawl4ai-setup
+```
+
+Configure an explicit fetch allowlist before enabling it:
+
+```powershell
+$env:SARA_CRAWL4AI_ENABLED = "1"
+$env:SARA_CRAWL4AI_ALLOWED_DOMAINS = "example.org,example.gov"
+$env:SARA_CRAWL4AI_STORE_DIR = ".sara-crawl4ai"
+$env:SARA_CRAWL4AI_TIMEOUT_SECONDS = "20"
+$env:SARA_CRAWL4AI_MAX_PAGES = "3"
+$env:SARA_CRAWL4AI_MAX_STORED_BYTES = "2000000"
+```
+
+The adapter accepts only HTTPS on port 443, rejects literal IPs and credential-bearing URLs, checks DNS answers and browser requests against the domain policy, blocks image/media/font requests, limits a turn to at most three pages and one active page by default, and applies a per-page timeout. These checks reduce exposure but do not pin the browser's DNS resolution or impose a hard network download cap before Chromium has received a response. Production deployments still need network egress controls or a validating proxy for strong SSRF and response-size protection. Use only sources the operator is permitted to access and honor publisher access policies.
+
+The adapter records transport/retrieval status, extraction status and source-level completeness separately; it does not return `verification_status`. A technically complete extraction is recorded as `extraction_status=COMPLETE`, while `completeness_status=UNKNOWN` because Crawl4AI cannot establish that a page contains an entire article or that the publisher exposed all of its content. Partial/empty/oversized extraction is not treated as full text. SARA continues to determine claim status from trusted-domain policy and source spans. Raw HTML and Markdown can contain sensitive or copyrighted material: configure storage access, retention and cleanup accordingly. Browser startup and JavaScript execution may increase latency; benchmark the actual source mix before enabling it broadly.
+
+For a public-network integration check, set `SARA_CRAWL4AI_LIVE_TEST=1` and `SARA_CRAWL4AI_ALLOWED_DOMAINS=quotes.toscrape.com`, then run `python -m pytest -q SARA_v3/tests/test_crawl4ai_live.py`. The test uses the site's JavaScript demonstration page and stores artifacts under pytest's temporary directory. For a reproducible latency smoke comparison against a direct HTTP fetch, use `python -m SARA_v3.crawl4ai_benchmark --url ... --allowed-domains ...`. Results are workload-specific and not proof of general speed improvement.
 
 The MCP callback accepts `(tool_name, arguments)` and returns an MCP mapping with `structuredContent` or JSON text content. Search results use a top-level `results` list. Fetch returns `url`, `content`, and optional `content_scope` (`FULL_TEXT` to assert full-text access), title, publisher, and publication date. The host adapter must enforce its own timeout, server identity, authentication, and read-only policy.
 
