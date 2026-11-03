@@ -258,10 +258,11 @@ only reports `PROMOTION_APPROVED` or `PROMOTION_BLOCKED`; it never changes the
 canonical version itself. It now also requires the human-review commit gate test
 suite and a verified readiness status for that transition.
 
-Current promotion evidence is maintained in `promotion_evidence_template.json`
-and the decision in `CANONICAL_PROMOTION_STATUS.md`. As long as the benchmark is
-DRAFT, a real provider is unconfigured, or other required evidence is missing,
-v2.4 remains canonical.
+v2.5 promotion evidence is maintained in `promotion_evidence_template.json`
+and the decision in `CANONICAL_PROMOTION_STATUS.md`. v2.5 itself was never
+promoted: the benchmark stayed DRAFT and no real provider was configured.
+Canonical status passed from v2.4 directly to v3.0.0 on 2026-11-03 under a
+separate source-release promotion (`docs/v3-promotion-status.md`).
 
 
 ## SARA-Internal JEV-Style Dialogue Route — Prototype

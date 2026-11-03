@@ -156,12 +156,14 @@ v3는 이 경로를 실행한다. Co-thoughts 측 연결은 ydonchoi/co-thoughts
 
 ## 6. 통합 및 마이그레이션
 
-1. **기준 보존:** v2.4 canonical 동작을 regression suite로 고정하고, 정확한 기준 commit과 변경 가능한 maintained tree를 구분한다.
-2. **계약 통합:** v2.3 실행 envelope, v2.4 epistemic/attribution/logical audit, v2.5 JEV/claim identity/conflict/provenance/commit gate를 버전된 v3 schema로 매핑한다. 과거 module을 단순 import해 v3라고 부르지 않는다.
-3. **provider interface:** judgment LLM, web search, page fetch/content access, MCP connector를 별도 interface와 공통 error/provenance 계약으로 등록한다.
-4. **host 연결:** Co-thoughts가 claim candidates와 context를 제출하고 SARA assessment envelope을 받아 다음 LLM 호출에 넣는 왕복 통합을 구현한다. API key와 credentials는 host에서 주입한다.
-5. **호환 기간:** v2.3/v2.4/v2.5 진입점을 deprecated compatibility facade로 유지하고, 출력에 `schema_version`, `runtime_revision`, 원천 assessment를 명시한다.
-6. **승격:** 아래 release gate가 충족되고 명시적 human approval을 받은 뒤에만 v3를 canonical로 선언한다. 구현 완료, local green tests, synthetic provider 실행만으로 승격하지 않는다.
+진행 상태는 2026-11-03 기준이다.
+
+1. **기준 보존:** v2.4 canonical 동작을 regression suite로 고정하고, 정확한 기준 commit과 변경 가능한 maintained tree를 구분한다. — 완료. v3 승격 후에도 v2.4 regression suite는 비교 기준으로 유지한다.
+2. **계약 통합:** v2.3 실행 envelope, v2.4 epistemic/attribution/logical audit, v2.5 JEV/claim identity/conflict/provenance/commit gate를 버전된 v3 schema로 매핑한다. 과거 module을 단순 import해 v3라고 부르지 않는다. — 완료(`sara.assessment.v3`, `sara.dialogue-result.v3`). v2.5와의 라우팅 동등성은 `test_v3_regression_comparison.py`로 확인.
+3. **provider interface:** judgment LLM, web search, page fetch/content access, MCP connector를 별도 interface와 공통 error/provenance 계약으로 등록한다. — 완료(Crawl4AI fetcher 포함). live 연결은 사용자 책임.
+4. **host 연결:** Co-thoughts가 claim candidates와 context를 제출하고 SARA assessment envelope을 받아 다음 LLM 호출에 넣는 왕복 통합을 구현한다. API key와 credentials는 host에서 주입한다. — 구현 완료(ydonchoi/co-thoughts#1: 별도 프로세스 호출, 전송 범위 제한, envelope 전달·변조 거부). live 왕복은 사용자 책임.
+5. **호환 기간:** v2.3/v2.4/v2.5 진입점을 deprecated compatibility facade로 유지하고, 출력에 `schema_version`, `runtime_revision`, 원천 assessment를 명시한다. — 진행 중. v2.5 CLI·executor와 `sara_runtime`의 v2.5/v2.3 진입점은 호환 경로로 남아 있다.
+6. **승격:** 아래 release gate가 충족되고 명시적 human approval을 받은 뒤에만 v3를 canonical로 선언한다. 구현 완료, local green tests, synthetic provider 실행만으로 승격하지 않는다. — 완료(2026-11-03). 일부 gate는 저장소 소유자가 코드 공개 범위에 맞춰 `WAIVED`로 기록했다([승격 기록](v3-promotion-status.md)).
 
 ## 7. v3 출시 전 수용 기준
 
@@ -178,12 +180,12 @@ v3는 이 경로를 실행한다. Co-thoughts 측 연결은 ydonchoi/co-thoughts
 
 ## 8. 미확정 배포 선택
 
-아래 항목은 설계 원칙을 바꾸지 않는 배포 선택이며, 실제 provider/host 환경을 확인한 뒤 정한다.
+아래 항목은 설계 원칙을 바꾸지 않는 배포 선택이며, 실제 provider/host 환경을 확인한 뒤 정한다. v3는 배포 계획 없이 코드 공개 범위로 승격됐으므로, 2026-11-03에 정한 두 항목 외에는 운영자가 배포 시 결정한다.
 
 - 기본 웹 검색 서비스와 사용 약관/지역/데이터 보존 조건
-- Kimi 및 추가 LLM의 전용 adapter 지원 여부와 현재 API/schema capability
+- Kimi 및 추가 LLM의 전용 adapter 지원 여부와 현재 API/schema capability — 지원 provider는 Anthropic으로 지정(2026-11-03). 나머지 adapter는 `UNVERIFIED`
 - MCP server 목록, 인증 방식, 허용 tool, rate limit
-- host가 제공하는 durable ledger와 reviewer identity/authorization
+- host가 제공하는 durable ledger와 reviewer identity/authorization — SQLite 참조 ledger(`SARA_PROVENANCE_LEDGER_PATH`) 제공. reviewer 인증은 미정
 - 모델/검색 호출에 전송 가능한 대화 범위와 retention 설정
 - 배포별 latency·비용 한도와 retry budget
 
