@@ -26,6 +26,8 @@ def test_live_javascript_page_is_rendered_and_captured(tmp_path: Path):
     assert result["retrieval_metadata"]["retrieval_status"] == "SUCCEEDED"
     assert result["retrieval_metadata"]["extraction_status"] == "COMPLETE"
     assert result["retrieval_metadata"]["completeness_status"] == "UNKNOWN"
-    assert "The world as we have created it" in result["content"]
+    assert result["access_level"] == "ABSTRACT"
+    assert result["content"] == ""
+    assert "The world as we have created it" in result["snippet"]
     assert result["retrieval_metadata"]["raw_content_ref"]
     assert result["retrieval_metadata"]["markdown_ref"]
