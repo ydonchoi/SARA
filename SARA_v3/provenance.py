@@ -71,4 +71,5 @@ def record_proposal(ledger: ProvenanceEventLedger, *, claim: Mapping[str, Any],
     )
     created.append(proposal_event_id)
     return {"event_ids": created, "proposal_event_id": proposal_event_id,
-            "ledger_status": "IN_MEMORY_ONLY", "commit_status": "NOT_COMMITTED"}
+            "ledger_status": getattr(ledger, "ledger_status", "IN_MEMORY_ONLY"),
+            "commit_status": "NOT_COMMITTED"}
