@@ -122,6 +122,10 @@ requirements-crawl4ai.txt
               선택 의존성 (Crawl4AI)
 ```
 
+## 설명 출력 형식
+
+설명·보고서·검토 자료의 표현 매체 선택과 기술문서 작성 원칙은 [설명 출력 프로토콜](docs/explanation-output-protocol-v0.1.md)을 참고하세요. 이 문서는 표현 계층의 지침이며 SARA 런타임의 자동 시각화나 영상 생성을 구현하지 않습니다. SARA의 evidence, provenance, verification status 및 commit 계약은 기존 v3 기준을 그대로 따릅니다.
+
 ## 문서와 테스트
 
 현재 상태의 기준 문서는 이 README, [v3 승격 기록](docs/v3-promotion-status.md), [v3 설계 기준](docs/v3-integration-design.md)입니다. `SARA_v2.3/`–`SARA_v2.5/`와 `docs/v2.5-*` 문서는 각 버전의 계약과 당시 검토·승격 기록을 보존합니다. 그 안의 "현재" 표현은 작성 시점 기준이므로 지금 상태와 혼동하지 마세요.
