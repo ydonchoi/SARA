@@ -2,7 +2,7 @@
 
 ## Status
 
-**VERSION-SCOPED STATUS: USER-LED TRIAL CANDIDATE / PRODUCTION READINESS UNVERIFIED.** v2.5 remains available on `main` for compatibility and trial use; v2.4 remains the canonical rollback/comparison baseline. The integrated successor candidate is SARA v3.0; its current state and release gates are in the root [README](../README.md) and [v3 integration design](../docs/v3-integration-design.md). This v2.5 runtime has injectable provider boundaries, but actual host dialogue-loop and live model/verifier configuration remain unverified. Durable deployment storage/access control, independently adjudicated benchmarks, and comparative research-quality evidence remain incomplete. The automated suite is intentionally not a prerequisite for this historical v2.5 trial; observed runtime failures drive targeted fixes.
+**VERSION-SCOPED STATUS: USER-LED TRIAL CANDIDATE / PRODUCTION READINESS UNVERIFIED.** v2.5 remains available on `main` for compatibility and trial use. SARA v3.0.0 has been canonical since 2026-11-03, and v2.4 remains the rollback/comparison baseline; see the root [README](../README.md) and [v3 promotion record](../docs/v3-promotion-status.md). This v2.5 runtime has injectable provider boundaries, but actual host dialogue-loop and live model/verifier configuration remain unverified. Durable deployment storage/access control, independently adjudicated benchmarks, and comparative research-quality evidence remain incomplete. The automated suite is intentionally not a prerequisite for this historical v2.5 trial; observed runtime failures drive targeted fixes.
 
 ## Goal
 

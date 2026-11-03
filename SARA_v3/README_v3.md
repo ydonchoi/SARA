@@ -1,6 +1,6 @@
-# SARA v3.0.0 integration candidate
+# SARA v3.0.0
 
-**Status:** SARA v3.0.0 integration candidate on `main`, not canonical. SARA v2.4 remains the canonical baseline until the v3 release gates pass. Local contracts and stub tests do not establish live-provider quality, a Co-thoughts → SARA → assessment-return host connection, production security, durable storage, or promotion readiness.
+**Status:** canonical since 2026-11-03, promoted for source release. SARA v2.4 is the previous baseline and remains the regression comparison suite. The promotion rests on local and CI contract gates. Live-provider quality, a live Co-thoughts → SARA → assessment-return round trip, independent adjudication, and deployment storage/security were not verified; they are waived to users and operators. See [the promotion record](../docs/v3-promotion-status.md).
 
 ## Runtime
 
@@ -68,4 +68,8 @@ The MCP callback accepts `(tool_name, arguments)` and returns an MCP mapping wit
 
 ## Verification
 
-Run the repository suite with `python -m pytest -q`. The full suite passed locally on 2026-10-25 with Python 3.13.9 and pytest 8.4.2 (453 passed) on the v3 integration candidate. This is local regression evidence only. Before canonical promotion, meet the release gates in [the integration design](../docs/v3-integration-design.md), including live provider smoke tests, an approved Co-thoughts host invocation and assessment-return test, independent adjudication, security review, and durable ledger evidence.
+Run the repository suite with `python -m pytest -q`. The promoted commit `7db1cdb` passed all 34 GitHub Actions checks and 520 local tests (3 opt-in live tests skipped) on 2026-11-03. Before operating v3, run the opt-in live checks yourself: `SARA_v3/tests/test_live_provider_smoke.py` (`SARA_V3_LIVE_SMOKE=1`) for your judgment provider and web search, and the Co-thoughts live round trip if you use that host. Only the Anthropic adapter is listed as supported; the other adapters have stub-transport tests only.
+
+## Durable ledger
+
+Set `SARA_PROVENANCE_LEDGER_PATH` to a SQLite file to keep provenance events across processes (`SARA_v3/durable_ledger.py`). The ledger keeps the v2.5 hash chain and transition rules, rejects UPDATE/DELETE at the database level, refuses appends that would fork the chain, re-verifies the whole history on load, and supports JSONL export and restore. Reviewer IDs are caller-supplied strings and are not authenticated; file permissions, backups, and retention are the operator's responsibility.

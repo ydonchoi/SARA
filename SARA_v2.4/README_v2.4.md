@@ -3,7 +3,7 @@
 
 SARA (**Senior Academic Research Architect**)는 연구의 Claim → Premise → Evidence → Method → Verification → Inference → Uncertainty 구조를 추적하고, source provenance와 검증 상태를 분리하여 연구 판단을 지원한다.
 
-2026-10-25 기준 현재 canonical verification baseline은 **v2.4**다. v3.0 통합 런타임 후보가 `main`에 추가됐지만, live host/provider와 운영 release gate가 검증되지 않아 canonical 표기는 바뀌지 않았다. 이 문서는 v2.4의 버전별 계약과 구현 설명이다.
+2026-11-03부터 canonical 버전은 **v3.0.0**이다([승격 기록](../docs/v3-promotion-status.md)). v2.4는 이전 canonical verification baseline이며 회귀 비교 기준으로 유지된다. 이 문서는 v2.4의 버전별 계약과 구현 설명이다.
 
 ## Version Overview
 
@@ -334,7 +334,7 @@ v2.4 adds:
 ## 16. Current Status
 
 **Version: v2.4**
-**Status: CANONICAL VERIFICATION BASELINE (2026-10-25); v3 SUCCESSOR CANDIDATE NOT YET PROMOTED**
+**Status: PREVIOUS CANONICAL VERIFICATION BASELINE; v3.0.0 CANONICAL SINCE 2026-11-03; v2.4 KEPT AS REGRESSION COMPARISON SUITE**
 
 v2.4는 Co-thoughts v2.0과 연결되는 verification baseline이다.
 

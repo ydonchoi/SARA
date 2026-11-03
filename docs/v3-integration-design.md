@@ -1,13 +1,12 @@
 # SARA v3 통합 설계 기준
 
-- **상태:** v3 구현 후보 — 로컬 구현 완료, release gate 및 canonical 승격 대기
-- **검토일:** 2026-10-25
-- **현재 기준선:** v2.4 canonical; v2.5 operational trial
-- **통합 후보:** v3.0.0이 `main`에 구현됨; canonical 지정은 대기
-- **로컬 검증:** Python 3.13.9 / pytest 8.4.2, 전체 suite 453 passed (2026-10-25); live/host/release gate는 미검증
+- **상태:** v3.0.0 canonical — 2026-11-03 코드 공개 범위로 승격 ([승격 기록](v3-promotion-status.md))
+- **검토일:** 2026-10-25 (설계), 2026-11-03 (승격)
+- **현재 기준선:** v3.0.0 canonical; v2.4 이전 baseline·회귀 비교 기준; v2.5 호환·trial 경로
+- **승격 commit:** `7db1cdb` — GitHub Actions check 34개 통과, 로컬 520 passed (3 skipped: opt-in live 테스트)
 - **목적:** 버전별로 분리된 실행·판단·출처 확인 경로를 외부 LLM 및 Co-thoughts와 연결하는 v3 기준을 정의한다.
 
-이 문서는 설계 결정과 구현 기준을 기록한다. 저장소의 v3 후보 코드가 있어도 live provider 연결, 운영 보안 검토, 성능 검증 또는 canonical 승격을 완료했다는 뜻은 아니다.
+이 문서는 설계 결정과 구현 기준을 기록한다. v3는 canonical이지만, live provider 연결, Co-thoughts live 왕복, 독립 평가, 배포 환경 보안·저장 검토는 승격 범위에서 제외(`WAIVED`)했다. 이 항목들은 검증되지 않았으며 운영 전 사용자/운영자가 확인해야 한다.
 
 ## 1. v3의 목표와 사용자 의도
 
@@ -153,7 +152,7 @@ flowchart TD
   M --> N[Explicit review/commit gate for durable status]
 ```
 
-구현 후보는 이 경로를 실행하지만, 실제 provider와 Co-thoughts host에서 동작한다는 운영 증거는 아직 없다.
+v3는 이 경로를 실행한다. Co-thoughts 측 연결은 ydonchoi/co-thoughts#1에 구현됐지만, 실제 provider와 Co-thoughts host에서 동작한다는 live 운영 증거는 아직 없다.
 
 ## 6. 통합 및 마이그레이션
 
@@ -175,7 +174,7 @@ flowchart TD
 - source verification 판단과 reviewer-bound durable commit이 구분되고, conflict·stale revision·partial failure가 fail-closed임을 검증한다.
 - 독립 adjudication이 된 benchmark와 사전 지정된 false-positive/false-negative/abstention/latency/cost 기준으로 비교 평가한다.
 - 영속 저장·접근 통제·보존·복구·감사 요구사항을 실제 배포 환경에서 확인한다.
-- 모든 증거는 정확한 candidate commit에 묶고, 미충족 gate는 `UNVERIFIED` 또는 `BLOCKED`로 남긴다.
+- 모든 증거는 정확한 candidate commit에 묶고, 미충족 gate는 `UNVERIFIED` 또는 `BLOCKED`로 남긴다. 저장소 소유자가 승격 범위에서 명시적으로 제외한 gate는 근거와 함께 `WAIVED`로 기록한다(2026-11-03 결과는 [승격 기록](v3-promotion-status.md)).
 
 ## 8. 미확정 배포 선택
 

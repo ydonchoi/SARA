@@ -4,7 +4,7 @@
 
 SARA는 연구 주장을 근거·방법·출처와 연결해 검토하고, 검증 상태와 불확실성을 분리해 기록하는 연구 분석 시스템입니다. 저장소에는 버전별 설계 문서, Python 실행 모듈, 계약 테스트가 함께 있습니다.
 
-> **현재 상태:** v2.4는 canonical verification baseline입니다. v2.5는 operational trial, v3는 통합 런타임 구현 후보입니다. v3의 live provider, durable host/ledger 운영, 독립 평가와 canonical 승격 근거는 아직 확인되지 않았습니다.
+> **현재 상태:** v3.0.0이 canonical 버전입니다(2026-11-03 승격, 코드 공개 범위). v2.4는 이전 baseline이자 회귀 비교 기준으로 유지되고, v2.5는 호환·trial 경로입니다. 승격은 로컬·CI 계약 gate에 근거하며, live provider 연결, Co-thoughts live 왕복, 독립 평가, 배포 환경의 저장·보안은 검증하지 않고 사용자/운영자 책임으로 남겼습니다. 자세한 내용은 [v3 승격 기록](docs/v3-promotion-status.md)을 참고하세요.
 
 ## 무엇을 하는가
 
@@ -24,9 +24,9 @@ SARA의 구조적·계약 검사는 의미론적 사실 판정이나 독립적�
 | v2.1 | 분석 모듈화 | 보존된 이력 |
 | v2.2 | 의존성·로딩·계약 관리 | 보존된 이력 |
 | v2.3 | 실행 경계, evidence 검증, 재현/시뮬레이션 구분 | 호환성과 실행 기반 |
-| **v2.4** | Claim/premise 상태, provenance, attribution, temporal context, 구조화 argument audit | **canonical baseline** |
+| **v2.4** | Claim/premise 상태, provenance, attribution, temporal context, 구조화 argument audit | **이전 canonical baseline; 회귀 비교 기준** |
 | **v2.5** | Claim identity, evidence conflict, provenance ledger, selective reverification, 내부 판단 경로와 CLI | **operational trial; 승격·운영 준비 미확인** |
-| **v3.0.0** | v2.3~v2.5 통합 대화 런타임, 외부 LLM judgment/응답, 기본 웹 검색, 선택 MCP, SARA assessment envelope | **구현 후보; release gate 대기** |
+| **v3.0.0** | v2.3~v2.5 통합 대화 런타임, 외부 LLM judgment/응답, 기본 웹 검색, 선택 MCP, SARA assessment envelope, SQLite 영속 ledger | **canonical (2026-11-03, 코드 공개 범위; 운영 검증은 사용자 책임)** |
 
 판단 adapter는 OpenAI API, Anthropic Messages, Gemini `generateContent`, Kimi(OpenAI-compatible JSON mode), 일반 OpenAI-compatible endpoint를 지원합니다. 저장소 테스트는 stub transport를 사용하며, 실제 계정·API key·서비스 연결이 설정됐다는 뜻은 아닙니다. JSON mode 응답은 SARA가 로컬 schema 계약으로 다시 검사합니다. 소비자용 ChatGPT, Claude, Gemini 앱의 내부 대화 흐름에도 자동 연결되지 않습니다.
 
@@ -111,9 +111,9 @@ provider module 계약, 입력 형식, 결과 상태는 [실행기 안내](SARA_
 
 ```text
 SARA_v2.3/   호환 실행 계약과 evidence 검증 모듈
-SARA_v2.4/   canonical epistemic baseline과 구조화 논리 감사
+SARA_v2.4/   이전 canonical epistemic baseline과 구조화 논리 감사
 SARA_v2.5/   trial runtime, provider adapter, executor, 재검증·승격 프로토타입
-SARA_v3/    통합 대화 runtime 후보, web/MCP source adapter, assessment contract
+SARA_v3/    canonical 통합 대화 runtime, web/MCP source adapter, assessment contract, 영속 ledger
 LEGACY/     v2.1–v2.2 보존 문서
 SARA_v1.0/   초기 연구 분석 산출물
 SARA_v2.1/   모듈형 architecture 문서
@@ -125,7 +125,7 @@ requirements-test.txt
 
 ## 문서와 테스트
 
-루트 README와 `docs/v3-integration-design.md`가 현재 저장소 상태를 설명합니다. `SARA_v2.3/`–`SARA_v2.5/` 문서는 각 버전의 계약과 당시 승격 기록을 보존하므로, 버전 내부의 historical status를 현재 v3 상태와 혼동하지 마세요. v3는 구현 후보이고 v2.4는 release gate가 통과될 때까지 canonical baseline입니다.
+루트 README와 `docs/v3-integration-design.md`가 현재 저장소 상태를 설명합니다. `SARA_v2.3/`–`SARA_v2.5/` 문서는 각 버전의 계약과 당시 승격 기록을 보존하므로, 버전 내부의 historical status를 현재 v3 상태와 혼동하지 마세요. v3가 canonical이며, v2.4는 이전 baseline으로 회귀 비교에 계속 사용합니다.
 
 - [v2.4 상세 설명](SARA_v2.4/README_v2.4.md)
 - [v2.5 상세 설명과 사용 예시](SARA_v2.5/README_v2.5.md)
@@ -135,9 +135,9 @@ requirements-test.txt
 - [v2.5 승격 준비 기준](docs/v2.5-promotion-readiness-plan.md)
 - [v2.4 regression baseline 정책](docs/v2.4-regression-baseline.md)
 - [v3 구현·통합 설계 기준](docs/v3-integration-design.md)
-- [v3 canonical 승격 상태](docs/v3-promotion-status.md)
+- [v3 canonical 승격 기록](docs/v3-promotion-status.md)
 
-Pull request에는 변경한 계약에 대한 회귀 테스트를 포함하고, CI 결과를 확인하세요. 전체 테스트 명령은 `python -m pytest -q`입니다. 위의 로컬 테스트 통과는 live provider 연결이나 v3 canonical 승격 gate 통과를 의미하지 않습니다.
+Pull request에는 변경한 계약에 대한 회귀 테스트를 포함하고, CI 결과를 확인하세요. 전체 테스트 명령은 `python -m pytest -q`입니다. 로컬 테스트 통과는 live provider 연결이나 운영 환경 검증을 의미하지 않습니다.
 
 ## 라이선스
 

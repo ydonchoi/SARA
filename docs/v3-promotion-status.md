@@ -1,10 +1,10 @@
 # SARA v3 Canonical Promotion Status
 
-**Decision: PROMOTION NOT APPROVED — gates are `PASSED` or `WAIVED` except G0 (candidate CI pending); waiting for the approval record.**
+**Decision: PROMOTED — SARA v3.0.0 is canonical as of 2026-11-03 (source release; waived gates are user/operator responsibilities).**
 
 - **작성일:** 2026-11-03
 - **대상:** SARA v3.0.0 통합 런타임 후보
-- **현재 canonical:** SARA v2.4 (rollback/comparison baseline)
+- **현재 canonical:** SARA v3.0.0 (2026-11-03부터). SARA v2.4는 이전 baseline이며 rollback·회귀 비교 기준으로 유지
 - **후보 commit:** `7db1cdb` (branch `v3-promotion-gates`, ydonchoi/SARA#70; base `main` `9ee11c9`). 이 commit은 G9 SQLite ledger, Crawl4AI 판정 무결성 수정, 저장소 정리를 포함한다. 이후 이 문서만 고치는 commit은 코드·테스트를 바꾸지 않으므로 후보를 바꾸지 않는다. 코드나 테스트가 바뀌면 후보를 다시 지정한다. 이전 후보 `a0f7a63`의 CI 증거는 참고 자료로 남긴다.
 - **기준 문서:** [v3 통합 설계 기준 §6–§8](v3-integration-design.md)
 
@@ -34,7 +34,7 @@ v3 승격은 **코드 공개(source release)** 범위로 한다. 배포 계획�
 
 | # | Gate (설계 기준 §7) | 상태 | 근거 | 승격 후 남는 사용자/운영자 책임 |
 |---|---|---|---|---|
-| G0 | 후보 commit 고정 및 해당 commit의 전체 suite 통과 | `PARTIAL` (CI 확인 대기) | 로컬: 후보 `7db1cdb`(작업 트리 clean)에서 520 passed, 3 skipped (skip은 opt-in live 테스트). GitHub Actions 결과는 아래 "후보 CI 증거"에 기록하며, 모두 통과하면 `PASSED` | 코드·테스트가 바뀌면 후보 재지정 후 CI 재확인 |
+| G0 | 후보 commit 고정 및 해당 commit의 전체 suite 통과 | `PASSED` | 후보 `7db1cdb`의 GitHub Actions check 34개 모두 success(아래 "후보 CI 증거"). 로컬: 같은 commit에서 520 passed, 3 skipped (skip은 opt-in live 테스트) | 이후 코드·테스트 변경은 각자의 CI로 확인 |
 | G1 | JEV rubric 및 v2.5 binding/staleness/failure 계약 회귀 비교 | `PASSED` | `SARA_v3/tests/test_v3_regression_comparison.py` — frozen 8개 케이스(bound/unbound inference, ambiguous, no-inference, medium/low confidence, stale digest, model timeout)가 v2.5와 v3에서 같은 judgment·activation·reason code로 라우팅되고, 출처 검증은 bound high-confidence 케이스에서만 시작됨. v3 envelope의 v2.4 epistemic·logical audit 결과가 직접 실행한 v2.4 결과와 동일 | 없음 |
 | G2 | 각 judgment adapter의 실제 API 형식·structured output 확인 | `WAIVED` (사용자 부담) | 지원 provider는 Anthropic만으로 결정. live smoke 하네스 `SARA_v3/tests/test_live_provider_smoke.py` 제공(`SARA_V3_LIVE_SMOKE=1`, 보고서 `SARA_V3_LIVE_SMOKE_REPORT`, API key 노출 검사 포함). 2026-11-03 `claude-sonnet-5-5` 실행은 Anthropic API가 "credit balance is too low"(HTTP 400)로 거절해 계약 확인은 못 함. 이때 judgment는 `NOT_ASSESSED`/`FAILED`, 응답은 `LLM_PROVIDER_HTTP_ERROR_400`으로 fail-closed되었고 결과에 API key가 포함되지 않음 | 사용할 provider 계정으로 하네스 실행. OpenAI·Gemini·Kimi·OpenAI-compatible adapter는 stub 테스트만 있으며 `UNVERIFIED` |
 | G3 | 웹 검색 snippet-only / metadata-only / abstract / full-text / unavailable 케이스, snippet-only ≠ `VERIFIED` | `PASSED` (live 검색 제외) | `test_v3_integration.py`의 snippet/full-text 테스트, `test_v3_release_gates.py`의 `test_non_full_text_access_levels_cannot_verify`, `test_unavailable_source_cannot_verify`, `test_empty_search_reports_no_evidence_retrieved`, `test_mcp_fetch_without_full_text_scope_is_abstract_and_does_not_verify`. Crawl4AI 수집 결과도 `ABSTRACT`로만 들어가 `VERIFIED`에 기여하지 않음(`test_crawl_fetcher_integrates_without_trusting_its_status`) | Brave key로 `test_live_web_search_snippets_never_verify` 실행 |
@@ -48,7 +48,8 @@ v3 승격은 **코드 공개(source release)** 범위로 한다. 배포 계획�
 
 ## 후보 CI 증거
 
-- 후보 `7db1cdb`: _CI 결과 확인 후 기록_ (2026-11-03 push 직후 check 34개 실행 중)
+- 후보 `7db1cdb`: check 34개 모두 success (2026-11-03) — `SARA v3 Tests`(전체 suite 포함) [push](https://github.com/ydonchoi/SARA/actions/runs/41636547619), [pull_request](https://github.com/ydonchoi/SARA/actions/runs/41636553913); `SARA Contract Tests` [push](https://github.com/ydonchoi/SARA/actions/runs/41636547514), [pull_request](https://github.com/ydonchoi/SARA/actions/runs/41636554130)
+- 문서 commit `635dc56`(gate 범위 기록): check 34개 모두 success
 - 중간 commit `d2d0ee6` (G9 ledger 추가, 참고): check 33개 모두 success
 - 이전 후보 `a0f7a63` (참고): check 33개 모두 success — `SARA v3 Tests` [push](https://github.com/ydonchoi/SARA/actions/runs/41632302037), [pull_request](https://github.com/ydonchoi/SARA/actions/runs/41634392082); `SARA Contract Tests` [push](https://github.com/ydonchoi/SARA/actions/runs/41632301902), [pull_request](https://github.com/ydonchoi/SARA/actions/runs/41634392006)
 
@@ -65,24 +66,26 @@ v3를 실제 서비스나 연구 운영에 쓰려면 아래를 직접 확인해�
 
 ## 승격 절차
 
-1. 후보 commit을 지정하고 G0를 기록한다. (완료: `7db1cdb`, CI 확인 대기)
+1. 후보 commit을 지정하고 G0를 기록한다. (완료: `7db1cdb`, CI 34개 통과)
 2. 로컬 gate(G1, G3–G5, G7)를 후보 commit에서 확인한다. (완료)
 3. 승격 범위 밖 gate를 `WAIVED`로 기록한다. (완료: G2, G6, G8, G9, G10)
-4. 아래 승인 기록을 작성한다.
-5. 같은 변경에서 루트 [README](../README.md), [README_v3](../SARA_v3/README_v3.md), [v3 통합 설계 기준](v3-integration-design.md)의 상태 문구를 갱신하고 v2.4를 이전 baseline으로 표시한다.
+4. 아래 승인 기록을 작성한다. (완료)
+5. 같은 변경에서 루트 [README](../README.md), [README_v3](../SARA_v3/README_v3.md), [v3 통합 설계 기준](v3-integration-design.md)의 상태 문구를 갱신하고 v2.4를 이전 baseline으로 표시한다. (완료: v2.4·v2.5 문서와 v2.4 회귀 기준 정책의 현재 상태 문구도 함께 갱신)
 
 ## 승인 기록
 
 | 항목 | 값 |
 |---|---|
-| 승인자 | _미기록_ |
-| 승인일 | _미기록_ |
-| 후보 commit | _미기록_ |
+| 승인자 | ydonchoi (저장소 소유자) |
+| 승인일 | 2026-11-03 |
+| 후보 commit | `7db1cdb` (ydonchoi/SARA#70) |
+| 승인 조건 | 후보 commit의 CI 통과 시 승격 — 충족(check 34개 success) |
 | 범위·예외 | 코드 공개 범위. G2·G6·G8은 사용자 부담, G9·G10은 배포 범위 밖으로 `WAIVED` |
 
 ## 현재 결론
 
-- v3 canonical promotion: **NOT APPROVED** (승인 기록 대기)
-- 후보 commit: **`7db1cdb`**
-- `PASSED`: G1, G3, G4, G5, G7 / `WAIVED`: G2, G6, G8, G9, G10 / `PARTIAL`: G0 (후보 CI 확인 대기)
-- Canonical baseline: **SARA v2.4 유지**
+- v3 canonical promotion: **APPROVED** (2026-11-03)
+- 승격 commit: **`7db1cdb`**
+- `PASSED`: G0, G1, G3, G4, G5, G7 / `WAIVED`: G2, G6, G8, G9, G10
+- Canonical: **SARA v3.0.0**; v2.4는 이전 baseline·회귀 비교 기준
+- 실제 canonical 전환은 ydonchoi/SARA#70이 `main`에 merge될 때 적용된다
