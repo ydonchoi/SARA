@@ -31,7 +31,7 @@ def complete_result(url="https://example.org/paper", *, content="The interventio
             "raw_content_ref": "raw/" + "a" * 64 + ".html",
             "markdown_ref": "markdown/" + "b" * 64 + ".md",
             "extractor_version": "crawl4ai-0.9.5/sara-adapter-1",
-            "retrieval_status": "SUCCEEDED", "completeness_status": "UNKNOWN",
+            "retrieval_status": "SUCCEEDED", "completeness_status": "COMPLETE",
             "extraction_status": "COMPLETE",
         },
     }
@@ -75,6 +75,22 @@ def test_incomplete_crawl_cannot_be_normalized_as_full_text(tmp_path):
         normalize_evidence({**raw, "retrieval_metadata": metadata}, fallback_id="E1")
 
 
+def test_unknown_source_completeness_cannot_be_normalized_as_full_text():
+    raw = complete_result()
+    metadata = dict(raw["retrieval_metadata"], completeness_status="UNKNOWN")
+    with pytest.raises(V3ContractError, match="FULL_TEXT_REQUIRES_COMPLETE_RETRIEVAL"):
+        normalize_evidence({**raw, "retrieval_metadata": metadata}, fallback_id="E1")
+
+
+def test_evidence_trust_domain_uses_final_redirect_destination():
+    raw = complete_result(url="https://example.gov/paper")
+    metadata = dict(raw["retrieval_metadata"], final_url="https://cdn-mirror.net/paper")
+    evidence = normalize_evidence({**raw, "retrieval_metadata": metadata}, fallback_id="E1")
+    assert evidence["url"] == "https://example.gov/paper"
+    assert evidence["domain"] == "cdn-mirror.net"
+    assert evidence["source_independence_key"] == "cdn-mirror.net"
+
+
 def test_fetch_reuses_adapter_result_and_stores_content_addressed_files(tmp_path):
     fetcher = make_fetcher(tmp_path)
     html = "<html><title>Paper</title><body>Raw source</body></html>"
@@ -116,6 +132,7 @@ def test_result_mapping_distinguishes_http_errors_empty_content_and_partial_cont
     assert partial["retrieval_metadata"]["retrieval_status"] == "SUCCEEDED"
     assert partial["retrieval_metadata"]["extraction_status"] == "PARTIAL"
     assert partial["access_level"] == "ABSTRACT"
+    assert partial["snippet"] == ""
     fetcher.close()
 
 
@@ -182,6 +199,9 @@ def test_fetch_page_limit_is_enforced_before_browser_request(tmp_path, monkeypat
     fetcher.fetch("https://example.org/paper")
     with pytest.raises(Crawl4AIAdapterError, match="CRAWL4AI_PAGE_LIMIT_REACHED"):
         fetcher.fetch("https://example.org/other")
+    fetcher.begin_verification()
+    fetcher.fetch("https://example.org/other")
+    assert fetcher._fetch_count.get() == 1
     fetcher.close()
 
 
@@ -208,8 +228,14 @@ def test_fetch_timeout_is_sanitized(tmp_path, monkeypatch):
 
 def test_crawl_fetcher_integrates_without_trusting_its_status(tmp_path):
     result = complete_result()
+    result.update(access_level="ABSTRACT", content="", snippet="The intervention reduced cases by 20 percent.")
+    result["retrieval_metadata"] = dict(result["retrieval_metadata"], completeness_status="UNKNOWN")
+    budget_resets = []
 
     class Fetcher:
+        def begin_verification(self):
+            budget_resets.append(True)
+
         def fetch(self, url):
             return dict(result, url=url)
 
@@ -227,8 +253,15 @@ def test_crawl_fetcher_integrates_without_trusting_its_status(tmp_path):
         search_provider=Search(), mcp_source=None, content_fetcher=Fetcher(),
         relation_assessor=assessor, trusted_source_domains={"example.org"},
     )
-    assert verified["verification_status"] == "VERIFIED"
+    assert verified["verification_status"] != "VERIFIED"
+    assert verified["evidence"][0]["access_level"] == "ABSTRACT"
     assert verified["evidence"][0]["retrieval_metadata"]["http_status"] == 200
+    verify_claim_from_sources(
+        {"claim": {"id": "C2", "text": "The intervention reduced cases by 20 percent."}},
+        search_provider=Search(), mcp_source=None, content_fetcher=Fetcher(),
+        relation_assessor=assessor, trusted_source_domains={"example.org"},
+    )
+    assert len(budget_resets) == 2
 
 
 def test_partial_crawl_remains_non_full_text_and_does_not_verify(tmp_path):
@@ -244,7 +277,8 @@ def test_partial_crawl_remains_non_full_text_and_does_not_verify(tmp_path):
 
     class Search:
         def search(self, *_args, **_kwargs):
-            return [{"url": result["url"], "title": "Paper", "snippet": "Search result", "evidence_id": "E1"}]
+            return [{"url": result["url"], "title": "Search result title", "publisher": "Original Publisher",
+                     "published_at": "2026-01-01T00:00:00Z", "snippet": "Search result", "evidence_id": "E1"}]
 
     unverified = verify_claim_from_sources(
         {"claim": {"id": "C1", "text": "Partial extraction text"}},
@@ -256,6 +290,46 @@ def test_partial_crawl_remains_non_full_text_and_does_not_verify(tmp_path):
         trusted_source_domains={"example.org"},
     )
     assert unverified["verification_status"] != "VERIFIED"
+    enriched = unverified["evidence"][0]
+    assert enriched["title"] == "Search result title"
+    assert enriched["publisher"] == "Original Publisher"
+    assert enriched["published_at"] == "2026-01-01T00:00:00Z"
+    assert enriched["snippet"] == "Partial extraction text"
+
+
+def test_empty_partial_crawl_keeps_existing_search_evidence(tmp_path):
+    url = "https://example.org/paper"
+    result = complete_result(url=url)
+    result.update(title="example.org", publisher="UNKNOWN", access_level="ABSTRACT",
+                  content="", snippet="")
+    result["retrieval_metadata"] = dict(
+        result["retrieval_metadata"], completeness_status="PARTIAL", extraction_status="PARTIAL",
+    )
+
+    class Fetcher:
+        def fetch(self, _url):
+            return result
+
+    class Search:
+        def search(self, *_args, **_kwargs):
+            return [{"url": url, "title": "Indexed study title", "publisher": "Trusted Journal",
+                     "published_at": "2025-12-31T00:00:00Z", "snippet": "Original useful search snippet",
+                     "evidence_id": "E1"}]
+
+    output = verify_claim_from_sources(
+        {"claim": {"id": "C1", "text": "A study claim."}},
+        search_provider=Search(), mcp_source=None, content_fetcher=Fetcher(),
+        relation_assessor=lambda _claim, evidence, _timeout: {
+            "evidence_id": evidence["evidence_id"], "relation": "INSUFFICIENT",
+            "rationale": "Insufficient source text", "support_spans": [],
+        },
+    )
+    evidence = output["evidence"][0]
+    assert evidence["title"] == "Indexed study title"
+    assert evidence["publisher"] == "Trusted Journal"
+    assert evidence["published_at"] == "2025-12-31T00:00:00Z"
+    assert evidence["snippet"] == "Original useful search snippet"
+    assert "retrieval_metadata" not in evidence
 
 
 def test_prompt_injection_in_source_is_data_and_cannot_set_status(tmp_path):

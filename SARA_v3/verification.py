@@ -87,6 +87,9 @@ def verify_claim_from_sources(
     query = claim.get("search_query", claim.get("text"))
     if not isinstance(query, str) or not query.strip():
         raise V3ContractError("CLAIM_SEARCH_QUERY_REQUIRED")
+    begin_verification = getattr(content_fetcher, "begin_verification", None)
+    if callable(begin_verification):
+        begin_verification()
     raw_evidence: list[Mapping[str, Any]] = []
     findings: list[str] = []
     search_succeeded = False
@@ -164,10 +167,36 @@ def verify_claim_from_sources(
                         raise V3ContractError("CRAWL4AI_FETCH_URL_MISMATCH")
                     candidate = normalize_evidence(fetched, fallback_id=evidence["evidence_id"])
                     metadata = candidate.get("retrieval_metadata", {})
+                    candidate_text = (candidate.get("content", "") if candidate.get("access_level") == "FULL_TEXT"
+                                      else candidate.get("snippet", ""))
                     if (metadata.get("retrieval_status") == "SUCCEEDED"
                             and metadata.get("extraction_status") in {"COMPLETE", "PARTIAL"}
-                            and metadata.get("completeness_status") not in {"EMPTY", "OVERSIZE"}):
-                        evidence = candidate
+                            and metadata.get("completeness_status") not in {"EMPTY", "OVERSIZE"}
+                            and candidate_text.strip()):
+                        # Enrich the search evidence without discarding useful
+                        # bibliographic metadata or promoting unknown completeness.
+                        evidence = {
+                            **evidence,
+                            "domain": candidate["domain"],
+                            "access_level": candidate["access_level"],
+                            "content": candidate["content"],
+                            "snippet": candidate["snippet"] or evidence["snippet"],
+                            "source_type": candidate["source_type"],
+                            "source_independence_key": candidate["source_independence_key"],
+                            "retrieval_metadata": metadata,
+                            "provenance": {
+                                **dict(evidence.get("provenance") or {}),
+                                "retrieved_by": dict(candidate.get("provenance") or {}),
+                            },
+                        }
+                        if (evidence["title"] in {candidate["domain"], "UNKNOWN"}
+                                and candidate.get("title")
+                                and candidate["title"] not in {candidate["domain"], "UNKNOWN"}):
+                            evidence["title"] = candidate["title"]
+                        if evidence.get("publisher") in (None, "", "UNKNOWN") and candidate.get("publisher") not in (None, "", "UNKNOWN"):
+                            evidence["publisher"] = candidate["publisher"]
+                        if not evidence.get("published_at") and candidate.get("published_at"):
+                            evidence["published_at"] = candidate["published_at"]
                     else:
                         findings.append("CRAWL4AI_CONTENT_INCOMPLETE")
                 except Exception as exc:

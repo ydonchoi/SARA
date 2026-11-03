@@ -1,4 +1,4 @@
-"""Unified SARA v3 integration runtime; candidate pending release evidence."""
+"""Unified SARA v3 integration runtime; canonical since 2026-11-03 (source release)."""
 VERSION = "3.0.0"
 SCHEMA_VERSION = "sara.assessment.v3"
 

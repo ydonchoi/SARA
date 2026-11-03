@@ -11,6 +11,7 @@ from typing import Any, Callable, Mapping
 
 from .mcp_adapter import MCPSourceAdapter
 from .crawl4ai_adapter import Crawl4AIContentFetcher
+from .durable_ledger import ledger_from_environment
 from .provenance import ProvenanceEventLedger
 from .verification import llm_relation_assessor, trusted_domains_from_environment, verify_claim_from_sources
 from .web_search import web_search_from_environment
@@ -240,14 +241,18 @@ def process_turn_from_environment(payload: Mapping[str, Any], *, timeout_seconds
                                               output_schema=RESPONSE_OUTPUT_SCHEMA, timeout_seconds=timeout)
 
     response_revision = os.environ.get("SARA_RESPONSE_LLM_MODEL_REVISION", "").strip() or f"{response_config.provider}:{response_config.model}"
+    ledger = ledger_from_environment(os.environ)
     try:
         return process_turn(
             payload, judgment_generate=judgment_generate, judgment_model_id=judgment_config.model,
             judgment_model_revision=revision, search_provider=search, relation_assessor=relation_assessor,
             mcp_source=mcp_source, content_fetcher=content_fetcher, response_generate=response_generate,
             response_model_id=response_config.model, response_model_revision=response_revision,
-            trusted_source_domains=trusted_domains_from_environment(), timeout_seconds=timeout_seconds,
+            trusted_source_domains=trusted_domains_from_environment(), provenance_ledger=ledger,
+            timeout_seconds=timeout_seconds,
         )
     finally:
         if content_fetcher is not None:
             content_fetcher.close()
+        if ledger is not None:
+            ledger.close()

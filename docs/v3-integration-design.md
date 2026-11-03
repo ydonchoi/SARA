@@ -1,13 +1,12 @@
 # SARA v3 통합 설계 기준
 
-- **상태:** v3 구현 후보 — 로컬 구현 완료, release gate 및 canonical 승격 대기
-- **검토일:** 2026-10-25
-- **현재 기준선:** v2.4 canonical; v2.5 operational trial
-- **통합 후보:** v3.0.0이 `main`에 구현됨; canonical 지정은 대기
-- **로컬 검증:** Python 3.13.9 / pytest 8.4.2, 전체 suite 453 passed (2026-10-25); live/host/release gate는 미검증
+- **상태:** v3.0.0 canonical — 2026-11-03 코드 공개 범위로 승격 ([승격 기록](v3-promotion-status.md))
+- **검토일:** 2026-10-25 (설계), 2026-11-03 (승격)
+- **현재 기준선:** v3.0.0 canonical; v2.4 이전 baseline·회귀 비교 기준; v2.5 호환·trial 경로
+- **승격 commit:** `7db1cdb` — GitHub Actions check 34개 통과, 로컬 520 passed (3 skipped: opt-in live 테스트)
 - **목적:** 버전별로 분리된 실행·판단·출처 확인 경로를 외부 LLM 및 Co-thoughts와 연결하는 v3 기준을 정의한다.
 
-이 문서는 설계 결정과 구현 기준을 기록한다. 저장소의 v3 후보 코드가 있어도 live provider 연결, 운영 보안 검토, 성능 검증 또는 canonical 승격을 완료했다는 뜻은 아니다.
+이 문서는 설계 결정과 구현 기준을 기록한다. v3는 canonical이지만, live provider 연결, Co-thoughts live 왕복, 독립 평가, 배포 환경 보안·저장 검토는 승격 범위에서 제외(`WAIVED`)했다. 이 항목들은 검증되지 않았으며 운영 전 사용자/운영자가 확인해야 한다.
 
 ## 1. v3의 목표와 사용자 의도
 
@@ -90,9 +89,9 @@ SARA 결과는 prompt에만 덧붙이지 않고, 호스트가 상태로 보존�
 
 Crawl4AI는 검색·판정기를 대체하지 않고, 기존 검색 또는 명시적으로 제출된 URL의 콘텐츠를 가져오는 선택형 `content_fetcher`로 연결한다. MCP fetch가 이미 완전한 원문을 반환하면 재수집하지 않는다. 원문이 없거나 초록/부분 자료인 경우에만 명시적으로 활성화한 Crawl4AI fetcher를 호출한다. 기본 상태는 비활성화이며, 설정된 HTTPS 도메인 허용 목록 밖으로 요청하지 않는다.
 
-수집기는 `evidence_id`와 출처 URL 계약을 유지하고, `retrieval_metadata` 안에 원 URL·최종 URL·조회 시각·HTTP 상태·원문/Markdown 해시·저장 참조·추출기 버전·`retrieval_status`·`extraction_status`·`completeness_status`를 기록한다. 원문 HTML과 Markdown은 content-addressed 경로에 각각 저장한다. `source_id`는 URL 기반 수집 ID이며, SARA 내부 주장 연결 ID인 `evidence_id`를 대신하지 않는다. HTTP 수집 성공, 추출 파이프라인 완료, 원 출처의 완전성, 주장 검증은 별도 상태다. 추출 파이프라인이 끝나도 출판물 전체가 페이지에 실렸는지 알 수 없어 `completeness_status=UNKNOWN`을 기록한다. 비어 있거나 일부만 추출됐으면 각각 `EMPTY` 또는 `PARTIAL`이며 `FULL_TEXT`로 승격하지 않는다. Crawl4AI 결과에 `verification_status`를 두지 않는다.
+수집기는 `evidence_id`와 출처 URL 계약을 유지하고, `retrieval_metadata` 안에 원 URL·최종 URL·조회 시각·HTTP 상태·원문/Markdown 해시·저장 참조·추출기 버전·`retrieval_status`·`extraction_status`·`completeness_status`를 기록한다. 원문 HTML과 Markdown은 content-addressed 경로에 각각 저장한다. `source_id`는 URL 기반 수집 ID이며, SARA 내부 주장 연결 ID인 `evidence_id`를 대신하지 않는다. HTTP 수집 성공, 추출 파이프라인 완료, 원 출처의 완전성, 주장 검증은 별도 상태다. 추출 파이프라인이 끝나도 출판물 전체가 페이지에 실렸는지 알 수 없어 `completeness_status=UNKNOWN`을 기록한다. 따라서 Crawl4AI 결과는 `ABSTRACT` 접근 수준으로 두고, `completeness_status=COMPLETE`가 독립적으로 확인되기 전에는 `FULL_TEXT`나 `VERIFIED` 판정에 기여하지 않는다. 비어 있거나 쓸모 있는 텍스트가 없는 부분 추출은 기존 검색 evidence를 덮어쓰지 않는다. Crawl4AI 결과에 `verification_status`를 두지 않는다.
 
-현재 v3 verification 호출 경계는 동기식이므로, adapter는 한 호출 내에서 재사용되는 worker loop에 비동기 Crawl4AI crawler를 유지하고 동기 `fetch(url)` 계약을 제공한다. 최대 페이지 수·동시성·시간 제한은 adapter에서 제한한다. 브라우저는 정적 페이지에서 추가 지연을 만들 수 있어 전면 활성화하지 않는다. 실제 사이트 구성으로 기존 fetch 경로와 latency/throughput/추출 완전성을 비교한 뒤 선택적으로 운영한다. DNS 검증과 browser request routing만으로 브라우저 DNS 재해결과 다운로드 전 응답 크기 제한을 보장할 수 없으므로, 강한 SSRF/대용량 응답 방어는 배포 네트워크 egress 정책 또는 검증 proxy가 필요하다.
+현재 v3 verification 호출 경계는 동기식이므로, adapter는 한 호출 내에서 재사용되는 worker loop에 비동기 Crawl4AI crawler를 유지하고 동기 `fetch(url)` 계약을 제공한다. 페이지 예산은 claim verification 호출마다 초기화하고, 최대 페이지 수·동시성·페이지별 시간 제한을 adapter에서 적용한다. SARA의 `timeout_seconds`는 전체 turn deadline이 아니라 개별 평가 호출 제한이므로 Crawl4AI의 여러 페이지 수집을 포함하는 end-to-end deadline은 현재 보장하지 않는다. 브라우저는 정적 페이지에서 추가 지연을 만들 수 있어 전면 활성화하지 않는다. 실제 사이트 구성으로 기존 fetch 경로와 latency/throughput/추출 완전성을 비교한 뒤 선택적으로 운영한다. DNS 검증과 browser request routing만으로 브라우저 DNS 재해결과 다운로드 전 응답 크기 제한을 보장할 수 없으므로, 강한 SSRF/대용량 응답 방어는 배포 네트워크 egress 정책 또는 검증 proxy가 필요하다.
 
 ### D5. 외부 콘텐츠와 도구 호출은 불신 경계에 둔다
 
@@ -153,7 +152,7 @@ flowchart TD
   M --> N[Explicit review/commit gate for durable status]
 ```
 
-구현 후보는 이 경로를 실행하지만, 실제 provider와 Co-thoughts host에서 동작한다는 운영 증거는 아직 없다.
+v3는 이 경로를 실행한다. Co-thoughts 측 연결은 ydonchoi/co-thoughts#1에 구현됐지만, 실제 provider와 Co-thoughts host에서 동작한다는 live 운영 증거는 아직 없다.
 
 ## 6. 통합 및 마이그레이션
 
@@ -175,7 +174,7 @@ flowchart TD
 - source verification 판단과 reviewer-bound durable commit이 구분되고, conflict·stale revision·partial failure가 fail-closed임을 검증한다.
 - 독립 adjudication이 된 benchmark와 사전 지정된 false-positive/false-negative/abstention/latency/cost 기준으로 비교 평가한다.
 - 영속 저장·접근 통제·보존·복구·감사 요구사항을 실제 배포 환경에서 확인한다.
-- 모든 증거는 정확한 candidate commit에 묶고, 미충족 gate는 `UNVERIFIED` 또는 `BLOCKED`로 남긴다.
+- 모든 증거는 정확한 candidate commit에 묶고, 미충족 gate는 `UNVERIFIED` 또는 `BLOCKED`로 남긴다. 저장소 소유자가 승격 범위에서 명시적으로 제외한 gate는 근거와 함께 `WAIVED`로 기록한다(2026-11-03 결과는 [승격 기록](v3-promotion-status.md)).
 
 ## 8. 미확정 배포 선택
 

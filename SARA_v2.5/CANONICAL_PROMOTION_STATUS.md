@@ -2,7 +2,7 @@
 
 **Decision: USER-LED TRIAL APPROVED; PRODUCTION READINESS UNVERIFIED.**
 
-**Version scope:** This page records the v2.5 trial and its promotion evidence. The integrated successor candidate is v3.0; the root [README](../README.md) and [v3 integration design](../docs/v3-integration-design.md) are authoritative for current repository status. v2.4 remains canonical until v3 release gates are evidenced and accepted.
+**Version scope:** This page records the v2.5 trial and its promotion evidence. v3.0.0 became canonical on 2026-11-03; the root [README](../README.md) and [v3 promotion record](../docs/v3-promotion-status.md) are authoritative for current repository status. v2.4 is the previous baseline and remains the regression comparison suite.
 
 The v2.5 runtime and dialogue route are present on the repository's `main` branch for maintainer-led operational trial. This is an operational trial decision, not a canonical release or a claim that every promotion-evidence gate has passed.
 
@@ -22,7 +22,7 @@ The v2.5 runtime and dialogue route are present on the repository's `main` branc
 - v2.5 trial snapshot suite: **406 passed** on Python 3.12.14 for its 2026-10-24 candidate; this is historical local evidence only
 - Integrated repository suite: **453 passed** on Python 3.13.9 / pytest 8.4.2 on the v3 integration candidate, 2026-10-25; this does not replace hosted CI evidence for a later exact commit
 - Generic OpenAI/Anthropic/Gemini/Kimi/OpenAI-compatible judgment adapter: **IMPLEMENTED; tested with stub transports; no live credentials/provider configured**
-- v3 integration candidate: present on `main`; Co-thoughts host call/assessment-return integration remains **UNVERIFIED**
+- v3.0.0: canonical since 2026-11-03 (source release); Co-thoughts host integration implemented in ydonchoi/co-thoughts#1, live round trip **UNVERIFIED** (waived to users)
 - Live host dialogue/model/verifier integration: **UNVERIFIED**
 - Live Crossref request in this environment: **FAILED with URLError; retained as UNVERIFIED**
 - Independent reviewers/adjudicator: **NOT ASSIGNED**; Preflight adjudication and comparative benchmark: **NOT COMPLETED**

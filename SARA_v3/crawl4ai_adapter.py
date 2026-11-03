@@ -7,6 +7,7 @@ SARA runtime remains usable without the optional dependency.
 from __future__ import annotations
 
 import asyncio
+import contextvars
 from concurrent.futures import TimeoutError as FutureTimeout
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -54,7 +55,9 @@ class Crawl4AIContentFetcher:
         self.max_stored_bytes = int(max_stored_bytes)
         self.max_concurrency = max_concurrency
         self.max_pages = max_pages
-        self._fetch_count = 0
+        self._fetch_count: contextvars.ContextVar[int] = contextvars.ContextVar(
+            f"sara_crawl4ai_fetch_count_{id(self)}", default=0,
+        )
         self._thread: threading.Thread | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._crawler: Any | None = None
@@ -255,18 +258,20 @@ class Crawl4AIContentFetcher:
         elif raw_bytes and markdown_bytes:
             raw_ref = self._store("raw", raw_hash, ".html", raw_bytes)
             markdown_ref = self._store("markdown", markdown_hash, ".md", markdown_bytes)
-        content = markdown if extraction_status == "COMPLETE" else ""
-        snippet = "" if content else markdown[:8000]
+        # The extractor cannot establish that the page contains the complete
+        # source, so expose its text as an abstract/snippet, never verified full text.
+        content = ""
+        snippet = markdown[:8000]
         return {
             "evidence_id": source_id,
             "url": url,
             "title": getattr(result, "metadata", {}).get("title", "") if isinstance(getattr(result, "metadata", {}), Mapping) else "",
             "publisher": "UNKNOWN",
             "retrieved_at": retrieved_at,
-            "access_level": "FULL_TEXT" if extraction_status == "COMPLETE" else "ABSTRACT",
+            "access_level": "ABSTRACT",
             "source_type": "CRAWL4AI_RETRIEVED_CONTENT",
             "content": content,
-            "snippet": snippet or ("Page content was empty or incomplete." if extraction_status != "COMPLETE" else ""),
+            "snippet": snippet,
             "provenance": {"provider": "crawl4ai", "extractor_version": self.extractor_version},
             "retrieval_metadata": {
                 "source_id": source_id,
@@ -301,10 +306,10 @@ class Crawl4AIContentFetcher:
     def fetch(self, url: str) -> dict[str, Any]:
         """Synchronously fetch one page for SARA's current sync provider API."""
         self._validate_url(url)
-        with self._lock:
-            if self._fetch_count >= self.max_pages:
-                raise Crawl4AIAdapterError("CRAWL4AI_PAGE_LIMIT_REACHED")
-            self._fetch_count += 1
+        fetch_count = self._fetch_count.get()
+        if fetch_count >= self.max_pages:
+            raise Crawl4AIAdapterError("CRAWL4AI_PAGE_LIMIT_REACHED")
+        self._fetch_count.set(fetch_count + 1)
         loop = self._start_worker()
         coroutine = self._fetch_async(url)
         try:
@@ -321,6 +326,10 @@ class Crawl4AIContentFetcher:
             raise
         except Exception:
             raise Crawl4AIAdapterError("CRAWL4AI_FETCH_FAILED") from None
+
+    def begin_verification(self) -> None:
+        """Reset the per-claim page budget in the caller's execution context."""
+        self._fetch_count.set(0)
 
     async def _close_async(self) -> None:
         if self._crawler is not None:
