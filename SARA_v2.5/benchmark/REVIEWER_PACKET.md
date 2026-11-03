@@ -1,6 +1,6 @@
 # SARA v2.5 Preflight — Reviewer Packet
 
-**Version scope:** This packet evaluates only the v2.5 preflight fixture. The current integrated successor candidate is v3.0; its current status and release gates are tracked in the root README and `docs/v3-integration-design.md`.
+**Version scope:** This packet evaluates only the v2.5 preflight fixture. SARA v3.0.0 has been canonical since 2026-11-03; its status and release gates are tracked in the root README and `docs/v3-promotion-status.md`. Independent adjudication (v3 gate G8) was waived for that source release and remains open.
 
 ## Purpose and status
 
@@ -39,4 +39,4 @@ Independent labels alone do not establish production readiness. Keep separate ev
 - live dialogue-host/model/verifier integration;
 - durable audit persistence, recovery, access control, and reviewer identity.
 
-Until those gates are satisfied, SARA v2.4 remains canonical and SARA v2.5 remains a prototype.
+Until those gates are satisfied, SARA v2.5 remains a prototype and no benchmark-based quality claim may be made. (When this packet was written, v2.4 was canonical; v3.0.0 is canonical since 2026-11-03.)

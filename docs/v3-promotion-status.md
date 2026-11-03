@@ -3,7 +3,7 @@
 **Decision: PROMOTED — SARA v3.0.0 is canonical as of 2026-11-03 (source release; waived gates are user/operator responsibilities).**
 
 - **작성일:** 2026-11-03
-- **대상:** SARA v3.0.0 통합 런타임 후보
+- **대상:** SARA v3.0.0 통합 런타임
 - **현재 canonical:** SARA v3.0.0 (2026-11-03부터). SARA v2.4는 이전 baseline이며 rollback·회귀 비교 기준으로 유지
 - **후보 commit:** `7db1cdb` (branch `v3-promotion-gates`, ydonchoi/SARA#70; base `main` `9ee11c9`). 이 commit은 G9 SQLite ledger, Crawl4AI 판정 무결성 수정, 저장소 정리를 포함한다. 이후 이 문서만 고치는 commit은 코드·테스트를 바꾸지 않으므로 후보를 바꾸지 않는다. 코드나 테스트가 바뀌면 후보를 다시 지정한다. 이전 후보 `a0f7a63`의 CI 증거는 참고 자료로 남긴다.
 - **기준 문서:** [v3 통합 설계 기준 §6–§8](v3-integration-design.md)
@@ -88,4 +88,4 @@ v3를 실제 서비스나 연구 운영에 쓰려면 아래를 직접 확인해�
 - 승격 commit: **`7db1cdb`**
 - `PASSED`: G0, G1, G3, G4, G5, G7 / `WAIVED`: G2, G6, G8, G9, G10
 - Canonical: **SARA v3.0.0**; v2.4는 이전 baseline·회귀 비교 기준
-- 실제 canonical 전환은 ydonchoi/SARA#70이 `main`에 merge될 때 적용된다
+- 적용: ydonchoi/SARA#70이 `main`에 merge됨(merge commit `4ff5387`, tag `v3.0.0`). Co-thoughts 연동은 ydonchoi/co-thoughts#1(merge commit `5d281ab`)
