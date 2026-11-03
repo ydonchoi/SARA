@@ -135,6 +135,7 @@ requirements-test.txt
 - [v2.5 승격 준비 기준](docs/v2.5-promotion-readiness-plan.md)
 - [v2.4 regression baseline 정책](docs/v2.4-regression-baseline.md)
 - [v3 구현·통합 설계 기준](docs/v3-integration-design.md)
+- [v3 canonical 승격 상태](docs/v3-promotion-status.md)
 
 Pull request에는 변경한 계약에 대한 회귀 테스트를 포함하고, CI 결과를 확인하세요. 전체 테스트 명령은 `python -m pytest -q`입니다. 위의 로컬 테스트 통과는 live provider 연결이나 v3 canonical 승격 gate 통과를 의미하지 않습니다.
 
